@@ -60,22 +60,23 @@ function step(){
   const vis=NODES.filter(visible);
   const rep=5200*spread,link=120*spread;
   const tl=viewMode==="timeline";
-  /* timeline: springs own the layout; only contact collision remains, so era lanes hold */
-  const repK=tl?0:1,colK=tl?1.1:0.6;
+  /* timeline: springs own the layout; only contact collision remains, so era lanes hold.
+     Collision is soft and capped there — hard kicks against pinned springs make names jitter */
+  const repK=tl?0:1,colK=tl?0.55:0.6,damp=tl?0.78:0.85;
   for(let i=0;i<vis.length;i++){
     const a=vis[i];
     if(tl){a.vx+=(a._tx-a.x)*0.08;a.vy+=(a._ty-a.y)*0.08;a.vz-=a.z*0.08;}
     else{a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;}
     for(let j=i+1;j<vis.length;j++){
       const b=vis[j];let dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z,d2=dx*dx+dy*dy+dz*dz||.01,d=Math.sqrt(d2);
-      const minD=26;let f=rep*repK/d2;if(d<minD)f+=(minD-d)*colK/d;
+      const minD=26;let f=rep*repK/d2;if(d<minD)f+=(minD-d)*colK/(tl?Math.max(d,10):d);
       /* in timeline mode the x spring owns chronology — repulsion mostly spreads the lanes vertically */
       const kx=tl?0.12:1,kz=tl?0:1;
       const fx=dx/d*f*kx,fy=dy/d*f,fz=dz/d*f*kz;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
     }
   }
   if(!tl)EDGES.forEach(ed=>{if(!ed.s||!visible(ed.s)||!visible(ed.t))return;let dx=ed.t.x-ed.s.x,dy=ed.t.y-ed.s.y,dz=ed.t.z-ed.s.z,d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01;const f=(d-link)*0.010,fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;ed.s.vx+=fx;ed.s.vy+=fy;ed.s.vz+=fz;ed.t.vx-=fx;ed.t.vy-=fy;ed.t.vz-=fz;});
-  vis.forEach(nd=>{nd.vx*=0.85;nd.vy*=0.85;nd.vz*=0.85;nd.x+=nd.vx;nd.y+=nd.vy;nd.z+=nd.vz;});
+  vis.forEach(nd=>{nd.vx*=damp;nd.vy*=damp;nd.vz*=damp;nd.x+=nd.vx;nd.y+=nd.vy;nd.z+=nd.vz;});
   if(alpha>0.05)alpha*=0.992;
 }
 
@@ -140,7 +141,8 @@ function draw(){
     vis.push(nd);
   }
   let dmin=1e9,dmax=-1e9;for(const nd of vis){if(nd._d<dmin)dmin=nd._d;if(nd._d>dmax)dmax=nd._d;}
-  const dr=Math.max(1,dmax-dmin),bright=nd=>(nd._d-dmin)/dr;
+  /* depth shading is meaningless on the flat timeline (z≈0) and its jitter makes labels flicker — light uniformly there */
+  const dr=Math.max(1,dmax-dmin),bright=viewMode==="timeline"?(nd=>0.55):(nd=>(nd._d-dmin)/dr);
   const key=hoverNode||selNode;
   if(viewMode==="timeline"){
     /* axis, era lanes, career lines, record dots — fade in as the globe finishes flattening */
@@ -238,7 +240,7 @@ function draw(){
     ctx.fillText(nd.name,nd._sx,y);
   }
 }
-function prio(nd){return (nd===hoverNode||nd===selNode?1e9:0)+(focusSet&&focusSet.has(nd.id)?1e6:0)+nd.deg*120+(nd._d||0);}
+function prio(nd){return (nd===hoverNode||nd===selNode?1e9:0)+(focusSet&&focusSet.has(nd.id)?1e6:0)+nd.deg*120+(viewMode==="timeline"?nd.twp:(nd._d||0));}
 function loop(){
   tick++;pulse=(pulse+0.012)%1;
   if(trans){
