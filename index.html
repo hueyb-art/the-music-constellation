@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>The Music Constellation — an encyclopedia of who shaped whom</title>
+<meta name="description" content="Interactive 3D maps of music history: jazz, hip hop, and reggae as constellations of the musicians who shaped one another — with live discographies, photos, and 30-second previews." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,5 61,38 96,38 68,59 78,93 50,72 22,93 32,59 4,38 39,38' fill='%23e0b15a'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+
+<div class="topbar">
+  <div class="brand">
+    <h1 id="gname">The Music Constellation <span class="ver" id="ver"></span></h1>
+    <div class="tag">The Music Constellation &middot; who shaped whom</div>
+  </div>
+  <nav class="gtabs" id="gtabs" aria-label="Choose a genre"></nav>
+  <button class="rr" id="rrBtn">Reading room</button>
+  <button class="rr" id="fitBtn">Fit to screen</button>
+  <select class="instr" id="instr" aria-label="Filter the constellation"></select>
+  <div class="search">
+    <input id="q" type="text" placeholder="Find an artist…" autocomplete="off" />
+    <div class="suggest" id="suggest"></div>
+  </div>
+</div>
+
+<div class="legend" id="legend"></div>
+<div class="hint"><b>Hover</b> to trace ties &middot; <b>Click</b> for a card &middot; <b>Double-click</b> for the full page<br><b>Drag</b> to spin the globe &middot; <b>Scroll</b> to zoom in for photos</div>
+<div class="spread"><span>Tight</span><input id="spread" type="range" min="0.7" max="3.4" step="0.05" value="1.5" aria-label="Spread the network out" /><span>Spread</span></div>
+<div id="clipnote" class="clipnote"></div>
+
+<aside class="panel" id="panel"><button class="close" id="close">&times;</button><div id="panelBody"></div></aside>
+<div class="page" id="page"><div class="page-inner" id="pageInner"></div></div>
+
+<noscript><p style="padding:40px;font-family:sans-serif">The Music Constellation needs JavaScript to draw its sky.</p></noscript>
+<script src="js/version.js"></script>
+<script src="js/data/jazz.js"></script>
+<script src="js/data/hiphop.js"></script>
+<script src="js/data/reggae.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>
