@@ -43,7 +43,7 @@ const KIND_COLOR={collab:"224,177,90",mentor:"245,222,150",influence:"150,180,21
 
 let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,pulse=0,spread=1.5,viewY=0,tviewY=0;
 /* ----------  TIMELINE VIEW  ---------- */
-let viewMode="globe",viewX=0,tviewX=0;
+let viewMode="globe",viewX=0,tviewX=0,panVX=0,panVY=0;
 const THIS_YEAR=new Date().getFullYear();
 /* the timeline is a long road, not a compressed chart: pxy world-units per year,
    so a century stretches thousands of px and you travel along it */
@@ -249,7 +249,9 @@ function loop(){
   }
   if(!pointer.down){
     /* timeline owns the camera: always ease flat, so an interrupted flatten can never strand the axis invisible */
-    if(viewMode==="timeline"){yaw+=(0-yaw)*0.12;pitch+=(0-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(yaw)<0.0005)yaw=0;if(Math.abs(pitch)<0.0005)pitch=0;}
+    if(viewMode==="timeline"){yaw+=(0-yaw)*0.12;pitch+=(0-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(yaw)<0.0005)yaw=0;if(Math.abs(pitch)<0.0005)pitch=0;
+      /* released drags keep floating through the years */
+      if(panVX||panVY){tviewX+=panVX;viewX+=panVX;tviewY+=panVY;viewY+=panVY;panVX*=0.94;panVY*=0.94;if(Math.abs(panVX)<0.05)panVX=0;if(Math.abs(panVY)<0.05)panVY=0;}}
     else if(tyaw!=null){const dd=((tyaw-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;yaw+=dd*0.12;pitch+=(tpitch-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(dd)<0.01&&Math.abs(tpitch-pitch)<0.01)tyaw=null;}
     else{yaw+=vyaw;pitch+=vpitch;vyaw+=(0.0012-vyaw)*0.03;vpitch*=0.9;}
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
@@ -271,13 +273,13 @@ function nodeAt(px,py){let best=null,bz=-1e9;for(const nd of NODES){if(!visible(
 canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;
   if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;
-    if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
+    if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;panVX=panVX*0.5+dx*0.5;panVY=panVY*0.5+dy*0.5;}
     else{yaw+=dx*0.005;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.005));vyaw=dx*0.005;vpitch=dy*0.005;}}
     pointer.x=px;pointer.y=py;return;}
   const nd=nodeAt(px,py);if(nd!==hoverNode){hoverNode=nd;if(!selNode)computeFocus(nd);canvas.style.cursor=nd?"pointer":"grab";}
   pointer.x=px;pointer.y=py;
 });
-canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;canvas.style.cursor="grabbing";});
+canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;panVX=0;panVY=0;canvas.style.cursor="grabbing";});
 addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
 canvas.addEventListener("dblclick",ev=>{const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
 canvas.addEventListener("wheel",ev=>{ev.preventDefault();
@@ -288,7 +290,7 @@ canvas.addEventListener("wheel",ev=>{ev.preventDefault();
 let touchMode=0,pinchD=0,tapXY=null,lastTap=0;
 canvas.addEventListener("touchstart",ev=>{
   ev.preventDefault();unlockAudio();
-  if(ev.touches.length===1){pointer.down=true;pointer.moved=false;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;tapXY={x:pointer.x,y:pointer.y};touchMode=1;}
+  if(ev.touches.length===1){pointer.down=true;pointer.moved=false;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;tapXY={x:pointer.x,y:pointer.y};touchMode=1;panVX=0;panVY=0;}
   else if(ev.touches.length>=2){touchMode=2;pointer.down=false;pinchD=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX,ev.touches[0].clientY-ev.touches[1].clientY);}
 },{passive:false});
 canvas.addEventListener("touchmove",ev=>{
@@ -296,7 +298,7 @@ canvas.addEventListener("touchmove",ev=>{
   if(touchMode===1&&ev.touches.length===1){
     const px=ev.touches[0].clientX,py=ev.touches[0].clientY,dx=px-pointer.x,dy=py-pointer.y;
     if(Math.abs(dx)+Math.abs(dy)>1.5){pointer.moved=true;tyaw=null;
-      if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
+      if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;panVX=panVX*0.5+dx*0.5;panVY=panVY*0.5+dy*0.5;}
       else{yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}}
     pointer.x=px;pointer.y=py;
   } else if(touchMode===2&&ev.touches.length>=2){
@@ -559,6 +561,7 @@ function setView(mode){
   if(tlBtn)tlBtn.classList.toggle("on",mode==="timeline");
   if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TL:HINT_GLOBE;
   alpha=1;userFramed=false;
+  panVX=0;panVY=0;
   if(mode==="timeline"){tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameTimeline(true);}
   else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);} // globe needs time to fold back in from far down the road
 }
