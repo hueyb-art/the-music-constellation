@@ -154,13 +154,13 @@ function draw(){
     if(ax>0.02){
       const gx=W/2+viewX,gy=H/2+viewY;
       ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 12px Helvetica Neue, Arial";
-      for(let yr=Math.ceil((camYear-1)/10)*10;yr<=Math.min(TL.y1+10,camYear+80);yr+=10){
+      for(let yr=Math.ceil((camYear-1)/10)*10;yr<=Math.min(TL.y1+3,camYear+80);yr+=10){
         const zz=ZOF(yr)*zoom;if(zz>CAM-200)continue;
         const pf=CAM/Math.max(120,CAM-zz);
         const rad=420*pf*zoom,fa=Math.max(0,Math.min(1,pf*1.4-0.18));
-        ctx.strokeStyle="rgba(226,212,184,"+(0.10*fa*ax).toFixed(3)+")";ctx.lineWidth=1;
+        ctx.strokeStyle="rgba(226,212,184,"+(0.22*fa*ax).toFixed(3)+")";ctx.lineWidth=1.5;
         ctx.beginPath();ctx.arc(gx,gy,rad,0,6.283);ctx.stroke();
-        ctx.fillStyle="rgba(226,212,184,"+(0.34*fa*ax).toFixed(3)+")";
+        ctx.fillStyle="rgba(226,212,184,"+(0.50*fa*ax).toFixed(3)+")";
         ctx.fillText(String(yr),gx,gy+rad+6);
       }
       /* career trails: from each star's debut deeper to their final year — you fly alongside the careers */
@@ -570,7 +570,19 @@ function setView(mode){
   if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TL:HINT_GLOBE;
   alpha=1;userFramed=false;
   panVX=0;panVY=0;camV=0;
-  if(mode==="timeline"){tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameTimeline(true);}
+  if(mode==="timeline"){
+    /* bake the current rotation into the star positions so entry is seamless —
+       no tumbling upright; the sky simply streams away into depth */
+    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+    NODES.forEach(nd=>{
+      const x=nd.x*cy-nd.z*sy,z1=nd.x*sy+nd.z*cy,y=nd.y*cp-z1*sp,z=nd.y*sp+z1*cp;
+      nd.x=x;nd.y=y;nd.z=z;
+      const vx=nd.vx*cy-nd.vz*sy,vz1=nd.vx*sy+nd.vz*cy,vy=nd.vy*cp-vz1*sp,vz=nd.vy*sp+vz1*cp;
+      nd.vx=vx;nd.vy=vy;nd.vz=vz;
+    });
+    yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;
+    frameTimeline(true);
+  }
   else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);} // globe needs time to fold back in from far down the road
 }
 if(tlBtn)tlBtn.onclick=()=>setView(viewMode==="globe"?"timeline":"globe");
