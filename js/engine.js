@@ -611,7 +611,9 @@ function loadGenre(key){
   TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10),laneH:520/Object.keys(ERAS).length,pxy:MOBILE?26:44};
   const eraIdx={};Object.keys(ERAS).forEach((k,i)=>eraIdx[k]=i);
   NODES.forEach((nd,i)=>{
-    nd._tx=TLX((nd._y0+nd._y1)/2);
+    /* the star marks the artist's arrival: their first essential record
+       (lifespan midpoint only for those with no surviving records) */
+    nd._tx=TLX(nd._recs.length?Math.min(...nd._recs):(nd._y0+nd._y1)/2);
     nd._ty=-260+(eraIdx[nd.era]+0.5)*TL.laneH+(((i*7919)%1000)/1000-0.5)*TL.laneH*0.7;
   });
   viewX=0;tviewX=0;viewY=0;tviewY=0;
