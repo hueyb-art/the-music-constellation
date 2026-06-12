@@ -38,6 +38,8 @@ function relWord(ed,nd){const dir=ed.a===nd.id;if(SYM.includes(ed.rel))return ed
 function kindOf(rel){if(rel==="mentored")return"mentor";if(/influenc/.test(rel))return"influence";if(rel==="rivals"||rel==="beef")return"rivalry";return"collab";}
 const KIND_LABEL={collab:"Collaboration",mentor:"Mentorship",influence:"Influence",rivalry:"Rivalry"};
 const KIND_DASH={collab:[],mentor:[],influence:[6,5],rivalry:[2,5]};
+/* warm gold = working together, bright gold = the torch passed, cool silver-blue = indirect influence, rose = rivalry */
+const KIND_COLOR={collab:"224,177,90",mentor:"245,222,150",influence:"150,180,215",rivalry:"217,96,122"};
 
 let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,pulse=0,spread=1.5,viewY=0,tviewY=0;
 const CAM=760;
@@ -126,10 +128,9 @@ function draw(){
     if(!ed.s||!visible(ed.s)||!visible(ed.t))return;
     const s=ed.s,t=ed.t,on=!focusSet||(focusSet.has(ed.a)&&focusSet.has(ed.b)),lit=key&&(ed.a===key.id||ed.b===key.id);
     const tb=(bright(s)+bright(t))/2;
-    const rose=ed.kind==="rivalry";
     ctx.beginPath();ctx.moveTo(s._sx,s._sy);ctx.lineTo(t._sx,t._sy);
     ctx.setLineDash(KIND_DASH[ed.kind]);
-    const cc=rose?"217,96,122":"224,177,90";
+    const cc=KIND_COLOR[ed.kind];
     if(lit){ctx.strokeStyle=`rgba(${cc},${((0.25+0.45*tb)*F).toFixed(3)})`;ctx.lineWidth=ed.kind==="mentor"?2:1.6;}
     else if(on){ctx.strokeStyle=`rgba(${cc},${((0.05+0.12*tb)*F).toFixed(3)})`;ctx.lineWidth=ed.kind==="mentor"?1.25:1;}
     else{ctx.strokeStyle=`rgba(${cc},${((0.02+0.03*tb)*F).toFixed(3)})`;ctx.lineWidth=0.8;}

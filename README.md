@@ -19,7 +19,7 @@ This repo supersedes three earlier single-file apps ([jazz-](https://github.com/
 - A custom 3D force-directed graph rendered on an HTML canvas — no frameworks, no dependencies, no build step. Plain HTML/CSS/JS served as-is by GitHub Pages.
 - **Discographies** load live from MusicBrainz; **photos** from Wikipedia; **preview clips** from Deezer/Apple (artist-verified before playing); **Apple Music links** via Apple's iTunes lookup.
 - Search is diacritic-folded and typo-tolerant ("thelonius" finds Thelonious Monk).
-- Connection lines are styled by relationship: solid = collaboration, thick = mentorship, dashed = influence, dotted red = rivalry.
+- Connection lines are styled by relationship: quiet gold = collaboration, bright white-gold = mentorship, dashed silver-blue = influence, dotted rose = rivalry (line styles double as a colorblind-safe encoding).
 
 ## Repo layout
 
