@@ -48,7 +48,9 @@ const THIS_YEAR=new Date().getFullYear();
 /* the timeline is a long road, not a compressed chart: pxy world-units per year,
    so a century stretches thousands of px and you travel along it */
 let TL={y0:1900,y1:THIS_YEAR,laneH:74,pxy:44};
-const TLX=yr=>(yr-(TL.y0+TL.y1)/2)*TL.pxy;
+/* in timeline the Tight↔Spread slider stretches time itself (slider's 1.5 default = base scale) */
+const PXY=()=>TL.pxy*(spread/1.5);
+const TLX=yr=>(yr-(TL.y0+TL.y1)/2)*PXY();
 const CAM=760;
 const MOBILE=(typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(max-width:700px)").matches)||false;
 const BLURK=MOBILE?0.5:1;
@@ -65,7 +67,7 @@ function step(){
   const repK=tl?0:1,colK=tl?0.55:0.6,damp=tl?0.78:0.85;
   for(let i=0;i<vis.length;i++){
     const a=vis[i];
-    if(tl){a.vx+=(a._tx-a.x)*0.08;a.vy+=(a._ty-a.y)*0.08;a.vz-=a.z*0.08;}
+    if(tl){a.vx+=(TLX(a._ay)-a.x)*0.08;a.vy+=(a._ty-a.y)*0.08;a.vz-=a.z*0.08;}
     else{a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;}
     for(let j=i+1;j<vis.length;j++){
       const b=vis[j];let dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z,d2=dx*dx+dy*dy+dz*dz||.01,d=Math.sqrt(d2);
@@ -149,7 +151,7 @@ function draw(){
     const ax=Math.max(0,1-(Math.abs(yaw)+Math.abs(pitch))*2.5)*F;
     if(ax>0.02){
       const sx=x=>W/2+viewX+x*zoom,sy=y=>H/2+viewY+y*zoom;
-      const stepY=(10*TL.pxy*zoom<64)?20:10;
+      const stepY=(10*PXY()*zoom<64)?20:10;
       ctx.textAlign="center";ctx.textBaseline="top";ctx.font="400 11px Helvetica Neue, Arial";
       for(let yr=Math.ceil(TL.y0/stepY)*stepY;yr<=TL.y1;yr+=stepY){
         const x=sx(TLX(yr));
@@ -162,7 +164,7 @@ function draw(){
       const lx=Math.max(sx(TLX(TL.y0))-150,14); // sticky at the viewport edge while panning
       Object.keys(ERAS).forEach((k,i)=>{ctx.fillStyle=hexA(ERAS[k].color,0.5*ax);ctx.fillText(ERAS[k].label.toUpperCase(),lx,sy(-260+(i+0.5)*TL.laneH));});
       /* where in history you are right now */
-      const cyr=Math.max(TL.y0,Math.min(TL.y1,Math.round((TL.y0+TL.y1)/2-viewX/(zoom*TL.pxy))));
+      const cyr=Math.max(TL.y0,Math.min(TL.y1,Math.round((TL.y0+TL.y1)/2-viewX/(zoom*PXY()))));
       ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 13px Helvetica Neue, Arial";
       ctx.fillStyle="rgba(226,212,184,"+(0.30*ax).toFixed(3)+")";
       ctx.fillText("· "+cyr+" ·",W/2,175);
@@ -488,7 +490,13 @@ function pick(nd){if(!nd)return;if(!activeEras.has(nd.era)){activeEras.add(nd.er
 document.addEventListener("click",ev=>{if(!q.parentNode.contains(ev.target))suggest.style.display="none";});
 
 const spreadEl=document.getElementById("spread");
-if(spreadEl){spreadEl.value=spread;spreadEl.oninput=()=>{spread=parseFloat(spreadEl.value);alpha=Math.max(alpha,0.75);};}
+if(spreadEl){spreadEl.value=spread;spreadEl.oninput=()=>{
+  if(viewMode==="timeline"){ /* stretch time around the year at screen centre */
+    const mid=(TL.y0+TL.y1)/2,cy=mid-viewX/(zoom*PXY());
+    spread=parseFloat(spreadEl.value);
+    tviewX=viewX=-(cy-mid)*PXY()*zoom;
+  }else spread=parseFloat(spreadEl.value);
+  alpha=Math.max(alpha,0.75);};}
 
 /* ----------  AUDIO PREVIEW CLIPS (Deezer / Apple iTunes)  ---------- */
 const clip=(typeof Audio!=="undefined")?new Audio():null;
@@ -613,7 +621,7 @@ function loadGenre(key){
   NODES.forEach((nd,i)=>{
     /* the star marks the artist's arrival: their first essential record
        (lifespan midpoint only for those with no surviving records) */
-    nd._tx=TLX(nd._recs.length?Math.min(...nd._recs):(nd._y0+nd._y1)/2);
+    nd._ay=nd._recs.length?Math.min(...nd._recs):(nd._y0+nd._y1)/2;
     nd._ty=-260+(eraIdx[nd.era]+0.5)*TL.laneH+(((i*7919)%1000)/1000-0.5)*TL.laneH*0.7;
   });
   viewX=0;tviewX=0;viewY=0;tviewY=0;
