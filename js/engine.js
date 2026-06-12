@@ -251,7 +251,7 @@ function loop(){
     /* timeline owns the camera: always ease flat, so an interrupted flatten can never strand the axis invisible */
     if(viewMode==="timeline"){yaw+=(0-yaw)*0.12;pitch+=(0-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(yaw)<0.0005)yaw=0;if(Math.abs(pitch)<0.0005)pitch=0;
       /* released drags keep floating — vertical drift settles fast so the glide relaxes into the line of years */
-      if(panVX||panVY){tviewX+=panVX;viewX+=panVX;tviewY+=panVY;viewY+=panVY;panVX*=0.94;panVY*=0.85;if(Math.abs(panVX)<0.05)panVX=0;if(Math.abs(panVY)<0.05)panVY=0;}}
+      if(panVX||panVY){tviewX+=panVX;viewX+=panVX;tviewY+=panVY;viewY+=panVY;panVX*=0.965;panVY*=0.85;if(Math.abs(panVX)<0.05)panVX=0;if(Math.abs(panVY)<0.05)panVY=0;}}
     else if(tyaw!=null){const dd=((tyaw-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;yaw+=dd*0.12;pitch+=(tpitch-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(dd)<0.01&&Math.abs(tpitch-pitch)<0.01)tyaw=null;}
     else{yaw+=vyaw;pitch+=vpitch;vyaw+=(0.0012-vyaw)*0.03;vpitch*=0.9;}
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
