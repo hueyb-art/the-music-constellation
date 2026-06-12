@@ -201,14 +201,16 @@ function draw(){
   vis.sort((a,b)=>a._d-b._d);
   for(const nd of vis){
     const dim=focusSet&&!focusSet.has(nd.id),col=ERAS[nd.era].color,b=bright(nd);
+    /* near-plane dissolve: stars melt away over their last few years instead of popping at the cull */
+    const nf=viewMode==="timeline"?Math.max(0,Math.min(1,(CAM-150-nd._d)/220)):1;nd._nf=nf;
     const twk=0.9+0.1*Math.sin(tick*0.045+nd.twp);
     const r=Math.max(1.3,radius(nd)*nd._pf*zoom*0.9*(1+0.5*nd.hl));nd._r=r;
     ctx.save();
-    ctx.globalAlpha=(dim?0.28:Math.min(1,(0.45+0.55*b)*twk))*F;
+    ctx.globalAlpha=(dim?0.28:Math.min(1,(0.45+0.55*b)*twk))*F*nf;
     ctx.shadowColor=col;ctx.shadowBlur=(dim?2:(6+16*nd.hl)*twk)*(0.6+b)*BLURK;
     ctx.beginPath();ctx.arc(nd._sx,nd._sy,r,0,6.283);ctx.fillStyle=col;ctx.fill();
     ctx.restore();
-    if(nd===selNode||nd===hoverNode){ctx.globalAlpha=F;ctx.lineWidth=2;ctx.strokeStyle="#f3ece0";ctx.beginPath();ctx.arc(nd._sx,nd._sy,r+1,0,6.283);ctx.stroke();ctx.globalAlpha=1;}
+    if(nd===selNode||nd===hoverNode){ctx.globalAlpha=F*nf;ctx.lineWidth=2;ctx.strokeStyle="#f3ece0";ctx.beginPath();ctx.arc(nd._sx,nd._sy,r+1,0,6.283);ctx.stroke();ctx.globalAlpha=1;}
   }
   const cand=vis.filter(nd=>!focusSet||focusSet.has(nd.id)||nd===hoverNode||nd===selNode);
   cand.sort((a,b)=>prio(b)-prio(a));
@@ -224,17 +226,20 @@ function draw(){
     const ok=st&&st.ok&&st.img;
     nd._pa=nd._pa||0;nd._pa+=(((want&&ok)?1:0)-nd._pa)*0.12;
     if(nd._pa>0.02&&ok){
-      const pr=Math.max(12,nd._r*1.7);
-      ctx.save();ctx.globalAlpha=nd._pa*F;
+      const pr=Math.max(12,nd._r*1.7),pa=nd._pa*F*(nd._nf!=null?nd._nf:1);
+      ctx.save();ctx.globalAlpha=pa;
       ctx.beginPath();ctx.arc(nd._sx,nd._sy,pr,0,6.283);ctx.clip();
       ctx.drawImage(st.img,nd._sx-pr,nd._sy-pr,pr*2,pr*2);
       ctx.restore();
-      ctx.save();ctx.globalAlpha=nd._pa*F;ctx.lineWidth=1.5;ctx.strokeStyle=ERAS[nd.era].color;ctx.beginPath();ctx.arc(nd._sx,nd._sy,pr,0,6.283);ctx.stroke();ctx.restore();
+      ctx.save();ctx.globalAlpha=pa;ctx.lineWidth=1.5;ctx.strokeStyle=ERAS[nd.era].color;ctx.beginPath();ctx.arc(nd._sx,nd._sy,pr,0,6.283);ctx.stroke();ctx.restore();
     }
   }
   const placed=[];ctx.textAlign="center";ctx.textBaseline="top";
   for(const nd of cand){
     const big=nd===hoverNode||nd===selNode,b=bright(nd);
+    /* in the voyage, names materialise only as artists come near — the deep future stays anonymous */
+    let lf=1;
+    if(viewMode==="timeline"){lf=Math.max(0,Math.min(1,(nd._pf-0.42)/0.25))*(nd._nf!=null?nd._nf:1);if(big)lf=Math.max(lf,0.6);if(lf<=0.03)continue;}
     const fs=Math.max(10.5,(9+3*b)*(0.85+0.35*zoom));
     ctx.font=(big?"600 ":"400 ")+fs.toFixed(1)+"px Helvetica Neue, Arial";
     const off=nd._pa>0.02?Math.max(12,nd._r*1.7):nd._r;
@@ -242,7 +247,7 @@ function draw(){
     let clash=false;if(!big)for(const o of placed){if(rc.x<o.x+o.w&&rc.x+rc.w>o.x&&rc.y<o.y+o.h&&rc.y+rc.h>o.y){clash=true;break;}}
     if(clash)continue;placed.push(rc);
     const dim=focusSet&&!focusSet.has(nd.id);
-    ctx.fillStyle=dim?`rgba(243,236,224,${(0.18*F).toFixed(3)})`:`rgba(243,236,224,${((0.4+0.5*b)*F).toFixed(2)})`;
+    ctx.fillStyle=dim?`rgba(243,236,224,${(0.18*F*lf).toFixed(3)})`:`rgba(243,236,224,${((0.4+0.5*b)*F*lf).toFixed(2)})`;
     ctx.fillText(nd.name,nd._sx,y);
   }
 }
