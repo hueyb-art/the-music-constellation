@@ -146,6 +146,7 @@
     .ver{display:none}
     .gtab{font-size:11px;padding:5px 9px}
     .legend .ekey{display:none}
+    #fitBtn{display:none} /* auto-fit + pinch cover it; keeps the wrapped topbar to three rows */
     .rr{font-size:11.5px;padding:6px 10px;white-space:nowrap}
     .instr{font-size:11.5px;padding:6px 9px}
     .search{margin-left:auto}

@@ -19,6 +19,7 @@ This repo supersedes three earlier single-file apps ([jazz-](https://github.com/
 - A custom 3D force-directed graph rendered on an HTML canvas — no frameworks, no dependencies, no build step. Plain HTML/CSS/JS served as-is by GitHub Pages.
 - **Discographies** load live from MusicBrainz; **photos** from Wikipedia; **preview clips** from Deezer/Apple (artist-verified before playing); **Apple Music links** via Apple's iTunes lookup.
 - Search is diacritic-folded and typo-tolerant ("thelonius" finds Thelonious Monk).
+- A **Timeline** button collapses the globe into a horizontal chronology: eras become lanes, each artist gets a career line from birth to death with their essential records as dots at release years, and influence visibly flows left to right across the decades. Toggle again to fold it back into the globe.
 - Connection lines are styled by relationship: quiet gold = collaboration, bright white-gold = mentorship, dashed silver-blue = influence, dotted rose = rivalry (line styles double as a colorblind-safe encoding).
 
 ## Repo layout

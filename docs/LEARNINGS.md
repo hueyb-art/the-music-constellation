@@ -13,3 +13,6 @@ A running log of non-obvious findings. Append, don't rewrite.
 - **thingproxy.freeboard.io is dead**; it was removed from the CORS fallback chain. Chain is now: own Cloudflare relay → direct → corsproxy.io → allorigins.
 - **Canvas photo candidates must be filtered to the viewport** — at high zoom most high-priority nodes are off-screen and would silently consume the photo budget.
 - When testing via the preview panel, the page can reload between eval calls (state resets to `tmc_last` genre) — do multi-step assertions in a single atomic eval.
+- **A hidden preview panel pauses requestAnimationFrame entirely** — positions freeze and look like a crashed loop (no console error, `tick` static). Check `document.hidden` before debugging; pump `step()` manually in an eval to test physics.
+- **Era lanes need springs + contact collision, not long-range repulsion.** In timeline mode, any inverse-square repulsion (even at 40% strength) overwhelms a lane spring across 230 nodes and smears the bands together; zeroing repulsion and keeping only the `minD` collision term holds lanes cleanly with x pinned to years.
+- Every node in all three genres has parseable years in `life` (verified 2026-06-12) — the timeline relies on this; keep new entries in the `1901–1971` / `b.1930` format.

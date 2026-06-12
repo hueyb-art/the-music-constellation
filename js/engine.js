@@ -42,6 +42,11 @@ const KIND_DASH={collab:[],mentor:[],influence:[6,5],rivalry:[2,5]};
 const KIND_COLOR={collab:"224,177,90",mentor:"245,222,150",influence:"150,180,215",rivalry:"217,96,122"};
 
 let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,pulse=0,spread=1.5,viewY=0,tviewY=0;
+/* ----------  TIMELINE VIEW  ---------- */
+let viewMode="globe",viewX=0,tviewX=0;
+const THIS_YEAR=new Date().getFullYear();
+let TL={y0:1900,y1:THIS_YEAR,laneH:74};
+const TLX=yr=>-420+(yr-TL.y0)/(TL.y1-TL.y0)*840;
 const CAM=760;
 const MOBILE=(typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(max-width:700px)").matches)||false;
 const BLURK=MOBILE?0.5:1;
@@ -52,16 +57,22 @@ let alpha=1;
 function step(){
   const vis=NODES.filter(visible);
   const rep=5200*spread,link=120*spread;
+  const tl=viewMode==="timeline";
+  /* timeline: springs own the layout; only contact collision remains, so era lanes hold */
+  const repK=tl?0:1,colK=tl?1.1:0.6;
   for(let i=0;i<vis.length;i++){
     const a=vis[i];
-    a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;
+    if(tl){a.vx+=(a._tx-a.x)*0.08;a.vy+=(a._ty-a.y)*0.08;a.vz-=a.z*0.08;}
+    else{a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;}
     for(let j=i+1;j<vis.length;j++){
       const b=vis[j];let dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z,d2=dx*dx+dy*dy+dz*dz||.01,d=Math.sqrt(d2);
-      const minD=26;let f=rep/d2;if(d<minD)f+=(minD-d)*0.6/d;
-      const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
+      const minD=26;let f=rep*repK/d2;if(d<minD)f+=(minD-d)*colK/d;
+      /* in timeline mode the x spring owns chronology — repulsion mostly spreads the lanes vertically */
+      const kx=tl?0.12:1,kz=tl?0:1;
+      const fx=dx/d*f*kx,fy=dy/d*f,fz=dz/d*f*kz;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
     }
   }
-  EDGES.forEach(ed=>{if(!ed.s||!visible(ed.s)||!visible(ed.t))return;let dx=ed.t.x-ed.s.x,dy=ed.t.y-ed.s.y,dz=ed.t.z-ed.s.z,d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01;const f=(d-link)*0.010,fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;ed.s.vx+=fx;ed.s.vy+=fy;ed.s.vz+=fz;ed.t.vx-=fx;ed.t.vy-=fy;ed.t.vz-=fz;});
+  if(!tl)EDGES.forEach(ed=>{if(!ed.s||!visible(ed.s)||!visible(ed.t))return;let dx=ed.t.x-ed.s.x,dy=ed.t.y-ed.s.y,dz=ed.t.z-ed.s.z,d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01;const f=(d-link)*0.010,fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;ed.s.vx+=fx;ed.s.vy+=fy;ed.s.vz+=fz;ed.t.vx-=fx;ed.t.vy-=fy;ed.t.vz-=fz;});
   vis.forEach(nd=>{nd.vx*=0.85;nd.vy*=0.85;nd.vz*=0.85;nd.x+=nd.vx;nd.y+=nd.vy;nd.z+=nd.vz;});
   if(alpha>0.05)alpha*=0.992;
 }
@@ -118,12 +129,42 @@ function draw(){
     if(!visible(nd)){nd._sx=null;continue;}
     let x=nd.x*cy-nd.z*sy,z=nd.x*sy+nd.z*cy,y=nd.y*cp-z*spp;z=nd.y*spp+z*cp;
     const zz=z*zoom,pf=CAM/Math.max(120,CAM-zz);
-    nd._sx=W/2+x*zoom*pf;nd._sy=H/2+viewY+y*zoom*pf;nd._d=zz;nd._pf=pf;
+    nd._sx=W/2+viewX+x*zoom*pf;nd._sy=H/2+viewY+y*zoom*pf;nd._d=zz;nd._pf=pf;
     vis.push(nd);
   }
   let dmin=1e9,dmax=-1e9;for(const nd of vis){if(nd._d<dmin)dmin=nd._d;if(nd._d>dmax)dmax=nd._d;}
   const dr=Math.max(1,dmax-dmin),bright=nd=>(nd._d-dmin)/dr;
   const key=hoverNode||selNode;
+  if(viewMode==="timeline"){
+    /* axis, era lanes, career lines, record dots — fade in as the globe finishes flattening */
+    const ax=Math.max(0,1-(Math.abs(yaw)+Math.abs(pitch))*2.5)*F;
+    if(ax>0.02){
+      const sx=x=>W/2+viewX+x*zoom,sy=y=>H/2+viewY+y*zoom;
+      const stepY=(TL.y1-TL.y0)>120?20:10;
+      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="400 11px Helvetica Neue, Arial";
+      for(let yr=Math.ceil(TL.y0/stepY)*stepY;yr<=TL.y1;yr+=stepY){
+        const x=sx(TLX(yr));
+        ctx.strokeStyle="rgba(226,212,184,"+(0.05*ax).toFixed(3)+")";ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(x,sy(-280));ctx.lineTo(x,sy(280));ctx.stroke();
+        ctx.fillStyle="rgba(226,212,184,"+(0.35*ax).toFixed(3)+")";
+        ctx.fillText(String(yr),x,sy(288));
+      }
+      ctx.textAlign="left";ctx.textBaseline="middle";ctx.font="600 10px Helvetica Neue, Arial";
+      const lx=Math.max(sx(TLX(TL.y0))-150,14); // sticky at the viewport edge while panning
+      Object.keys(ERAS).forEach((k,i)=>{ctx.fillStyle=hexA(ERAS[k].color,0.5*ax);ctx.fillText(ERAS[k].label.toUpperCase(),lx,sy(-260+(i+0.5)*TL.laneH));});
+      for(const nd of vis){
+        const dim=focusSet&&!focusSet.has(nd.id),col=ERAS[nd.era].color,b=bright(nd);
+        const x0=sx(TLX(nd._y0)),x1=sx(TLX(nd._y1));
+        ctx.strokeStyle=hexA(col,(dim?0.05:0.10+0.18*b)*ax);ctx.lineWidth=Math.max(1,(nd._r||4)*0.18);
+        ctx.beginPath();ctx.moveTo(x0,nd._sy);ctx.lineTo(x1,nd._sy);ctx.stroke();
+        const hot=nd===hoverNode||nd===selNode;
+        for(const ry of nd._recs){
+          ctx.fillStyle=hexA(col,(dim?0.10:hot?0.95:0.45)*ax);
+          ctx.beginPath();ctx.arc(sx(TLX(ry)),nd._sy,hot?2.6:1.7,0,6.283);ctx.fill();
+        }
+      }
+    }
+  }
   EDGES.forEach(ed=>{
     if(!ed.s||!visible(ed.s)||!visible(ed.t))return;
     const s=ed.s,t=ed.t,on=!focusSet||(focusSet.has(ed.a)&&focusSet.has(ed.b)),lit=key&&(ed.a===key.id||ed.b===key.id);
@@ -194,10 +235,10 @@ function loop(){
   }
   if(!pointer.down){
     if(tyaw!=null){const dd=((tyaw-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;yaw+=dd*0.12;pitch+=(tpitch-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(dd)<0.01&&Math.abs(tpitch-pitch)<0.01)tyaw=null;}
-    else{yaw+=vyaw;pitch+=vpitch;vyaw+=(0.0012-vyaw)*0.03;vpitch*=0.9;}
+    else if(viewMode==="globe"){yaw+=vyaw;pitch+=vpitch;vyaw+=(0.0012-vyaw)*0.03;vpitch*=0.9;}
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
   }
-  zoom+=(tzoom-zoom)*0.12;viewY+=(tviewY-viewY)*0.12;
+  zoom+=(tzoom-zoom)*0.12;viewY+=(tviewY-viewY)*0.12;viewX+=(tviewX-viewX)*0.12;
   NODES.forEach(nd=>{nd.hl+=(((nd===hoverNode||nd===selNode)?1:0)-nd.hl)*0.16;});
   if(!pageOpen)step();
   draw();requestAnimationFrame(loop);
@@ -207,7 +248,10 @@ function loop(){
 function nodeAt(px,py){let best=null,bz=-1e9;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const r=(nd._r||6)+6;if(Math.hypot(px-nd._sx,py-nd._sy)<r&&nd._d>bz){bz=nd._d;best=nd;}}return best;}
 canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;
-  if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;yaw+=dx*0.005;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.005));vyaw=dx*0.005;vpitch=dy*0.005;}pointer.x=px;pointer.y=py;return;}
+  if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;
+    if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
+    else{yaw+=dx*0.005;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.005));vyaw=dx*0.005;vpitch=dy*0.005;}}
+    pointer.x=px;pointer.y=py;return;}
   const nd=nodeAt(px,py);if(nd!==hoverNode){hoverNode=nd;if(!selNode)computeFocus(nd);canvas.style.cursor=nd?"pointer":"grab";}
   pointer.x=px;pointer.y=py;
 });
@@ -226,7 +270,9 @@ canvas.addEventListener("touchmove",ev=>{
   ev.preventDefault();
   if(touchMode===1&&ev.touches.length===1){
     const px=ev.touches[0].clientX,py=ev.touches[0].clientY,dx=px-pointer.x,dy=py-pointer.y;
-    if(Math.abs(dx)+Math.abs(dy)>1.5){pointer.moved=true;tyaw=null;yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}
+    if(Math.abs(dx)+Math.abs(dy)>1.5){pointer.moved=true;tyaw=null;
+      if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
+      else{yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}}
     pointer.x=px;pointer.y=py;
   } else if(touchMode===2&&ev.touches.length>=2){
     const d=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX,ev.touches[0].clientY-ev.touches[1].clientY);
@@ -259,7 +305,9 @@ function renderPanel(nd){
   document.getElementById("opBtn").onclick=()=>openPage(nd);
   panelBody.querySelectorAll(".conn").forEach(el=>{el.onclick=()=>{const t=byId[el.dataset.id];centerOn(t);select(t);};});
 }
-function centerOn(nd){const R=Math.hypot(nd.x,nd.z);tyaw=Math.atan2(nd.x,nd.z);tpitch=Math.max(-1.3,Math.min(1.3,Math.atan2(nd.y,R)));tzoom=Math.max(tzoom,1.2);}
+function centerOn(nd){
+  if(viewMode==="timeline"){tzoom=Math.max(tzoom,1.2);tviewX=-nd.x*tzoom;tviewY=-nd.y*tzoom-(MOBILE?H*0.18:0);return;}
+  const R=Math.hypot(nd.x,nd.z);tyaw=Math.atan2(nd.x,nd.z);tpitch=Math.max(-1.3,Math.min(1.3,Math.atan2(nd.y,R)));tzoom=Math.max(tzoom,1.2);}
 
 /* full encyclopedia page */
 const pageEl=document.getElementById("page"),pageInner=document.getElementById("pageInner");
@@ -464,9 +512,26 @@ function playClip(nd){
   else search(q1,afterQ1);
 }
 
-function fitView(){let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
+function fitView(){let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;if(viewMode==="timeline"){tviewX=0;tviewY=0;}}
 const fitBtn=document.getElementById("fitBtn");if(fitBtn)fitBtn.onclick=fitView;
 let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(ev,()=>{userFramed=true;}));
+
+/* ----------  GLOBE ⇄ TIMELINE TOGGLE  ---------- */
+const tlBtn=document.getElementById("tlBtn");
+const hintEl=document.querySelector(".hint");
+const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
+const HINT_TL='<b>Hover</b> to trace ties &middot; <b>Click</b> for a card &middot; <b>Double-click</b> for the full page<br><b>Drag</b> to pan the years &middot; <b>Scroll</b> to zoom &middot; small dots are essential records';
+function setView(mode){
+  if(viewMode===mode)return;
+  viewMode=mode;
+  if(tlBtn)tlBtn.classList.toggle("on",mode==="timeline");
+  if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TL:HINT_GLOBE;
+  alpha=1;userFramed=false;
+  if(mode==="timeline"){tyaw=0;tpitch=0;vyaw=0;vpitch=0;}
+  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;}
+  setTimeout(fitView,900); // an explicit view change always reframes
+}
+if(tlBtn)tlBtn.onclick=()=>setView(viewMode==="globe"?"timeline":"globe");
 
 /* ----------  GENRE LOADING, THEME & ROUTING  ---------- */
 const legend=document.getElementById("legend");
@@ -499,6 +564,23 @@ function loadGenre(key){
     nd.discoAs=G.discoAs[nd.id]||null;
   });
   NODES.forEach(nd=>{nd._sname=fold(nd.name);nd._swords=nd._sname.split(/\s+/);nd._srole=fold(nd.role+" "+nd.instr);});
+  /* timeline targets: lifespan from `life`, record years from the curated essentials */
+  let ymin=1e9,ymax=-1e9;
+  NODES.forEach(nd=>{
+    const yrs=(nd.life.match(/\d{4}/g)||[]).map(Number);
+    const recs=nd.disco.map(d=>{const m=String(d[0]).match(/\d{4}/);return m?+m[0]:null;}).filter(Boolean);
+    nd._y0=yrs[0]||recs[0]||1950;
+    nd._y1=Math.min(yrs[1]||THIS_YEAR,THIS_YEAR);
+    nd._recs=recs.filter(y=>y>=nd._y0-5&&y<=THIS_YEAR);
+    ymin=Math.min(ymin,nd._y0);ymax=Math.max(ymax,nd._y1);
+  });
+  TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10),laneH:520/Object.keys(ERAS).length};
+  const eraIdx={};Object.keys(ERAS).forEach((k,i)=>eraIdx[k]=i);
+  NODES.forEach((nd,i)=>{
+    nd._tx=TLX((nd._y0+nd._y1)/2);
+    nd._ty=-260+(eraIdx[nd.era]+0.5)*TL.laneH+(((i*7919)%1000)/1000-0.5)*TL.laneH*0.7;
+  });
+  viewX=0;tviewX=0;viewY=0;tviewY=0;
   /* theme — @property-registered vars cross-fade in CSS */
   const rs=document.documentElement.style;
   rs.setProperty("--bg",G.theme.bg);rs.setProperty("--glow",G.theme.glow);
