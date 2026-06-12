@@ -42,15 +42,17 @@ const KIND_DASH={collab:[],mentor:[],influence:[6,5],rivalry:[2,5]};
 const KIND_COLOR={collab:"224,177,90",mentor:"245,222,150",influence:"150,180,215",rivalry:"217,96,122"};
 
 let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,pulse=0,spread=1.5,viewY=0,tviewY=0;
-/* ----------  TIMELINE VIEW  ---------- */
+/* ----------  TIMELINE VOYAGE  ---------- */
+/* Time runs INTO the screen: the earliest years sit at your nose, the future
+   recedes into the deep, and you pull yourself through the artists. */
 let viewMode="globe",viewX=0,tviewX=0,panVX=0,panVY=0;
 const THIS_YEAR=new Date().getFullYear();
-/* the timeline is a long road, not a compressed chart: pxy world-units per year,
-   so a century stretches thousands of px and you travel along it */
-let TL={y0:1900,y1:THIS_YEAR,laneH:74,pxy:44};
-/* in timeline the Tight↔Spread slider stretches time itself (slider's 1.5 default = base scale) */
-const PXY=()=>TL.pxy*(spread/1.5);
-const TLX=yr=>(yr-(TL.y0+TL.y1)/2)*PXY();
+let TL={y0:1900,y1:THIS_YEAR};
+let camYear=1900,tcamYear=1900,camV=0;
+/* depth world-units per year — the Tight↔Spread slider stretches time itself */
+const DPY=()=>56*(spread/1.5);
+/* a year's depth relative to the camera: negative = ahead of you, positive = passed */
+const ZOF=yr=>(camYear-yr)*DPY();
 const CAM=760;
 const MOBILE=(typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(max-width:700px)").matches)||false;
 const BLURK=MOBILE?0.5:1;
@@ -67,14 +69,14 @@ function step(){
   const repK=tl?0:1,colK=tl?0.55:0.6,damp=tl?0.78:0.85;
   for(let i=0;i<vis.length;i++){
     const a=vis[i];
-    if(tl){a.vx+=(TLX(a._ay)-a.x)*0.08;a.vy+=(a._ty-a.y)*0.08;a.vz-=a.z*0.08;}
+    if(tl){a.vx+=(a._lx-a.x)*0.08;a.vy+=(a._ly-a.y)*0.08;a.vz+=(ZOF(a._ay)-a.z)*0.14;}
     else{a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;}
     for(let j=i+1;j<vis.length;j++){
       const b=vis[j];let dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z,d2=dx*dx+dy*dy+dz*dz||.01,d=Math.sqrt(d2);
       const minD=26;let f=rep*repK/d2;if(d<minD)f+=(minD-d)*colK/(tl?Math.max(d,10):d);
-      /* in timeline mode the x spring owns chronology — repulsion mostly spreads the lanes vertically */
-      const kx=tl?0.12:1,kz=tl?0:1;
-      const fx=dx/d*f*kx,fy=dy/d*f,fz=dz/d*f*kz;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
+      /* in the voyage, depth belongs to chronology — collision only spreads artists laterally */
+      const kz=tl?0:1;
+      const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f*kz;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
     }
   }
   if(!tl)EDGES.forEach(ed=>{if(!ed.s||!visible(ed.s)||!visible(ed.t))return;let dx=ed.t.x-ed.s.x,dy=ed.t.y-ed.s.y,dz=ed.t.z-ed.s.z,d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01;const f=(d-link)*0.010,fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;ed.s.vx+=fx;ed.s.vy+=fy;ed.s.vz+=fz;ed.t.vx-=fx;ed.t.vy-=fy;ed.t.vz-=fz;});
@@ -139,46 +141,47 @@ function draw(){
     if(!visible(nd)){nd._sx=null;continue;}
     let x=nd.x*cy-nd.z*sy,z=nd.x*sy+nd.z*cy,y=nd.y*cp-z*spp;z=nd.y*spp+z*cp;
     const zz=z*zoom,pf=CAM/Math.max(120,CAM-zz);
+    if(viewMode==="timeline"&&zz>CAM-150){nd._sx=null;continue;} // already passed you
     nd._sx=W/2+viewX+x*zoom*pf;nd._sy=H/2+viewY+y*zoom*pf;nd._d=zz;nd._pf=pf;
     vis.push(nd);
   }
   let dmin=1e9,dmax=-1e9;for(const nd of vis){if(nd._d<dmin)dmin=nd._d;if(nd._d>dmax)dmax=nd._d;}
-  /* depth shading is meaningless on the flat timeline (z≈0) and its jitter makes labels flicker — light uniformly there */
-  const dr=Math.max(1,dmax-dmin),bright=viewMode==="timeline"?(nd=>0.55):(nd=>(nd._d-dmin)/dr);
+  const dr=Math.max(1,dmax-dmin),bright=nd=>(nd._d-dmin)/dr;
   const key=hoverNode||selNode;
   if(viewMode==="timeline"){
-    /* axis, era lanes, career lines, record dots — fade in as the globe finishes flattening */
+    /* decade gates ahead, career trails streaming through depth — fade in as the globe finishes flattening */
     const ax=Math.max(0,1-(Math.abs(yaw)+Math.abs(pitch))*2.5)*F;
     if(ax>0.02){
-      const sx=x=>W/2+viewX+x*zoom,sy=y=>H/2+viewY+y*zoom;
-      const stepY=(10*PXY()*zoom<64)?20:10;
-      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="400 11px Helvetica Neue, Arial";
-      for(let yr=Math.ceil(TL.y0/stepY)*stepY;yr<=TL.y1;yr+=stepY){
-        const x=sx(TLX(yr));
-        ctx.strokeStyle="rgba(226,212,184,"+(0.05*ax).toFixed(3)+")";ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(x,sy(-280));ctx.lineTo(x,sy(280));ctx.stroke();
-        ctx.fillStyle="rgba(226,212,184,"+(0.35*ax).toFixed(3)+")";
-        ctx.fillText(String(yr),x,sy(288));
+      const gx=W/2+viewX,gy=H/2+viewY;
+      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 12px Helvetica Neue, Arial";
+      for(let yr=Math.ceil((camYear-1)/10)*10;yr<=Math.min(TL.y1+10,camYear+80);yr+=10){
+        const zz=ZOF(yr)*zoom;if(zz>CAM-200)continue;
+        const pf=CAM/Math.max(120,CAM-zz);
+        const rad=420*pf*zoom,fa=Math.max(0,Math.min(1,pf*1.4-0.18));
+        ctx.strokeStyle="rgba(226,212,184,"+(0.10*fa*ax).toFixed(3)+")";ctx.lineWidth=1;
+        ctx.beginPath();ctx.arc(gx,gy,rad,0,6.283);ctx.stroke();
+        ctx.fillStyle="rgba(226,212,184,"+(0.34*fa*ax).toFixed(3)+")";
+        ctx.fillText(String(yr),gx,gy+rad+6);
       }
-      ctx.textAlign="left";ctx.textBaseline="middle";ctx.font="600 10px Helvetica Neue, Arial";
-      const lx=Math.max(sx(TLX(TL.y0))-150,14); // sticky at the viewport edge while panning
-      Object.keys(ERAS).forEach((k,i)=>{ctx.fillStyle=hexA(ERAS[k].color,0.5*ax);ctx.fillText(ERAS[k].label.toUpperCase(),lx,sy(-260+(i+0.5)*TL.laneH));});
-      /* where in history you are right now */
-      const cyr=Math.max(TL.y0,Math.min(TL.y1,Math.round((TL.y0+TL.y1)/2-viewX/(zoom*PXY()))));
-      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 13px Helvetica Neue, Arial";
-      ctx.fillStyle="rgba(226,212,184,"+(0.30*ax).toFixed(3)+")";
-      ctx.fillText("· "+cyr+" ·",W/2,175);
+      /* career trails: from each star's debut deeper to their final year — you fly alongside the careers */
       for(const nd of vis){
         const dim=focusSet&&!focusSet.has(nd.id),col=ERAS[nd.era].color,b=bright(nd);
-        const x0=sx(TLX(nd._y0)),x1=sx(TLX(nd._y1));
-        ctx.strokeStyle=hexA(col,(dim?0.05:0.10+0.18*b)*ax);ctx.lineWidth=Math.max(1,(nd._r||4)*0.18);
-        ctx.beginPath();ctx.moveTo(x0,nd._sy);ctx.lineTo(x1,nd._sy);ctx.stroke();
+        const z0=Math.min(ZOF(nd._ay)*zoom,CAM-160),z1=Math.min(ZOF(nd._y1)*zoom,CAM-160);
+        const p0=CAM/Math.max(120,CAM-z0),p1=CAM/Math.max(120,CAM-z1);
+        ctx.strokeStyle=hexA(col,(dim?0.04:0.09+0.16*b)*ax);ctx.lineWidth=Math.max(1,(nd._r||4)*0.16);
+        ctx.beginPath();ctx.moveTo(gx+nd.x*zoom*p0,gy+nd.y*zoom*p0);ctx.lineTo(gx+nd.x*zoom*p1,gy+nd.y*zoom*p1);ctx.stroke();
         const hot=nd===hoverNode||nd===selNode;
         for(const ry of nd._recs){
-          ctx.fillStyle=hexA(col,(dim?0.10:hot?0.95:0.45)*ax);
-          ctx.beginPath();ctx.arc(sx(TLX(ry)),nd._sy,hot?2.6:1.7,0,6.283);ctx.fill();
+          const rz=ZOF(ry)*zoom;if(rz>CAM-160)continue;
+          const rp=CAM/Math.max(120,CAM-rz);
+          ctx.fillStyle=hexA(col,(dim?0.08:hot?0.95:0.4)*ax);
+          ctx.beginPath();ctx.arc(gx+nd.x*zoom*rp,gy+nd.y*zoom*rp,(hot?2.6:1.6)*Math.min(rp,2),0,6.283);ctx.fill();
         }
       }
+      /* the year you're flying through */
+      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 13px Helvetica Neue, Arial";
+      ctx.fillStyle="rgba(226,212,184,"+(0.30*ax).toFixed(3)+")";
+      ctx.fillText("· "+Math.round(camYear)+" ·",W/2,175);
     }
   }
   EDGES.forEach(ed=>{
@@ -210,11 +213,12 @@ function draw(){
   const cand=vis.filter(nd=>!focusSet||focusSet.has(nd.id)||nd===hoverNode||nd===selNode);
   cand.sort((a,b)=>prio(b)-prio(a));
   /* photos fade in on close zoom: the stars become faces */
-  const showPhotos=zoom>PHOTO_ZOOM&&!trans;
+  const showPhotos=(viewMode==="timeline"||zoom>PHOTO_ZOOM)&&!trans;
   let shown=0;
   for(const nd of cand){
     const onScreen=nd._sx>-40&&nd._sx<W+40&&nd._sy>-40&&nd._sy<H+40;
-    const want=showPhotos&&onScreen&&shown<PHOTO_MAX&&!(focusSet&&!focusSet.has(nd.id));
+    const near=viewMode!=="timeline"||nd._pf>1.3; // in the voyage, faces resolve as they approach
+    const want=showPhotos&&near&&onScreen&&shown<PHOTO_MAX&&!(focusSet&&!focusSet.has(nd.id));
     let st=null;
     if(want){st=photoState(nd);shown++;}
     const ok=st&&st.ok&&st.img;
@@ -252,18 +256,20 @@ function loop(){
   if(!pointer.down){
     /* timeline owns the camera: always ease flat, so an interrupted flatten can never strand the axis invisible */
     if(viewMode==="timeline"){yaw+=(0-yaw)*0.12;pitch+=(0-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(yaw)<0.0005)yaw=0;if(Math.abs(pitch)<0.0005)pitch=0;
-      /* released drags keep floating — vertical drift settles fast so the glide relaxes into the line of years */
-      if(panVX||panVY){tviewX+=panVX;viewX+=panVX;tviewY+=panVY;viewY+=panVY;panVX*=0.965;panVY*=0.85;if(Math.abs(panVX)<0.05)panVX=0;if(Math.abs(panVY)<0.05)panVY=0;}}
+      /* released pulls keep flying through the years; lateral drift settles quickly */
+      if(camV){tcamYear+=camV;camV*=0.965;if(Math.abs(camV)<0.002)camV=0;}
+      if(panVX){tviewX+=panVX;viewX+=panVX;panVX*=0.85;if(Math.abs(panVX)<0.05)panVX=0;}}
     else if(tyaw!=null){const dd=((tyaw-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;yaw+=dd*0.12;pitch+=(tpitch-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(dd)<0.01&&Math.abs(tpitch-pitch)<0.01)tyaw=null;}
     else{yaw+=vyaw;pitch+=vpitch;vyaw+=(0.0012-vyaw)*0.03;vpitch*=0.9;}
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
   }
   zoom+=(tzoom-zoom)*0.12;viewY+=(tviewY-viewY)*0.12;viewX+=(tviewX-viewX)*0.12;
   if(viewMode==="timeline"){
-    const lo=-(TLX(TL.y1)+60)*zoom,hi=-(TLX(TL.y0)-60)*zoom;
-    tviewX=Math.max(lo,Math.min(hi,tviewX));viewX=Math.max(lo,Math.min(hi,viewX));
-    const vy=340*zoom; // keep the era lanes on screen
-    tviewY=Math.max(-vy,Math.min(vy,tviewY));viewY=Math.max(-vy,Math.min(vy,viewY));
+    tcamYear=Math.max(TL.y0-3,Math.min(TL.y1+2,tcamYear));
+    camYear+=(tcamYear-camYear)*0.12;
+    const lim=560*zoom; // lateral peek bounds — can't lose the tunnel
+    tviewX=Math.max(-lim,Math.min(lim,tviewX));viewX=Math.max(-lim,Math.min(lim,viewX));
+    tviewY=Math.max(-lim,Math.min(lim,tviewY));viewY=Math.max(-lim,Math.min(lim,viewY));
   }
   NODES.forEach(nd=>{nd.hl+=(((nd===hoverNode||nd===selNode)?1:0)-nd.hl)*0.16;});
   if(!pageOpen)step();
@@ -275,24 +281,24 @@ function nodeAt(px,py){let best=null,bz=-1e9;for(const nd of NODES){if(!visible(
 canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;
   if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;
-    if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;panVX=panVX*0.5+dx*0.5;panVY=panVY*0.5+dy*0.5;}
+    if(viewMode==="timeline"){tviewX=viewX+=dx;panVX=panVX*0.5+dx*0.5;const dyr=dy*0.035*(1.5/spread);tcamYear+=dyr;camYear+=dyr;camV=camV*0.5+dyr*0.5;}
     else{yaw+=dx*0.005;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.005));vyaw=dx*0.005;vpitch=dy*0.005;}}
     pointer.x=px;pointer.y=py;return;}
   const nd=nodeAt(px,py);if(nd!==hoverNode){hoverNode=nd;if(!selNode)computeFocus(nd);canvas.style.cursor=nd?"pointer":"grab";}
   pointer.x=px;pointer.y=py;
 });
-canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;panVX=0;panVY=0;canvas.style.cursor="grabbing";});
+canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;panVX=0;panVY=0;camV=0;canvas.style.cursor="grabbing";});
 addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
 canvas.addEventListener("dblclick",ev=>{const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
 canvas.addEventListener("wheel",ev=>{ev.preventDefault();
-  /* in timeline, scrolling travels along the years; pinch (ctrl/meta+wheel) still zooms */
-  if(viewMode==="timeline"&&!ev.ctrlKey&&!ev.metaKey){tviewX-=(ev.deltaY+ev.deltaX);return;}
+  /* in the voyage, scrolling flies you through the years; pinch (ctrl/meta+wheel) still zooms */
+  if(viewMode==="timeline"&&!ev.ctrlKey&&!ev.metaKey){tcamYear+=(ev.deltaY+ev.deltaX)*0.012*(1.5/spread);return;}
   const f=ev.deltaY<0?1.1:0.91;tzoom=Math.max(0.3,Math.min(3,tzoom*f));},{passive:false});
 /* touch */
 let touchMode=0,pinchD=0,tapXY=null,lastTap=0;
 canvas.addEventListener("touchstart",ev=>{
   ev.preventDefault();unlockAudio();
-  if(ev.touches.length===1){pointer.down=true;pointer.moved=false;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;tapXY={x:pointer.x,y:pointer.y};touchMode=1;panVX=0;panVY=0;}
+  if(ev.touches.length===1){pointer.down=true;pointer.moved=false;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;tapXY={x:pointer.x,y:pointer.y};touchMode=1;panVX=0;panVY=0;camV=0;}
   else if(ev.touches.length>=2){touchMode=2;pointer.down=false;pinchD=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX,ev.touches[0].clientY-ev.touches[1].clientY);}
 },{passive:false});
 canvas.addEventListener("touchmove",ev=>{
@@ -300,7 +306,7 @@ canvas.addEventListener("touchmove",ev=>{
   if(touchMode===1&&ev.touches.length===1){
     const px=ev.touches[0].clientX,py=ev.touches[0].clientY,dx=px-pointer.x,dy=py-pointer.y;
     if(Math.abs(dx)+Math.abs(dy)>1.5){pointer.moved=true;tyaw=null;
-      if(viewMode==="timeline"){tviewX=viewX+=dx;tviewY=viewY+=dy;panVX=panVX*0.5+dx*0.5;panVY=panVY*0.5+dy*0.5;}
+      if(viewMode==="timeline"){tviewX=viewX+=dx;panVX=panVX*0.5+dx*0.5;const dyr=dy*0.04*(1.5/spread);tcamYear+=dyr;camYear+=dyr;camV=camV*0.5+dyr*0.5;}
       else{yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}}
     pointer.x=px;pointer.y=py;
   } else if(touchMode===2&&ev.touches.length>=2){
@@ -335,7 +341,9 @@ function renderPanel(nd){
   panelBody.querySelectorAll(".conn").forEach(el=>{el.onclick=()=>{const t=byId[el.dataset.id];centerOn(t);select(t);};});
 }
 function centerOn(nd){
-  if(viewMode==="timeline"){tzoom=Math.max(tzoom,1.2);tviewX=-nd.x*tzoom;tviewY=-nd.y*tzoom-(MOBILE?H*0.18:0);return;}
+  if(viewMode==="timeline"){ /* fly to their moment, hold them just ahead of you */
+    camV=0;tcamYear=nd._ay+280/DPY();
+    const pf=1.55;tviewX=-nd.x*zoom*pf;tviewY=-nd.y*zoom*pf-(MOBILE?H*0.18:0);return;}
   const R=Math.hypot(nd.x,nd.z);tyaw=Math.atan2(nd.x,nd.z);tpitch=Math.max(-1.3,Math.min(1.3,Math.atan2(nd.y,R)));tzoom=Math.max(tzoom,1.2);}
 
 /* full encyclopedia page */
@@ -490,13 +498,7 @@ function pick(nd){if(!nd)return;if(!activeEras.has(nd.era)){activeEras.add(nd.er
 document.addEventListener("click",ev=>{if(!q.parentNode.contains(ev.target))suggest.style.display="none";});
 
 const spreadEl=document.getElementById("spread");
-if(spreadEl){spreadEl.value=spread;spreadEl.oninput=()=>{
-  if(viewMode==="timeline"){ /* stretch time around the year at screen centre */
-    const mid=(TL.y0+TL.y1)/2,cy=mid-viewX/(zoom*PXY());
-    spread=parseFloat(spreadEl.value);
-    tviewX=viewX=-(cy-mid)*PXY()*zoom;
-  }else spread=parseFloat(spreadEl.value);
-  alpha=Math.max(alpha,0.75);};}
+if(spreadEl){spreadEl.value=spread;spreadEl.oninput=()=>{spread=parseFloat(spreadEl.value);alpha=Math.max(alpha,0.75);};}
 
 /* ----------  AUDIO PREVIEW CLIPS (Deezer / Apple iTunes)  ---------- */
 const clip=(typeof Audio!=="undefined")?new Audio():null;
@@ -547,12 +549,10 @@ function playClip(nd){
   else search(q1,afterQ1);
 }
 
-/* frame the timeline: fit the era lanes vertically; x stays wherever you've travelled
-   (toStart=true jumps to the genre's beginnings) */
+/* frame the voyage: recentre the tunnel (toStart=true snaps back to the genre's beginnings) */
 function frameTimeline(toStart){
-  tzoom=Math.max(0.3,Math.min(2.4,(H-170)/620));
-  if(toStart)tviewX=180-W/2-TLX(TL.y0)*tzoom;
-  tviewY=0;
+  tzoom=1;tviewX=0;tviewY=0;
+  if(toStart){camYear=tcamYear=TL.y0-2;camV=0;}
 }
 function fitView(){if(viewMode==="timeline"){frameTimeline(false);tyaw=null;return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
 const fitBtn=document.getElementById("fitBtn");if(fitBtn)fitBtn.onclick=fitView;
@@ -562,14 +562,14 @@ let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(e
 const tlBtn=document.getElementById("tlBtn");
 const hintEl=document.querySelector(".hint");
 const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
-const HINT_TL='<b>Hover</b> to trace ties &middot; <b>Click</b> for a card &middot; <b>Double-click</b> for the full page<br><b>Drag</b> to pan the years &middot; <b>Scroll</b> to zoom &middot; small dots are essential records';
+const HINT_TL='<b>Hover</b> to trace ties &middot; <b>Click</b> for a card &middot; <b>Double-click</b> for the full page<br><b>Pull or scroll</b> to fly through the years &middot; <b>Spread</b> stretches time &middot; dots are records';
 function setView(mode){
   if(viewMode===mode)return;
   viewMode=mode;
   if(tlBtn)tlBtn.classList.toggle("on",mode==="timeline");
   if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TL:HINT_GLOBE;
   alpha=1;userFramed=false;
-  panVX=0;panVY=0;
+  panVX=0;panVY=0;camV=0;
   if(mode==="timeline"){tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameTimeline(true);}
   else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);} // globe needs time to fold back in from far down the road
 }
@@ -616,14 +616,19 @@ function loadGenre(key){
     nd._recs=recs.filter(y=>y>=nd._y0-5&&y<=THIS_YEAR);
     ymin=Math.min(ymin,nd._y0);ymax=Math.max(ymax,nd._y1);
   });
-  TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10),laneH:520/Object.keys(ERAS).length,pxy:MOBILE?26:44};
-  const eraIdx={};Object.keys(ERAS).forEach((k,i)=>eraIdx[k]=i);
+  TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10)};
+  /* era strands: each era owns an angular sector of the tunnel, with a clear corridor down the middle */
+  const ekeys=Object.keys(ERAS),eraIdx={};ekeys.forEach((k,i)=>eraIdx[k]=i);
   NODES.forEach((nd,i)=>{
     /* the star marks the artist's arrival: their first essential record
        (lifespan midpoint only for those with no surviving records) */
     nd._ay=nd._recs.length?Math.min(...nd._recs):(nd._y0+nd._y1)/2;
-    nd._ty=-260+(eraIdx[nd.era]+0.5)*TL.laneH+(((i*7919)%1000)/1000-0.5)*TL.laneH*0.7;
+    const h1=((i*7919)%1000)/1000,h2=((i*104729)%1000)/1000;
+    const th=(eraIdx[nd.era]+0.5)/ekeys.length*6.2832+(h1-0.5)*(6.2832/ekeys.length)*0.85;
+    const rr=150+h2*190;
+    nd._lx=Math.cos(th)*rr;nd._ly=Math.sin(th)*rr;
   });
+  camYear=tcamYear=TL.y0-2;camV=0;
   viewX=0;tviewX=0;viewY=0;tviewY=0;
   /* theme — @property-registered vars cross-fade in CSS */
   const rs=document.documentElement.style;

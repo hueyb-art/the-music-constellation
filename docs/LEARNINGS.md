@@ -2,6 +2,10 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-13 — the timeline became a voyage
+
+- The horizontal road was rebuilt as a depth voyage (time runs into the screen, you fly through it). The road's lessons carried over directly: enforce camera invariants in the frame loop, clamp every free axis, give released gestures momentum. One reversal: depth shading and depth-based label priority — disabled on the flat road because micro-jitter made them flicker — are correct again in the voyage, where depth is macro-scale chronology, smooth and meaningful.
+
 ## 2026-06-12 — consolidation from the three legacy repos
 
 - **Fork drift was real and shipping bugs.** The three legacy apps forked one engine: jazz had the older, unverified preview logic (could play the wrong artist); the hiphop site's `<title>` said "The Reggae Constellation" (never updated when forked); hiphop's engine carried reggae's `DISCO_AS` ids. Consolidating to one engine ended the class of bug.
