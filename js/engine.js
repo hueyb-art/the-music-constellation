@@ -510,8 +510,9 @@ function loadGenre(key){
   const kinds=[...new Set(EDGES.map(ed=>ed.kind))];
   legend.innerHTML=`<div class="lh">Eras — click to filter</div>`
     +Object.entries(ERAS).map(([k,v])=>`<label data-era="${k}"><span class="dot" style="background:${v.color}"></span>${v.label}</label>`).join("")
-    +`<div class="lh" style="margin-top:8px">Connections</div>`
-    +["collab","mentor","influence","rivalry"].filter(k=>kinds.includes(k)).map(k=>`<label class="ek"><span class="eline ${k}"></span>${KIND_LABEL[k]}</label>`).join("");
+    +`<div class="ekey"><div class="lh" style="margin-top:8px">Connections</div>`
+    +["collab","mentor","influence","rivalry"].filter(k=>kinds.includes(k)).map(k=>`<label class="ek"><span class="eline ${k}"></span>${KIND_LABEL[k]}</label>`).join("")
+    +`</div>`;
   legend.querySelectorAll("label[data-era]").forEach(el=>{el.onclick=()=>{const k=el.dataset.era;if(activeEras.has(k)){activeEras.delete(k);el.classList.add("off");}else{activeEras.add(k);el.classList.remove("off");}alpha=Math.max(alpha,0.4);};});
   /* filters */
   activeEras=new Set(Object.keys(ERAS));instrFilter=null;

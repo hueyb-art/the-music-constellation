@@ -25,7 +25,7 @@
   .brand .tag{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-top:3px}
   .ver{font-size:10px;font-weight:400;color:var(--muted);letter-spacing:.05em;vertical-align:middle}
   .gtabs{pointer-events:auto;display:flex;gap:6px}
-  .gtab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:var(--soft);font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+  .gtab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:var(--soft);font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:border-color .2s,color .2s,background .2s}
   .gtab:hover{border-color:var(--gold);color:var(--ink)}
   .gtab.on{border-color:var(--gold);color:var(--gold);background:rgba(224,177,90,.1)}
   .search{pointer-events:auto;margin-left:auto;position:relative}
@@ -41,6 +41,7 @@
   .legend label{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--soft);cursor:pointer;user-select:none}
   .legend .dot{width:11px;height:11px;border-radius:50%;flex:none}
   .legend label.off{opacity:.4}
+  .legend .ekey{display:flex;flex-direction:column;gap:7px}
   .legend .ek{cursor:default}
   .legend .eline{width:18px;border-top:2px solid var(--gold);flex:none}
   .legend .eline.influence{border-top-style:dashed}
@@ -139,10 +140,12 @@
   #stage,canvas{touch-action:none}
   @media(max-width:700px){
     .topbar{flex-wrap:wrap;gap:8px;padding:10px 12px}
-    .brand h1{font-size:15px}
+    .brand h1{font-size:14px}
     .brand .tag{display:none}
-    .gtab{font-size:11.5px;padding:6px 10px}
-    .rr{font-size:11.5px;padding:6px 10px}
+    .ver{display:none}
+    .gtab{font-size:11px;padding:5px 9px}
+    .legend .ekey{display:none}
+    .rr{font-size:11.5px;padding:6px 10px;white-space:nowrap}
     .instr{font-size:11.5px;padding:6px 9px}
     .search{margin-left:auto}
     .search input{width:140px}
