@@ -502,8 +502,9 @@ function loadGenre(key){
   const rs=document.documentElement.style;
   rs.setProperty("--bg",G.theme.bg);rs.setProperty("--glow",G.theme.glow);
   rs.setProperty("--deep",G.theme.deep);rs.setProperty("--panel",G.theme.panel);
-  /* identity */
-  document.title=G.name+" — an encyclopedia of who shaped whom";
+  /* identity: umbrella brand stays in the tab title so no genre route
+     can be mistaken for one of the legacy single-genre sites */
+  document.title=G.shortName+" · The Music Constellation — who shaped whom";
   document.getElementById("gname").innerHTML=`${G.name} <span class="ver">${window.MC_BUILD||""}</span>`;
   gtabs.querySelectorAll(".gtab").forEach(b=>b.classList.toggle("on",b.dataset.g===key));
   /* legend: eras + connection-line key */
