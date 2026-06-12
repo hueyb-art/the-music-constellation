@@ -45,8 +45,10 @@ let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,
 /* ----------  TIMELINE VIEW  ---------- */
 let viewMode="globe",viewX=0,tviewX=0;
 const THIS_YEAR=new Date().getFullYear();
-let TL={y0:1900,y1:THIS_YEAR,laneH:74};
-const TLX=yr=>-420+(yr-TL.y0)/(TL.y1-TL.y0)*840;
+/* the timeline is a long road, not a compressed chart: pxy world-units per year,
+   so a century stretches thousands of px and you travel along it */
+let TL={y0:1900,y1:THIS_YEAR,laneH:74,pxy:44};
+const TLX=yr=>(yr-(TL.y0+TL.y1)/2)*TL.pxy;
 const CAM=760;
 const MOBILE=(typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(max-width:700px)").matches)||false;
 const BLURK=MOBILE?0.5:1;
@@ -119,7 +121,12 @@ function draw(){
   for(const st of stars){
     let rx=st.x*cy-st.z*sy,rz=st.x*sy+st.z*cy,ry=st.y*cp-rz*spp;rz=st.y*spp+rz*cp;
     const t=(rz+1)/2,a=(0.10+0.42*t)*(0.6+0.4*Math.sin(tick*0.02+st.tw));
-    ctx.beginPath();ctx.arc(W/2+rx*Rstar,H/2+ry*Rstar,st.r*(0.5+t),0,6.283);
+    let px=W/2+rx*Rstar,py=H/2+ry*Rstar;
+    if(viewMode==="timeline"){ /* depth-weighted parallax: the sky drifts past as you travel */
+      px=(((px+viewX*(0.04+0.06*t))%(W+80))+(W+80))%(W+80)-40;
+      py=(((py+viewY*(0.04+0.06*t))%(H+80))+(H+80))%(H+80)-40;
+    }
+    ctx.beginPath();ctx.arc(px,py,st.r*(0.5+t),0,6.283);
     ctx.fillStyle="rgba(226,212,184,"+a.toFixed(3)+")";ctx.fill();
   }
   const F=easeF(fade);
@@ -140,7 +147,7 @@ function draw(){
     const ax=Math.max(0,1-(Math.abs(yaw)+Math.abs(pitch))*2.5)*F;
     if(ax>0.02){
       const sx=x=>W/2+viewX+x*zoom,sy=y=>H/2+viewY+y*zoom;
-      const stepY=(TL.y1-TL.y0)>120?20:10;
+      const stepY=(10*TL.pxy*zoom<64)?20:10;
       ctx.textAlign="center";ctx.textBaseline="top";ctx.font="400 11px Helvetica Neue, Arial";
       for(let yr=Math.ceil(TL.y0/stepY)*stepY;yr<=TL.y1;yr+=stepY){
         const x=sx(TLX(yr));
@@ -152,6 +159,11 @@ function draw(){
       ctx.textAlign="left";ctx.textBaseline="middle";ctx.font="600 10px Helvetica Neue, Arial";
       const lx=Math.max(sx(TLX(TL.y0))-150,14); // sticky at the viewport edge while panning
       Object.keys(ERAS).forEach((k,i)=>{ctx.fillStyle=hexA(ERAS[k].color,0.5*ax);ctx.fillText(ERAS[k].label.toUpperCase(),lx,sy(-260+(i+0.5)*TL.laneH));});
+      /* where in history you are right now */
+      const cyr=Math.max(TL.y0,Math.min(TL.y1,Math.round((TL.y0+TL.y1)/2-viewX/(zoom*TL.pxy))));
+      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 13px Helvetica Neue, Arial";
+      ctx.fillStyle="rgba(226,212,184,"+(0.30*ax).toFixed(3)+")";
+      ctx.fillText("· "+cyr+" ·",W/2,175);
       for(const nd of vis){
         const dim=focusSet&&!focusSet.has(nd.id),col=ERAS[nd.era].color,b=bright(nd);
         const x0=sx(TLX(nd._y0)),x1=sx(TLX(nd._y1));
@@ -241,6 +253,12 @@ function loop(){
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
   }
   zoom+=(tzoom-zoom)*0.12;viewY+=(tviewY-viewY)*0.12;viewX+=(tviewX-viewX)*0.12;
+  if(viewMode==="timeline"){
+    const lo=-(TLX(TL.y1)+60)*zoom,hi=-(TLX(TL.y0)-60)*zoom;
+    tviewX=Math.max(lo,Math.min(hi,tviewX));viewX=Math.max(lo,Math.min(hi,viewX));
+    const vy=340*zoom; // keep the era lanes on screen
+    tviewY=Math.max(-vy,Math.min(vy,tviewY));viewY=Math.max(-vy,Math.min(vy,viewY));
+  }
   NODES.forEach(nd=>{nd.hl+=(((nd===hoverNode||nd===selNode)?1:0)-nd.hl)*0.16;});
   if(!pageOpen)step();
   draw();requestAnimationFrame(loop);
@@ -260,7 +278,10 @@ canvas.addEventListener("mousemove",ev=>{
 canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;canvas.style.cursor="grabbing";});
 addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
 canvas.addEventListener("dblclick",ev=>{const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
-canvas.addEventListener("wheel",ev=>{ev.preventDefault();const f=ev.deltaY<0?1.1:0.91;tzoom=Math.max(0.3,Math.min(3,tzoom*f));},{passive:false});
+canvas.addEventListener("wheel",ev=>{ev.preventDefault();
+  /* in timeline, scrolling travels along the years; pinch (ctrl/meta+wheel) still zooms */
+  if(viewMode==="timeline"&&!ev.ctrlKey&&!ev.metaKey){tviewX-=(ev.deltaY+ev.deltaX);return;}
+  const f=ev.deltaY<0?1.1:0.91;tzoom=Math.max(0.3,Math.min(3,tzoom*f));},{passive:false});
 /* touch */
 let touchMode=0,pinchD=0,tapXY=null,lastTap=0;
 canvas.addEventListener("touchstart",ev=>{
@@ -514,7 +535,14 @@ function playClip(nd){
   else search(q1,afterQ1);
 }
 
-function fitView(){let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;if(viewMode==="timeline"){tviewX=0;tviewY=0;}}
+/* frame the timeline: fit the era lanes vertically; x stays wherever you've travelled
+   (toStart=true jumps to the genre's beginnings) */
+function frameTimeline(toStart){
+  tzoom=Math.max(0.3,Math.min(2.4,(H-170)/620));
+  if(toStart)tviewX=180-W/2-TLX(TL.y0)*tzoom;
+  tviewY=0;
+}
+function fitView(){if(viewMode==="timeline"){frameTimeline(false);tyaw=null;return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
 const fitBtn=document.getElementById("fitBtn");if(fitBtn)fitBtn.onclick=fitView;
 let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(ev,()=>{userFramed=true;}));
 
@@ -529,9 +557,8 @@ function setView(mode){
   if(tlBtn)tlBtn.classList.toggle("on",mode==="timeline");
   if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TL:HINT_GLOBE;
   alpha=1;userFramed=false;
-  if(mode==="timeline"){tyaw=0;tpitch=0;vyaw=0;vpitch=0;}
-  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;}
-  setTimeout(fitView,900); // an explicit view change always reframes
+  if(mode==="timeline"){tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameTimeline(true);}
+  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);} // globe needs time to fold back in from far down the road
 }
 if(tlBtn)tlBtn.onclick=()=>setView(viewMode==="globe"?"timeline":"globe");
 
@@ -576,7 +603,7 @@ function loadGenre(key){
     nd._recs=recs.filter(y=>y>=nd._y0-5&&y<=THIS_YEAR);
     ymin=Math.min(ymin,nd._y0);ymax=Math.max(ymax,nd._y1);
   });
-  TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10),laneH:520/Object.keys(ERAS).length};
+  TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10),laneH:520/Object.keys(ERAS).length,pxy:MOBILE?26:44};
   const eraIdx={};Object.keys(ERAS).forEach((k,i)=>eraIdx[k]=i);
   NODES.forEach((nd,i)=>{
     nd._tx=TLX((nd._y0+nd._y1)/2);

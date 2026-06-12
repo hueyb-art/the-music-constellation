@@ -23,7 +23,7 @@ Huey's standing rule: always commit AND push when validation passes — but ask 
 - localStorage keys are namespaced `tmc_<genre>_…` because this origin is shared with the legacy sites (which use `jc_…`). Don't change prefixes casually — it orphans users' caches.
 - The iTunes relay (`https://jazz-itunes.hueyb.workers.dev`) is genre-agnostic despite the name; deployment guide in docs/itunes-relay-setup.md.
 - Preview-test locally: `.claude/launch.json` serves the repo on :8741 (python http.server). The genre switch, search ("stephane", "thelonius"), node select, photo-zoom (`tzoom=1.8` after `centerOn`), and the Timeline toggle (lanes stay separated per era; globe re-inflates on return) are the key manual checks.
-- Timeline mode (`viewMode` in engine.js) repositions the same nodes: x is pinned to lifespan years parsed from each node's `life` field, y springs to the era lane, and only contact collision remains (long-range repulsion would smear the lanes). Drag pans instead of rotating there.
+- Timeline mode (`viewMode` in engine.js) repositions the same nodes: x is pinned to lifespan years (`TL.pxy` world-units per year — the world is a long road, thousands of px wide), y springs to the era lane, and only contact collision remains (long-range repulsion would smear the lanes). Drag and scroll-wheel travel along the years (ctrl/meta+wheel zooms); both pan axes are clamped in `loop()`; `frameTimeline()` fits the lanes vertically and starts at the genre's origins.
 - The preview panel pauses requestAnimationFrame when hidden — for physics assertions in evals, pump `step()` manually instead of waiting.
 - Mobile layout kicks in under 700px width; the bottom-sheet panel replaces the side panel.
 
