@@ -237,7 +237,7 @@ function layoutChord(){
 }
 
 /* ===== rendering ===== */
-let hover=null,frame=0;
+let hover=null,frame=0,chordSpin=0,chordIdle=0;
 function radius(n){return 3+Math.sqrt(deg[n.id]||0)*1.7;}
 /* deep-space backdrop: a twinkling starfield + distant galaxies, behind every view */
 const SPACE_STARS=[];for(let i=0;i<220;i++)SPACE_STARS.push({x:Math.random(),y:Math.random(),r:Math.random()*Math.random()*1.8+0.25,tw:Math.random()*6.28,sp:0.3+Math.random()*0.9,warm:Math.random()<0.18});
@@ -362,13 +362,19 @@ function drawRingFire(cx,cy,R){
 }
 function drawChord(){
   const cx=SX(0),cy=SY(0),R=chordR*cam.s;
+  /* ambient slow spin in space; pauses on any interaction, resumes after ~2s idle */
+  const interacting=drag||hover||chordFocus||Math.abs(cam.s-tcam.s)>0.001||Math.abs(cam.x-tcam.x)>0.5||Math.abs(cam.y-tcam.y)>0.5;
+  if(interacting)chordIdle=0;else chordIdle++;
+  if(chordIdle>120)chordSpin+=0.0012;
+  /* spin is applied to the rendered positions, derived from each node's stable base angle */
+  for(const n of nodes){const p=pos[n.id];if(p){const ea=p.ang+chordSpin;p.x=Math.cos(ea)*chordR;p.y=Math.sin(ea)*chordR;}}
   const active=chordFocus||hover;
   let neigh=null;
   if(active){neigh=new Set();edges.forEach(e=>{if(e.a===active)neigh.add(e.b);else if(e.b===active)neigh.add(e.a);});}
   drawSunCorona(cx,cy,R);
   // era arcs (suppress era labels while a star is active, so connection names stay clear)
   let i=0;const N=nodes.length;
-  eraKeys.forEach(k=>{const cnt=nodes.filter(n=>n.era===k).length;if(!cnt)return;const a0=i/N*6.2832-1.5708,a1=(i+cnt)/N*6.2832-1.5708;i+=cnt;
+  eraKeys.forEach(k=>{const cnt=nodes.filter(n=>n.era===k).length;if(!cnt)return;const a0=i/N*6.2832-1.5708+chordSpin,a1=(i+cnt)/N*6.2832-1.5708+chordSpin;i+=cnt;
     ctx.strokeStyle=hexA(eras[k].color,0.85);ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R+14,a0+0.01,a1-0.01);ctx.stroke();
     if(!active){const am=(a0+a1)/2;ctx.fillStyle=hexA(eras[k].color,0.7);ctx.font="9px Helvetica Neue,Arial";ctx.textAlign="center";ctx.save();ctx.translate(cx+Math.cos(am)*(R+40),cy+Math.sin(am)*(R+40));ctx.fillText(eras[k].label,0,0);ctx.restore();}});
   drawRingFire(cx,cy,R);
@@ -384,7 +390,7 @@ function drawChord(){
   if(active){
     const RR=chordR;
     const items=[];
-    const push=(id,big)=>{const p=pos[id];if(!p)return;const ox=Math.cos(p.ang),oy=Math.sin(p.ang);
+    const push=(id,big)=>{const p=pos[id];if(!p)return;const ox=p.x/chordR,oy=p.y/chordR;
       items.push({id,big,nx:SX(p.x),ny:SY(p.y),ax:SX(ox*(RR+26)),ay0:SY(oy*(RR+26)),side:ox>=0?1:-1});};
     if(neigh)neigh.forEach(id=>push(id,false));
     push(active,true);
