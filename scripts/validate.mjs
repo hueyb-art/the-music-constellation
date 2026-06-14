@@ -31,9 +31,9 @@ for (const m of html.matchAll(/"(js\/[^"?]+\.js)"/g)) {
 ok("index.html asset references resolve");
 
 /* 3. Build stamp present and cache-bust in sync (MC_BUILD must equal style.css?v=) */
-const build = html.match(/MC_BUILD\s*=\s*"(\d{4}-\d{2}-\d{2})"/);
-const cssv = html.match(/style\.css\?v=(\d{4}-\d{2}-\d{2})/);
-if (!build) fail("index.html: window.MC_BUILD must be a YYYY-MM-DD string");
+const build = html.match(/MC_BUILD\s*=\s*"(\d{4}-\d{2}-\d{2}(?:\.\d+)?)"/);
+const cssv = html.match(/style\.css\?v=(\d{4}-\d{2}-\d{2}(?:\.\d+)?)/);
+if (!build) fail("index.html: window.MC_BUILD must be a YYYY-MM-DD[.n] string");
 else if (!cssv) fail("index.html: style.css link must carry ?v=<build>");
 else if (build[1] !== cssv[1]) fail(`cache-bust drift: MC_BUILD ${build[1]} ≠ style.css?v=${cssv[1]}`);
 else ok(`build stamp ${build[1]} (assets cache-busted)`);

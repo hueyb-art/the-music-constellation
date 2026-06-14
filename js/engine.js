@@ -357,8 +357,9 @@ function toggleCollab(box,a,b,chev){
     box.dataset.loaded="1";
     if(!items.length){box.innerHTML='<div class="cbnote">No shared recordings found on MusicBrainz.</div>';return;}
     const top=items.slice(0,12);
-    box.innerHTML=top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbtitle">${esc(it.title)}</span></div>`).join("")
+    box.innerHTML=top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbmain"><span class="cbtitle">${esc(it.title)}</span>${svc(a.name+" "+b.name+" "+it.title)}</span></div>`).join("")
       +(items.length>12?`<div class="cbnote">+${items.length-12} more on MusicBrainz</div>`:"");
+    wireApple(box);
   }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
 }
 function centerOn(nd){
