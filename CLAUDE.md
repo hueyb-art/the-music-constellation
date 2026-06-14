@@ -15,6 +15,13 @@ One web app, three (so far) genre constellations. No build step, no dependencies
 
 Huey's standing rule: always commit AND push when validation passes — but ask questions first if you're about to change something structural.
 
+## Views
+
+Three view modes in engine.js, all genre-themed and routed via the hash:
+- **globe** (`#/<genre>`, default) — the 3D force-directed constellation.
+- **timeline** (`#/<genre>/timeline`) — the depth voyage; x pinned to debut years, fly through.
+- **chord** (`#/<genre>/chord`) — everyone on a ring by era, ties arcing to a living sun, ambient slow spin, deep-space backdrop. Hover lights+names a star's ties; click → the standard card (with the ♪ collab records). Self-contained `drawChordView()` + `drawChordSpace`/`drawSunCorona`/`drawRingFire`; node ring angle is `nd._cang` (set in loadGenre, ordered by era to match the era arcs). `setView()` switches modes and writes the hash; `parseHash()`/`updateHashView()` keep URL ↔ view in sync; `switchGenre()` preserves the current view in the hash.
+
 ## Conventions and gotchas
 
 - **All MusicBrainz access goes through `js/collab.js`** (`window.MB.get`), a single rate-limited request queue shared by discographies and collaboration lookups so they never collide on MB's ~1 req/sec limit. `window.MB.collab(nameA, nameB, cacheKey)` returns deduped shared recordings; used by the app's connection cards (the ♪ expander in `toggleCollab`) and the prototype's Solar view. Loaded before engine.js in index.html.

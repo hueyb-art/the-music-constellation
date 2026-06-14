@@ -2,6 +2,11 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-14 — chord-web promoted to a real view; the silent version-bump bug
+
+- Promoted the prototype chord-web into engine.js as a third `viewMode` (globe/timeline/chord) with `#/<genre>/chord` routing. Kept it self-contained (`drawChordView` + helpers, early-returns in draw()/loop(), chord branches in the pointer handlers) rather than threading it through the globe/timeline 3D paths — far less risk. Clicking a star reuses the app's existing card + ♪ collab panel, so no separate collab UI was needed.
+- **Bug caught during this work:** the cache-bust version had silently stuck at `2026-06-14.5` for several deploys. Each bump was a `sed 's/v=2026-06-14\.N/.../'` that assumed the prior value; once one bump's assumption was off, the pattern stopped matching and every later `sed` no-op'd. The validator's MC_BUILD===css-?v check still passed because BOTH stayed at `.5` in lockstep. Lesson: don't bump a single-source version with brittle find-by-old-value `sed` — use an exact Edit, and a sync-check can't detect a value that simply never changed. (Impact was limited: GitHub Pages asset cache is ~10 min, so returning users got fresh JS quickly regardless.)
+
 ## 2026-06-14 — chord-web as the favourite
 
 - The Era chord-web (prototype) became Huey's favourite view; built it up: hover/pin a star to light its chords AND name every node they land on (radial labels just outside the ring, anchored left/right by angle), click a pinned star's connection to open the shared-recordings panel (reuses window.MB.collab), and an animated "living sun" corona (pulsing core + flickering lighter-blend flares) where the chords converge. `frame` counter drives the animation; the prototype draw loop already runs rAF continuously so animation was free.
