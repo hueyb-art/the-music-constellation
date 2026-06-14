@@ -380,24 +380,39 @@ function drawChord(){
   // nodes (focus + its connections stay bright; the rest dim back)
   nodes.forEach(n=>{const isF=n.id===active,isN=neigh&&neigh.has(n.id);
     star(n,isF?5.5:isN?4:radius(n)*0.8,active?(isF||isN?1:0.22):0.9,eras[n.era].color);});
-  // (a) name the focus and everyone its lines land on
+  // (a) name the focus + every connection, tagged by tie kind, with radial de-collision
   if(active){
-    const drawName=(id,big)=>{const p=pos[id];if(!p)return;const ox=Math.cos(p.ang),oy=Math.sin(p.ang);
-      const lx=SX(ox*(chordR+26)),ly=SY(oy*(chordR+26)),align=ox>0.12?"left":ox<-0.12?"right":"center";
-      ctx.textBaseline=oy>0.55?"top":oy<-0.55?"bottom":"middle";
-      const nm=byId[id].name;
-      ctx.font=(big?"600 13px":"11.5px")+" Helvetica Neue,Arial";ctx.textAlign=align;
-      ctx.fillStyle=big?"rgba(245,222,150,.98)":"rgba(243,236,224,.94)";
-      ctx.fillText(nm,lx,ly);
-      if(!big){const ri=relInfo(active,id);if(ri){
-        const nameW=ctx.measureText(nm).width;
+    const RR=chordR;
+    const items=[];
+    const push=(id,big)=>{const p=pos[id];if(!p)return;const ox=Math.cos(p.ang),oy=Math.sin(p.ang);
+      items.push({id,big,nx:SX(p.x),ny:SY(p.y),ax:SX(ox*(RR+26)),ay0:SY(oy*(RR+26)),side:ox>=0?1:-1});};
+    if(neigh)neigh.forEach(id=>push(id,false));
+    push(active,true);
+    items.forEach(it=>it.ay=it.ay0);
+    // push overlapping labels apart vertically within each side, clamped to the viewport
+    const gap=15,top=74,bot=H-56;
+    [1,-1].forEach(s=>{
+      const col=items.filter(it=>it.side===s).sort((a,b)=>a.ay-b.ay);
+      for(let i=1;i<col.length;i++)if(col[i].ay<col[i-1].ay+gap)col[i].ay=col[i-1].ay+gap;
+      if(col.length){
+        if(col[col.length-1].ay>bot){col[col.length-1].ay=bot;for(let i=col.length-2;i>=0;i--)if(col[i].ay>col[i+1].ay-gap)col[i].ay=col[i+1].ay-gap;}
+        if(col[0].ay<top){col[0].ay=top;for(let i=1;i<col.length;i++)if(col[i].ay<col[i-1].ay+gap)col[i].ay=col[i-1].ay+gap;}
+      }
+    });
+    // leader lines from each star to its nudged label
+    items.forEach(it=>{if(!it.big&&Math.abs(it.ay-it.ay0)>3){ctx.strokeStyle="rgba(243,236,224,0.14)";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(it.nx,it.ny);ctx.lineTo(it.ax,it.ay);ctx.stroke();}});
+    ctx.textBaseline="middle";
+    items.forEach(it=>{
+      const align=it.side>=0?"left":"right";ctx.textAlign=align;
+      const nm=byId[it.id].name;
+      ctx.font=(it.big?"600 13px":"11.5px")+" Helvetica Neue,Arial";
+      ctx.fillStyle=it.big?"rgba(245,222,150,.98)":"rgba(243,236,224,.94)";
+      ctx.fillText(nm,it.ax,it.ay);
+      if(!it.big){const ri=relInfo(active,it.id);if(ri){const nameW=ctx.measureText(nm).width;
         ctx.font="9.5px Helvetica Neue,Arial";ctx.fillStyle="rgba("+(KCOL[ri.kind]||KCOL.collab)+",0.95)";
-        if(align==="center"){ctx.textAlign="center";ctx.fillText(ri.word,lx,ly+(oy<0?-12:12));}
-        else if(align==="left"){ctx.fillText("· "+ri.word,lx+nameW+5,ly);}
-        else{ctx.fillText(ri.word+" ·",lx-nameW-5,ly);}
-      }}};
-    if(neigh)neigh.forEach(id=>drawName(id,false));
-    drawName(active,true);
+        if(align==="left")ctx.fillText("· "+ri.word,it.ax+nameW+5,it.ay);
+        else ctx.fillText(ri.word+" ·",it.ax-nameW-5,it.ay);}}
+    });
   }
 }
 
