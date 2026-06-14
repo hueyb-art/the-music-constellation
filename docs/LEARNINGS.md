@@ -2,6 +2,11 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-14 — chord-web as the favourite
+
+- The Era chord-web (prototype) became Huey's favourite view; built it up: hover/pin a star to light its chords AND name every node they land on (radial labels just outside the ring, anchored left/right by angle), click a pinned star's connection to open the shared-recordings panel (reuses window.MB.collab), and an animated "living sun" corona (pulsing core + flickering lighter-blend flares) where the chords converge. `frame` counter drives the animation; the prototype draw loop already runs rAF continuously so animation was free.
+- Known rough edge: when a hub's connections cluster within one era arc, their outward names overlap (no radial label de-collision yet). Fine for low-degree stars; a hub like Miles stacks. If promoted, add angular label nudging.
+
 ## 2026-06-13 — hard data for collaborations
 
 - MusicBrainz co-credit recording search (`recording?query=artist:"A" AND artist:"B"`) is a genuinely good, free source for "what did these two make together": excellent for joint billings and hip-hop features (Jay-Z × Kanye returns 200+), decent for jazz duos; uncredited-sideman-only sessions can be partial. Dedupe by normalised title, keep earliest year, sort.
