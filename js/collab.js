@@ -42,5 +42,20 @@
     return collab(a,b).then(items=>{try{localStorage.setItem(key,JSON.stringify({items,ts:Date.now()}));}catch(e){}return items;});
   }
 
-  window.MB={get:mbGet,collab:collabCached};
+  /* a band's studio/live albums — used when a connection is a band member
+     (their recorded work lives under the band's name, invisible to co-credit search) */
+  function bandDisco(name,key){
+    let c=null;try{c=JSON.parse(localStorage.getItem(key)||"null");}catch(e){}
+    if(c&&c.items&&Date.now()-(c.ts||0)<30*864e5)return Promise.resolve(c.items);
+    const nm=String(name||"").replace(/"/g,"").trim();
+    return mbGet("https://musicbrainz.org/ws/2/artist?query="+encodeURIComponent('artist:"'+nm+'"')+"&fmt=json&limit=5")
+      .then(d=>{const list=d.artists||[];if(!list.length)return [];const best=list.find(a=>(a.name||"").toLowerCase()===nm.toLowerCase())||list[0];
+        return mbGet("https://musicbrainz.org/ws/2/release-group?artist="+best.id+"&type=album&fmt=json&limit=100").then(d2=>{
+          const out=[];(d2["release-groups"]||[]).forEach(rg=>{if((rg["primary-type"]||"")!=="Album")return;if((rg["secondary-types"]||[]).includes("Compilation"))return;out.push({title:rg.title,year:(rg["first-release-date"]||"").slice(0,4)});});
+          out.sort((x,y)=>(x.year||"9999").localeCompare(y.year||"9999"));return out;});})
+      .then(items=>{try{localStorage.setItem(key,JSON.stringify({items,ts:Date.now()}));}catch(e){}return items;})
+      .catch(()=>[]);
+  }
+
+  window.MB={get:mbGet,collab:collabCached,bandDisco:bandDisco};
 })();

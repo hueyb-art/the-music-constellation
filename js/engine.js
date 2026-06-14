@@ -355,12 +355,19 @@ function toggleCollab(box,a,b,chev){
   box.innerHTML='<div class="cbnote">finding records together…</div>';
   const sq=encodeURIComponent((a.name+" "+b.name).replace(/\s+/g," ").trim());
   const searchRow=`<div class="cbsearch">Hear them together — <a href="https://open.spotify.com/search/${sq}" target="_blank" rel="noopener">Spotify</a> · <a href="https://www.youtube.com/results?search_query=${sq}" target="_blank" rel="noopener">YouTube</a> · <a href="https://www.discogs.com/search/?q=${sq}&type=release" target="_blank" rel="noopener">Discogs</a></div>`;
-  window.MB.collab(a.name,b.name,collabKey(a.id,b.id)).then(items=>{
+  /* band members: their catalogue lives under the band's name, invisible to co-credit search */
+  const dA=a.discoAs,dB=b.discoAs,lc=s=>(s||"").toLowerCase();
+  let band=null;
+  if(dA&&(dA===dB||lc(dA).includes(lc(b.name))))band=dA;
+  else if(dB&&(dA===dB||lc(dB).includes(lc(a.name))))band=dB;
+  const records=band?window.MB.bandDisco(band,lsKey("bd_"+band.replace(/[^a-z0-9]+/gi,""))):window.MB.collab(a.name,b.name,collabKey(a.id,b.id));
+  const secRow=band?`<div class="cbnote" style="color:var(--gold)">Records together · as ${esc(band)}</div>`:"";
+  records.then(items=>{
     box.dataset.loaded="1";
     if(!items.length){box.innerHTML='<div class="cbnote">No co-credited records on MusicBrainz — sideman sessions often aren\'t listed there.</div>'+searchRow;return;}
-    const top=items.slice(0,12);
-    box.innerHTML=top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbmain"><span class="cbtitle">${esc(it.title)}</span>${svc(a.name+" "+b.name+" "+it.title)}</span></div>`).join("")
-      +(items.length>12?`<div class="cbnote">+${items.length-12} more on MusicBrainz</div>`:"")+searchRow;
+    const top=items.slice(0,14);
+    box.innerHTML=secRow+top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbmain"><span class="cbtitle">${esc(it.title)}</span>${svc((band||a.name+" "+b.name)+" "+it.title)}</span></div>`).join("")
+      +(items.length>14?`<div class="cbnote">+${items.length-14} more</div>`:"")+searchRow;
     wireApple(box);
   }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
 }

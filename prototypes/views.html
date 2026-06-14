@@ -54,10 +54,10 @@
 <div class="tip" id="tip"></div>
 <div class="cpanel" id="cpanel"></div>
 
-<script src="../js/collab.js"></script>
-<script src="../js/data/jazz.js"></script>
-<script src="../js/data/hiphop.js"></script>
-<script src="../js/data/reggae.js"></script>
+<script src="../js/collab.js?v=2026-06-14.5"></script>
+<script src="../js/data/jazz.js?v=2026-06-14.5"></script>
+<script src="../js/data/hiphop.js?v=2026-06-14.5"></script>
+<script src="../js/data/reggae.js?v=2026-06-14.5"></script>
 <script>
 const GEN=window.GENRE_DATA;
 const canvas=document.getElementById("c"),ctx=canvas.getContext("2d");
@@ -446,12 +446,19 @@ function showCollab(aId,bId){
   p.querySelector(".cpx").onclick=closeCollab;
   p.querySelector(".cpcenter").onclick=()=>{closeCollab();if(view==="chord"){chordFocus=bId;}else{layoutSolar(bId);fit();}};
   const key="tmc_collab_"+genreKey+"_"+[aId,bId].sort().join("_");
-  window.MB.collab(a.name,b.name,key).then(items=>{
+  /* band members: their work lives under the band's name — show the band catalogue */
+  const dA=(G.discoAs||{})[aId],dB=(G.discoAs||{})[bId],lc=s=>(s||"").toLowerCase();
+  let band=null;
+  if(dA&&(dA===dB||lc(dA).includes(lc(b.name))))band=dA;
+  else if(dB&&(dA===dB||lc(dB).includes(lc(a.name))))band=dB;
+  const records=band?window.MB.bandDisco(band,"tmc_bd_"+genreKey+"_"+band.replace(/[^a-z0-9]+/gi,"")):window.MB.collab(a.name,b.name,key);
+  const secLabel=band?"Records together · as "+esc(band):"Records together · MusicBrainz";
+  records.then(items=>{
     const body=p.querySelector(".cpbody");if(!body)return;
     if(!items.length){body.innerHTML='<div class="cpnote">No co-credited records on MusicBrainz — sideman sessions often aren’t indexed there. The links below will find what they did together.</div>';return;}
-    const q=t=>encodeURIComponent((a.name+" "+b.name+" "+t).replace(/\s+/g," ").trim());
+    const q=t=>encodeURIComponent(((band||a.name+" "+b.name)+" "+t).replace(/\s+/g," ").trim());
     const links=t=>'<span class="cpsvc"><a href="https://open.spotify.com/search/'+q(t)+'" target="_blank" rel="noopener">Spotify</a><a href="https://music.apple.com/us/search?term='+q(t)+'" target="_blank" rel="noopener">Apple</a><a href="https://www.youtube.com/results?search_query='+q(t)+'" target="_blank" rel="noopener">YouTube</a></span>';
-    body.innerHTML='<div class="cpsec">Records together · MusicBrainz</div>'+items.slice(0,16).map(it=>'<div class="cprow"><span class="cpy">'+(esc(it.year)||"—")+'</span><span class="cpmain"><span class="cptitle">'+esc(it.title)+'</span>'+links(it.title)+'</span></div>').join("")
+    body.innerHTML='<div class="cpsec">'+secLabel+'</div>'+items.slice(0,16).map(it=>'<div class="cprow"><span class="cpy">'+(esc(it.year)||"—")+'</span><span class="cpmain"><span class="cptitle">'+esc(it.title)+'</span>'+links(it.title)+'</span></div>').join("")
       +(items.length>16?'<div class="cpnote">+'+(items.length-16)+' more on MusicBrainz</div>':"");
   }).catch(()=>{const body=p.querySelector(".cpbody");if(body)body.innerHTML='<div class="cpnote">Could not load — try again.</div>';});
 }
