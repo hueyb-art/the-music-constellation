@@ -7,6 +7,12 @@ A running log of non-obvious findings. Append, don't rewrite.
 - The Era chord-web (prototype) became Huey's favourite view; built it up: hover/pin a star to light its chords AND name every node they land on (radial labels just outside the ring, anchored left/right by angle), click a pinned star's connection to open the shared-recordings panel (reuses window.MB.collab), and an animated "living sun" corona (pulsing core + flickering lighter-blend flares) where the chords converge. `frame` counter drives the animation; the prototype draw loop already runs rAF continuously so animation was free.
 - Known rough edge: when a hub's connections cluster within one era arc, their outward names overlap (no radial label de-collision yet). Fine for low-degree stars; a hub like Miles stacks. If promoted, add angular label nudging.
 
+## 2026-06-14 — connections must always reveal their nature
+
+- MusicBrainz co-credit search is blind to SIDEMAN sessions: "Grace Under Pressure" is credited to "John Scofield" only, so Frisell/Motian/Haden (who played on it) return 0 on `artist:"A" AND artist:"B"`. Verified by curl. Catching these needs per-release relationship crawling (dozens of requests/click) — not viable inline.
+- The fix isn't more MusicBrainz, it's product: the collab panel now ALWAYS leads with the curated relationship ("bandmate", "X mentored Y" — from the edge `rel`, directional words via REL_DIR, symmetric via the genre's `sym`), so a line means something even with zero co-credits; then it lists co-credited records (recordings + releases) if any; and ALWAYS offers a "hear their work together" search (Spotify/YouTube/**Discogs** — Discogs indexes sideman credits, so it surfaces exactly the sessions MusicBrainz misses). Empty state is reframed from "no collaborations" to "no co-credited records — sideman sessions often aren't indexed."
+- Lesson: when an automated data source has a structural blind spot, don't present its silence as truth — show the curated fact you DO have, and hand off to a source that covers the gap.
+
 ## 2026-06-13 — hard data for collaborations
 
 - MusicBrainz co-credit recording search (`recording?query=artist:"A" AND artist:"B"`) is a genuinely good, free source for "what did these two make together": excellent for joint billings and hip-hop features (Jay-Z × Kanye returns 200+), decent for jazz duos; uncredited-sideman-only sessions can be partial. Dedupe by normalised title, keep earliest year, sort.

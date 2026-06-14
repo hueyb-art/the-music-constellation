@@ -23,6 +23,13 @@
   .cpanel{position:fixed;top:64px;right:20px;z-index:7;width:300px;max-height:70vh;overflow-y:auto;display:none;background:rgba(22,18,24,.95);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 16px;backdrop-filter:blur(8px);box-shadow:0 18px 50px rgba(0,0,0,.5)}
   .cphead{font-size:13px;color:var(--ink);margin-bottom:10px;line-height:1.4;padding-right:16px}
   .cphead b{color:var(--gold);font-weight:600}
+  .cprel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .cprelpill{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);background:rgba(224,177,90,.13);border:1px solid rgba(224,177,90,.3);border-radius:999px;padding:3px 10px}
+  .cprelsent{font-size:12px;color:var(--ink);background:rgba(255,255,255,.05);border-radius:8px;padding:4px 10px;line-height:1.4}
+  .cpsec{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:4px 0 7px}
+  .cpsearch{font-size:11px;color:var(--muted);margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08);line-height:1.7}
+  .cpsearch a{color:var(--soft);text-decoration:none;border-bottom:1px solid rgba(224,177,90,.4)}
+  .cpsearch a:hover{color:var(--gold)}
   .cpx{position:absolute;top:10px;right:12px;cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
   .cpx:hover{color:var(--ink)}
   .cprow{display:flex;gap:10px;font-size:12.5px;padding:5px 0;color:var(--soft);align-items:baseline}
@@ -69,6 +76,16 @@ let genreKey="jazz",view="solar";
 let G,nodes,edges,eras,eraKeys,byId,adj,deg;
 
 function kindOf(r){if(r==="mentored")return"mentor";if(/influenc/.test(r))return"influence";if(r==="rivals"||r==="beef")return"rivalry";return"collab";}
+/* the nature of a connection, in words — so every line means something even with no co-credits */
+const REL_DIR={mentored:["mentored","was mentored by"],influenced:["influenced","was influenced by"],"influenced by":["was influenced by","influenced"],"arranged for":["arranged for","used as arranger"],produced:["produced","was produced by"],engineered:["engineered","was engineered by"],member:["plays in","includes"],founded:["founded","was founded by"],signed:["signed","is signed to"],dj:["was DJ for","was backed by"]};
+function relationPhrase(aId,bId){
+  const a=byId[aId],b=byId[bId],sym=new Set(G.sym||[]);
+  return edges.filter(e=>(e.a===aId&&e.b===bId)||(e.a===bId&&e.b===aId)).map(e=>{
+    if(sym.has(e.rel))return{sym:true,text:e.rel};
+    const m=REL_DIR[e.rel];if(m)return{sym:false,text:a.name+" "+(e.a===aId?m[0]:m[1])+" "+b.name};
+    return{sym:true,text:e.rel};
+  });
+}
 const KCOL={mentor:"245,222,150",influence:"150,180,215",rivalry:"217,96,122",collab:"224,177,90"};
 const STRONG=new Set(["member","co-founded","founded","crew","group","duo","bandmate","recorded with","played with","collaborated","frequent collaborators","produced","peer","backed by","dj"]);
 function hexA(hex,a){const v=parseInt(hex.slice(1),16);return`rgba(${v>>16&255},${v>>8&255},${v&255},${a})`;}
@@ -359,16 +376,22 @@ function showCollab(aId,bId){
   const a=byId[aId],b=byId[bId],p=document.getElementById("cpanel");
   p.style.display="block";
   const btn=view==="chord"?"Focus "+esc(b.name):"Centre on "+esc(b.name);
-  p.innerHTML='<span class="cpx">&times;</span><div class="cphead"><b>'+esc(a.name)+'</b> &times; <b>'+esc(b.name)+'</b></div><div class="cpbody"><div class="cpnote">finding shared recordings…</div></div><button class="cpcenter">'+btn+'</button>';
+  const phrases=relationPhrase(aId,bId);
+  const relHtml=phrases.length?'<div class="cprel">'+phrases.map(x=>x.sym?'<span class="cprelpill">'+esc(x.text)+'</span>':'<span class="cprelsent">'+esc(x.text)+'</span>').join("")+'</div>':"";
+  const sq=encodeURIComponent((a.name+" "+b.name).replace(/\s+/g," ").trim());
+  const searchHtml='<div class="cpsearch">Hear their work together — <a href="https://open.spotify.com/search/'+sq+'" target="_blank" rel="noopener">Spotify</a> · <a href="https://www.youtube.com/results?search_query='+sq+'" target="_blank" rel="noopener">YouTube</a> · <a href="https://www.discogs.com/search/?q='+sq+'&type=release" target="_blank" rel="noopener">Discogs</a></div>';
+  p.innerHTML='<span class="cpx">&times;</span><div class="cphead"><b>'+esc(a.name)+'</b> &times; <b>'+esc(b.name)+'</b></div>'+relHtml
+    +'<div class="cpbody"><div class="cpnote">finding records together…</div></div>'+searchHtml
+    +'<button class="cpcenter">'+btn+'</button>';
   p.querySelector(".cpx").onclick=closeCollab;
   p.querySelector(".cpcenter").onclick=()=>{closeCollab();if(view==="chord"){chordFocus=bId;}else{layoutSolar(bId);fit();}};
   const key="tmc_collab_"+genreKey+"_"+[aId,bId].sort().join("_");
   window.MB.collab(a.name,b.name,key).then(items=>{
     const body=p.querySelector(".cpbody");if(!body)return;
-    if(!items.length){body.innerHTML='<div class="cpnote">No shared recordings found on MusicBrainz.</div>';return;}
+    if(!items.length){body.innerHTML='<div class="cpnote">No co-credited records on MusicBrainz — sideman sessions often aren’t indexed there. The links below will find what they did together.</div>';return;}
     const q=t=>encodeURIComponent((a.name+" "+b.name+" "+t).replace(/\s+/g," ").trim());
     const links=t=>'<span class="cpsvc"><a href="https://open.spotify.com/search/'+q(t)+'" target="_blank" rel="noopener">Spotify</a><a href="https://music.apple.com/us/search?term='+q(t)+'" target="_blank" rel="noopener">Apple</a><a href="https://www.youtube.com/results?search_query='+q(t)+'" target="_blank" rel="noopener">YouTube</a></span>';
-    body.innerHTML=items.slice(0,16).map(it=>'<div class="cprow"><span class="cpy">'+(esc(it.year)||"—")+'</span><span class="cpmain"><span class="cptitle">'+esc(it.title)+'</span>'+links(it.title)+'</span></div>').join("")
+    body.innerHTML='<div class="cpsec">Records together · MusicBrainz</div>'+items.slice(0,16).map(it=>'<div class="cprow"><span class="cpy">'+(esc(it.year)||"—")+'</span><span class="cpmain"><span class="cptitle">'+esc(it.title)+'</span>'+links(it.title)+'</span></div>').join("")
       +(items.length>16?'<div class="cpnote">+'+(items.length-16)+' more on MusicBrainz</div>':"");
   }).catch(()=>{const body=p.querySelector(".cpbody");if(body)body.innerHTML='<div class="cpnote">Could not load — try again.</div>';});
 }

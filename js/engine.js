@@ -352,13 +352,15 @@ function toggleCollab(box,a,b,chev){
   if(box.style.display==="block"){box.style.display="none";chev.classList.remove("on");return;}
   box.style.display="block";chev.classList.add("on");
   if(box.dataset.loaded)return;
-  box.innerHTML='<div class="cbnote">finding shared recordings…</div>';
+  box.innerHTML='<div class="cbnote">finding records together…</div>';
+  const sq=encodeURIComponent((a.name+" "+b.name).replace(/\s+/g," ").trim());
+  const searchRow=`<div class="cbsearch">Hear them together — <a href="https://open.spotify.com/search/${sq}" target="_blank" rel="noopener">Spotify</a> · <a href="https://www.youtube.com/results?search_query=${sq}" target="_blank" rel="noopener">YouTube</a> · <a href="https://www.discogs.com/search/?q=${sq}&type=release" target="_blank" rel="noopener">Discogs</a></div>`;
   window.MB.collab(a.name,b.name,collabKey(a.id,b.id)).then(items=>{
     box.dataset.loaded="1";
-    if(!items.length){box.innerHTML='<div class="cbnote">No shared recordings found on MusicBrainz.</div>';return;}
+    if(!items.length){box.innerHTML='<div class="cbnote">No co-credited records on MusicBrainz — sideman sessions often aren\'t listed there.</div>'+searchRow;return;}
     const top=items.slice(0,12);
     box.innerHTML=top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbmain"><span class="cbtitle">${esc(it.title)}</span>${svc(a.name+" "+b.name+" "+it.title)}</span></div>`).join("")
-      +(items.length>12?`<div class="cbnote">+${items.length-12} more on MusicBrainz</div>`:"");
+      +(items.length>12?`<div class="cbnote">+${items.length-12} more on MusicBrainz</div>`:"")+searchRow;
     wireApple(box);
   }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
 }

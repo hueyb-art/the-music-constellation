@@ -17,19 +17,23 @@
   function collab(a,b){
     const clean=s=>String(s||"").replace(/"/g,"").trim();
     const q=encodeURIComponent('artist:"'+clean(a)+'" AND artist:"'+clean(b)+'"');
-    return mbGet("https://musicbrainz.org/ws/2/recording?query="+q+"&fmt=json&limit=50").then(d=>{
-      const seen={},out=[];
-      (d.recordings||[]).forEach(r=>{
-        const title=(r.title||"").trim();
-        const key=title.toLowerCase().replace(/\s*[\(\[].*?[\)\]]\s*/g," ").replace(/[^a-z0-9]+/g," ").trim();
-        if(!key)return;
-        const year=(r["first-release-date"]||"").slice(0,4);
-        if(!seen[key]){seen[key]={title,year};out.push(seen[key]);}
-        else if(year&&(!seen[key].year||year<seen[key].year))seen[key].year=year;
-      });
-      out.sort((x,y)=>(x.year||"9999").localeCompare(y.year||"9999"));
-      return out;
-    });
+    const seen={},out=[];
+    const add=(title,year)=>{
+      title=(title||"").trim();
+      const key=title.toLowerCase().replace(/\s*[\(\[].*?[\)\]]\s*/g," ").replace(/[^a-z0-9]+/g," ").trim();
+      if(!key)return;
+      if(!seen[key]){seen[key]={title,year};out.push(seen[key]);}
+      else if(year&&(!seen[key].year||year<seen[key].year))seen[key].year=year;
+    };
+    /* co-credited recordings AND releases — catches joint billings/features/duo albums.
+       (Sideman sessions where only one is the billed artist aren't in MusicBrainz's
+       name index, so they can't be found this way — the panel covers that with a
+       relationship line + a Discogs/Spotify search.) */
+    return mbGet("https://musicbrainz.org/ws/2/recording?query="+q+"&fmt=json&limit=40")
+      .then(d=>{(d.recordings||[]).forEach(r=>add(r.title,(r["first-release-date"]||"").slice(0,4)));},()=>{})
+      .then(()=>mbGet("https://musicbrainz.org/ws/2/release?query="+q+"&fmt=json&limit=25"))
+      .then(d=>{(d.releases||[]).forEach(r=>add(r.title,(r.date||"").slice(0,4)));},()=>{})
+      .then(()=>{out.sort((x,y)=>(x.year||"9999").localeCompare(y.year||"9999"));return out;});
   }
 
   function collabCached(a,b,key){
