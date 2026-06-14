@@ -39,17 +39,17 @@
 const GEN=window.GENRE_DATA;
 const canvas=document.getElementById("c"),ctx=canvas.getContext("2d");
 let W,H,DPR;
-function resize(){DPR=devicePixelRatio||1;W=innerWidth;H=innerHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+function resize(){DPR=devicePixelRatio||1;W=innerWidth;H=innerHeight;canvas.width=W*DPR;canvas.height=H*DPR;canvas.style.width=W+"px";canvas.style.height=H+"px";ctx.setTransform(DPR,0,0,DPR,0,0);}
 addEventListener("resize",resize);resize();
 
-const VIEWS=[["constellations","Named constellations"],["bloodline","Bloodline"],["solar","Solar system"],["chord","Era chord-web"]];
+const VIEWS=[["solar","Solar system"],["bloodline","Bloodline"],["chord","Era chord-web"]];
 const DESCS={
   constellations:"<b>Named constellations.</b> The tight circles in the data, detected automatically and drawn as outlined star-figures with a connecting spine — the metaphor made real. Hover a figure for its members.",
   bloodline:"<b>Bloodline.</b> Influence flowing generation by generation from a founder. Click any star to re-root the tree on them and trace who they shaped.",
   solar:"<b>Solar system.</b> One artist at the centre of their world; connections orbit in rings by relationship — mentors closest, rivals furthest. Click a star to travel to their system.",
   chord:"<b>Era chord-web.</b> Everyone on one ring, grouped by era; every relationship a chord across the circle. Hover an era or a star to light its threads.",
 };
-let genreKey="jazz",view="constellations";
+let genreKey="jazz",view="solar";
 let G,nodes,edges,eras,eraKeys,byId,adj,deg;
 
 function kindOf(r){if(r==="mentored")return"mentor";if(/influenc/.test(r))return"influence";if(r==="rivals"||r==="beef")return"rivalry";return"collab";}
@@ -65,18 +65,18 @@ function loadGenre(k){
   layout();fit();
 }
 
-/* ----- camera ----- */
-let cam={x:0,y:0,s:1},tcam={x:0,y:0,s:1};
+/* ----- camera: direct manipulation is immediate, programmatic moves ease ----- */
+let cam={x:0,y:0,s:1},tcam={x:0,y:0,s:1},easing=true;
 const SX=wx=>W/2+(wx-cam.x)*cam.s, SY=wy=>H/2+(wy-cam.y)*cam.s;
 function fitTo(pts,pad){
   if(!pts.length)return;
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  pts.forEach(p=>{x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y);});
+  pts.forEach(p=>{if(p.stray)return;x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y);});
   const w=Math.max(1,x1-x0),h=Math.max(1,y1-y0);
-  tcam.s=Math.min((W-(pad||120))/w,(H-(pad||160))/h,2.2);
-  tcam.x=(x0+x1)/2;tcam.y=(y0+y1)/2;
+  tcam.s=Math.min((W-(pad||140))/w,(H-(pad||180))/h,2);
+  tcam.x=(x0+x1)/2;tcam.y=(y0+y1)/2;easing=true;
 }
-function fit(){const pts=Object.values(pos);fitTo(pts);}
+function fit(){const pts=Object.values(pos).filter(p=>!p.halo);fitTo(pts);}
 
 /* ===== layouts produce world positions in `pos` {id:{x,y}} ===== */
 let pos={},clusters=[],bloodRoot=null,bloodLayers=[],solarFocus=null,solarRings=[];
@@ -197,7 +197,8 @@ function layoutChord(){
 let hover=null;
 function radius(n){return 3+Math.sqrt(deg[n.id]||0)*1.7;}
 function draw(){
-  cam.x+=(tcam.x-cam.x)*0.12;cam.y+=(tcam.y-cam.y)*0.12;cam.s+=(tcam.s-cam.s)*0.12;
+  if(easing){cam.x+=(tcam.x-cam.x)*0.16;cam.y+=(tcam.y-cam.y)*0.16;cam.s+=(tcam.s-cam.s)*0.16;
+    if(Math.hypot(tcam.x-cam.x,tcam.y-cam.y)<0.4&&Math.abs(tcam.s-cam.s)<0.003){cam.x=tcam.x;cam.y=tcam.y;cam.s=tcam.s;easing=false;}}
   ctx.clearRect(0,0,W,H);
   if(view==="constellations")drawConstellations();
   else if(view==="bloodline")drawBloodline();
@@ -248,7 +249,7 @@ function drawSolar(){
     ctx.fillStyle="rgba("+KCOL[r.k]+",0.5)";ctx.font="9px Helvetica Neue,Arial";ctx.textAlign="center";ctx.fillText(r.k.toUpperCase(),cx,cy-r.r*cam.s-4);});
   Object.keys(pos).forEach(id=>{const p=pos[id];if(p.focus||p.halo)return;ctx.strokeStyle=hexA(eras[byId[id].era].color,0.18);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(SX(p.x),SY(p.y));ctx.stroke();});
   Object.keys(pos).forEach(id=>{const n=byId[id],p=pos[id];const[x,y]=star(n,p.focus?radius(n)+5:p.halo?1.6:radius(n),p.halo?0.3:1,eras[n.era].color);
-    if(!p.halo&&(cam.s>0.5||p.focus))label(n,x,y-radius(n)-5,p.focus?0.95:0.6,p.focus?14:11);});
+    if(!p.halo)label(n,x,y-radius(n)-5,p.focus?0.95:0.62,p.focus?14:10.5);});
 }
 function drawChord(){
   const cx=SX(0),cy=SY(0),R=chordR*cam.s;
@@ -266,19 +267,28 @@ function drawChord(){
 }
 
 /* ===== interaction ===== */
-function pick(mx,my){let best=null,bd=18;Object.keys(pos).forEach(id=>{const p=pos[id];if(p&&!p.stray){const d=Math.hypot(mx-SX(p.x),my-SY(p.y));if(d<bd){bd=d;best=id;}}});return best;}
+function pick(mx,my){let best=null,bd=22;Object.keys(pos).forEach(id=>{const p=pos[id];if(p&&!p.stray){const d=Math.hypot(mx-SX(p.x),my-SY(p.y));if(d<bd){bd=d;best=id;}}});return best;}
+function refocus(id){if(!id)return;if(view==="bloodline"){layoutBloodline(id);fit();}else if(view==="solar"){layoutSolar(id);fit();}else hover=id;}
+function zoomAt(px,py,f){const ns=Math.max(0.18,Math.min(4,cam.s*f));const wx=cam.x+(px-W/2)/cam.s,wy=cam.y+(py-H/2)/cam.s;cam.s=tcam.s=ns;cam.x=tcam.x=wx-(px-W/2)/cam.s;cam.y=tcam.y=wy-(py-H/2)/cam.s;easing=false;}
 let drag=null;
-canvas.addEventListener("mousedown",e=>drag={x:e.clientX,y:e.clientY,cx:tcam.x,cy:tcam.y,moved:false});
-addEventListener("mouseup",e=>{
-  if(drag&&!drag.moved){const id=pick(e.clientX,e.clientY);if(id){if(view==="bloodline"){layoutBloodline(id);fit();}else if(view==="solar"){layoutSolar(id);fit();}}}
-  drag=null;});
+canvas.addEventListener("mousedown",e=>{drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y,moved:false};canvas.style.cursor="grabbing";});
 addEventListener("mousemove",e=>{
-  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;tcam.x=drag.cx-dx/cam.s;tcam.y=drag.cy-dy/cam.s;cam.x=tcam.x;cam.y=tcam.y;return;}
+  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;cam.x=tcam.x=drag.cx-dx/cam.s;cam.y=tcam.y=drag.cy-dy/cam.s;easing=false;return;}
   const id=pick(e.clientX,e.clientY);hover=id;
   const tip=document.getElementById("tip");
-  if(id){const n=byId[id];tip.style.opacity=1;tip.style.left=(e.clientX+12)+"px";tip.style.top=(e.clientY+12)+"px";tip.textContent=n.name+" · "+n.role;}else tip.style.opacity=0;
+  if(id){const n=byId[id];tip.style.opacity=1;tip.style.left=(e.clientX+12)+"px";tip.style.top=(e.clientY+12)+"px";tip.textContent=n.name+" · "+n.role;canvas.style.cursor="pointer";}
+  else{tip.style.opacity=0;canvas.style.cursor="grab";}
 });
-canvas.addEventListener("wheel",e=>{e.preventDefault();tcam.s=Math.max(0.2,Math.min(3.5,tcam.s*(e.deltaY<0?1.12:0.89)));},{passive:false});
+addEventListener("mouseup",e=>{if(drag&&!drag.moved)refocus(pick(e.clientX,e.clientY));drag=null;canvas.style.cursor="grab";});
+canvas.addEventListener("wheel",e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,e.deltaY<0?1.12:0.89);},{passive:false});
+/* touch: one finger pans, two fingers pinch-zoom, tap refocuses */
+let pinchD=0;
+const t2=e=>({x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2,d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)});
+canvas.addEventListener("touchstart",e=>{e.preventDefault();if(e.touches.length===1)drag={x:e.touches[0].clientX,y:e.touches[0].clientY,cx:cam.x,cy:cam.y,moved:false};else if(e.touches.length===2){drag=null;pinchD=t2(e).d;}},{passive:false});
+canvas.addEventListener("touchmove",e=>{e.preventDefault();
+  if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-drag.x,dy=e.touches[0].clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;cam.x=tcam.x=drag.cx-dx/cam.s;cam.y=tcam.y=drag.cy-dy/cam.s;easing=false;}
+  else if(e.touches.length===2){const m=t2(e);if(pinchD)zoomAt(m.x,m.y,m.d/pinchD);pinchD=m.d;}},{passive:false});
+canvas.addEventListener("touchend",e=>{if(drag&&!drag.moved)refocus(pick(drag.x,drag.y));if(e.touches.length===0){drag=null;pinchD=0;}},{passive:false});
 
 /* ===== chrome ===== */
 const vbar=document.getElementById("views"),gbar=document.getElementById("genres");
@@ -286,7 +296,7 @@ VIEWS.forEach(([k,name])=>{const b=document.createElement("button");b.textConten
 ["jazz","hiphop","reggae"].forEach(k=>{if(!GEN[k])return;const b=document.createElement("button");b.textContent=GEN[k].shortName;b.dataset.g=k;b.onclick=()=>{bloodRoot=null;solarFocus=null;loadGenre(k);gbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.g===k));};gbar.appendChild(b);});
 vbar.querySelector("button").classList.add("on");
 gbar.querySelector("button").classList.add("on");
-document.getElementById("desc").innerHTML=DESCS.constellations;
+document.getElementById("desc").innerHTML=DESCS[view];
 loadGenre("jazz");
 draw();
 </script>
