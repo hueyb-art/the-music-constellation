@@ -430,20 +430,31 @@ function playCollabClip(a,b,items,band){
   if(!clip||!items||!items.length)return;
   const id=[a.id,b.id].sort().join("_"),tag="cc:"+id,key=lsKey("cclip_"+id);
   clipFor=tag;
-  let cached=null;try{cached=localStorage.getItem(key);}catch(e){}
-  if(cached){if(cached!=="none"){try{const c=JSON.parse(cached);if(c&&c.url)playPreview(c.url,c.name);}catch(e){}}return;}
+  /* honour only a *successful* cache ({url,name}); ignore old "none"/garbage so a
+     pair that missed once (strict match, transient blip) is retried next time. */
+  try{const c=JSON.parse(localStorage.getItem(key)||"null");if(c&&c.url){playPreview(c.url,c.name);return;}}catch(e){}
   const names=[a.name,b.name].concat(band?[band]:[]).map(pnorm);
   const ok=an=>{an=pnorm(an);return !!an&&names.some(n=>n&&(an===n||an.includes(n)||n.includes(an)));};
-  const cands=items.slice(0,4);let i=0;
-  clipNote("♪  finding a track…",6500);
+  /* strip "(feat. …)" / "[Live]" / " - Remastered" style qualifiers that stop a
+     MusicBrainz title from matching the Deezer track name. */
+  const clean=s=>String(s||"").replace(/\s*[\(\[].*?[\)\]]\s*/g," ")
+    .replace(/\s*[-–—]\s*(remaster(ed)?|live|mono|stereo|single|edit|version|take\b.*|alt(ernate)?).*$/i,"")
+    .replace(/["]/g,"").replace(/\s+/g," ").trim();
+  const recs=items.slice(0,8).map(r=>clean(r.title)).filter(Boolean);
+  /* precise Deezer queries first (artist + track, by either name or the band),
+     then looser free-text — drawn from several records, so one miss isn't fatal. */
+  const tries=[];
+  recs.forEach(T=>{if(band)tries.push(`artist:"${band}" track:"${T}"`);tries.push(`artist:"${a.name}" track:"${T}"`);tries.push(`artist:"${b.name}" track:"${T}"`);});
+  recs.forEach(T=>{tries.push((band||a.name)+" "+T);tries.push(b.name+" "+T);});
+  const list=tries.slice(0,20);let i=0;
+  clipNote("♪  finding a track…",8000);
   const tryNext=()=>{
     if(clipFor!==tag)return;
-    if(i>=cands.length){try{localStorage.setItem(key,"none");}catch(e){}clipNote("");return;}
-    const rec=cands[i++],q=(band||a.name+" "+b.name)+" "+rec.title;
-    dzSearch(q,arr=>{
+    if(i>=list.length){clipNote("No preview for their records — try the listen links");return;} /* never cache "none": stay retryable */
+    dzSearch(list[i++],arr=>{
       if(clipFor!==tag)return;
       const t=(arr||[]).find(x=>x&&x.preview&&ok(x.artist&&x.artist.name));
-      if(t){try{localStorage.setItem(key,JSON.stringify({url:t.preview,name:rec.title}));}catch(e){}playPreview(t.preview,rec.title);}
+      if(t){try{localStorage.setItem(key,JSON.stringify({url:t.preview,name:t.title}));}catch(e){}playPreview(t.preview,t.title);}
       else tryNext();
     });
   };
