@@ -337,8 +337,8 @@ canvas.addEventListener("mousemove",ev=>{
   pointer.x=px;pointer.y=py;
 });
 canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;canvas.style.cursor="grabbing";});
-addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
-canvas.addEventListener("dblclick",ev=>{const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
+addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(viewMode==="chord")chordPick(nd);else if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
+canvas.addEventListener("dblclick",ev=>{if(viewMode==="chord")return;const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
 canvas.addEventListener("wheel",ev=>{ev.preventDefault();
   const f=ev.deltaY<0?1.1:0.91;tzoom=Math.max(0.3,Math.min(3,tzoom*f));},{passive:false});
 /* touch */
@@ -363,7 +363,7 @@ canvas.addEventListener("touchmove",ev=>{
   }
 },{passive:false});
 canvas.addEventListener("touchend",ev=>{
-  if(touchMode===1&&!pointer.moved&&tapXY){const now=Date.now(),nd=nodeAt(tapXY.x,tapXY.y);if(now-lastTap<300&&nd){openPage(nd);}else if(nd){select(nd);}else{deselect();}lastTap=now;}
+  if(touchMode===1&&!pointer.moved&&tapXY){const now=Date.now(),nd=nodeAt(tapXY.x,tapXY.y);if(viewMode==="chord"){chordPick(nd);}else if(now-lastTap<300&&nd){openPage(nd);}else if(nd){select(nd);}else{deselect();}lastTap=now;}
   pointer.down=false;
   if(ev.touches.length===0)touchMode=0;
   else if(ev.touches.length===1){touchMode=1;pointer.down=true;pointer.moved=true;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;}
@@ -372,8 +372,10 @@ canvas.addEventListener("touchend",ev=>{
 /* quick card panel */
 const panel=document.getElementById("panel"),panelBody=document.getElementById("panelBody");
 function select(nd){selNode=nd;computeFocus(nd);renderPanel(nd);panel.classList.add("open");if(MOBILE){tviewY=-H*0.24;centerOn(nd);}playClip(nd);}
-function deselect(){selNode=null;if(!hoverNode)focusSet=null;panel.classList.remove("open");tviewY=0;if(clip)clip.pause();clipNote("");}
-document.getElementById("close").onclick=deselect;
+function deselect(){selNode=null;chordAnchor=null;if(!hoverNode)focusSet=null;panel.classList.remove("open");tviewY=0;if(clip)clip.pause();clipNote("");}
+/* In chord view, closing the breakout card returns to the anchored-and-silent
+   state (the star stays lit) rather than clearing the whole selection. */
+document.getElementById("close").onclick=()=>{if(viewMode==="chord")panel.classList.remove("open");else deselect();};
 function connsFor(nd){return EDGES.filter(ed=>ed.a===nd.id||ed.b===nd.id).map(ed=>({other:ed.a===nd.id?byId[ed.b]:byId[ed.a],rel:relWord(ed,nd)})).sort((a,b)=>b.other.deg-a.other.deg);}
 function renderPanel(nd){
   const era=ERAS[nd.era],cs=connsFor(nd);
@@ -395,8 +397,15 @@ function toggleCollab(box,a,b,chev){
   box.style.display="block";chev.classList.add("on");
   if(box.dataset.loaded)return;
   box.innerHTML='<div class="cbnote">finding records together…</div>';
+  loadCollabInto(box,a,b);
+}
+/* Shared records loader — fills `box` with the recordings a & b made together
+   (or a band's catalogue when one is a member of the other), each with listen
+   links, plus a "hear them together" search row. Used both by the card's ♪
+   expanders and by the chord-web breakout card. */
+function loadCollabInto(box,a,b){
   const sq=encodeURIComponent((a.name+" "+b.name).replace(/\s+/g," ").trim());
-  const searchRow=`<div class="cbsearch">Hear them together — <a href="https://open.spotify.com/search/${sq}" target="_blank" rel="noopener">Spotify</a> · <a href="https://www.youtube.com/results?search_query=${sq}" target="_blank" rel="noopener">YouTube</a> · <a href="https://www.discogs.com/search/?q=${sq}&type=release" target="_blank" rel="noopener">Discogs</a></div>`;
+  const searchRow=`<div class="cbsearch">Hear them together — <a href="https://open.spotify.com/search/${sq}" target="_blank" rel="noopener">Spotify</a> · <a href="https://music.apple.com/us/search?term=${sq}" target="_blank" rel="noopener">Apple</a> · <a href="https://www.youtube.com/results?search_query=${sq}" target="_blank" rel="noopener">YouTube</a> · <a href="https://www.discogs.com/search/?q=${sq}&type=release" target="_blank" rel="noopener">Discogs</a></div>`;
   /* band members: their catalogue lives under the band's name, invisible to co-credit search */
   const dA=a.discoAs,dB=b.discoAs,lc=s=>(s||"").toLowerCase();
   let band=null;
@@ -412,6 +421,28 @@ function toggleCollab(box,a,b,chev){
       +(items.length>14?`<div class="cbnote">+${items.length-14} more</div>`:"")+searchRow;
     wireApple(box);
   }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
+}
+/* ----- chord-web two-step interaction -----
+   1st click anchors a star and lights its ties — in silence, no card, no audio.
+   2nd click on one of those lit ties opens a collab breakout card (the shared
+   records + listen links, or "no co-credited records"). Clicking a star that
+   isn't a tie re-anchors to it; clicking empty space clears the anchor. */
+let chordAnchor=null;
+function chordPick(nd){
+  if(!nd){chordAnchor=null;selNode=null;focusSet=null;panel.classList.remove("open");return;}
+  if(chordAnchor&&nd!==chordAnchor&&adj[chordAnchor.id]&&adj[chordAnchor.id].has(nd.id)){renderChordCollab(chordAnchor,nd);return;}
+  chordAnchor=nd;selNode=nd;computeFocus(nd);panel.classList.remove("open");
+}
+function renderChordCollab(a,b){
+  const ri=relInfo(a.id,b.id),kc=(ri&&KIND_COLOR[ri.kind])||KIND_COLOR.collab;
+  panelBody.innerHTML=`
+    <div class="ccpair"><span>${esc(a.name)}</span><span class="ccx">&times;</span><span>${esc(b.name)}</span></div>
+    ${ri?`<div class="ccrel"><span class="ccchip" style="background:rgba(${kc},0.16);color:rgb(${kc})">${esc(ri.word)}</span></div>`:""}
+    <div class="sec">Records together</div>
+    <div class="collab ccbox" id="ccbox"><div class="cbnote">finding records together…</div></div>`;
+  panel.classList.add("open");
+  const box=document.getElementById("ccbox");box.style.display="block";
+  loadCollabInto(box,a,b);
 }
 function centerOn(nd){
   if(viewMode==="chord")return; /* chord has its own framing; don't rotate the globe */
@@ -630,7 +661,7 @@ let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(e
 const chordBtn=document.getElementById("chordBtn");
 const hintEl=document.querySelector(".hint");
 const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
-const HINT_CHORD='<b>Hover</b> to light a star\'s ties &amp; name them &middot; <b>Click</b> for its card &amp; records<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
+const HINT_CHORD='<b>Click a star</b> to anchor it &amp; light its ties (in silence) &middot; <b>then click a tie</b> to reveal records they made together<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
 function frameChord(){tviewX=0;tviewY=0;tzoom=Math.max(0.32,Math.min(2,(Math.min(W,H)-150)/(CHORD_R*2)));}
 function setView(mode){
   if(viewMode===mode)return;
@@ -658,7 +689,7 @@ function loadGenre(key){
   G=GENRES[key];
   ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;WIKI=G.wiki;SYM=G.sym;
   /* reset interaction state */
-  hoverNode=null;selNode=null;focusSet=null;curId=null;
+  hoverNode=null;selNode=null;chordAnchor=null;focusSet=null;curId=null;
   panel.classList.remove("open");closePage();if(clip)clip.pause();clipNote("");
   /* index, degrees, adjacency, edge kinds */
   byId={};NODES.forEach(nd=>{byId[nd.id]=nd;nd.deg=0;});

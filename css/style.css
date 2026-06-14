@@ -86,6 +86,12 @@
   .cbsearch{font-size:11px;color:var(--muted);margin-top:6px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);line-height:1.7}
   .cbsearch a{color:var(--soft);text-decoration:none;border-bottom:1px solid rgba(224,177,90,.4)}
   .cbsearch a:hover{color:var(--gold)}
+  /* chord-web collab breakout card */
+  .ccpair{display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;font-size:21px;font-weight:600;line-height:1.15;margin:2px 0 2px}
+  .ccpair .ccx{color:var(--muted);font-weight:400;font-size:16px}
+  .ccrel{margin:8px 0 2px}
+  .ccchip{display:inline-block;font-size:11px;letter-spacing:.04em;padding:3px 10px;border-radius:11px}
+  .ccbox{display:block;margin-left:0;padding-left:0;border-left:none}
 
   /* full encyclopedia page */
   .page{position:fixed;inset:0;z-index:20;background:radial-gradient(1000px 700px at 78% -8%, var(--glow) 0%, var(--bg) 58%);overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .35s}
