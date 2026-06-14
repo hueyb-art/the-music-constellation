@@ -229,11 +229,38 @@ function layoutChord(){
 /* ===== rendering ===== */
 let hover=null,frame=0;
 function radius(n){return 3+Math.sqrt(deg[n.id]||0)*1.7;}
+/* deep-space backdrop: a twinkling starfield + distant galaxies, behind every view */
+const SPACE_STARS=[];for(let i=0;i<220;i++)SPACE_STARS.push({x:Math.random(),y:Math.random(),r:Math.random()*Math.random()*1.8+0.25,tw:Math.random()*6.28,sp:0.3+Math.random()*0.9,warm:Math.random()<0.18});
+const GALAXIES=[
+  {x:0.14,y:0.22,r:260,e:0.45,rot:0.5,col:"150,130,210",a:0.07},
+  {x:0.86,y:0.72,r:340,e:0.5,rot:-0.7,col:"96,150,205",a:0.06},
+  {x:0.66,y:0.10,r:190,e:0.6,rot:1.2,col:"205,120,165",a:0.055},
+  {x:0.30,y:0.82,r:150,e:0.7,rot:-1.4,col:"120,200,180",a:0.045},
+];
+function drawSpace(){
+  const t=frame*0.02, px=Math.max(-70,Math.min(70,(cam.x||0)*0.03)), py=Math.max(-70,Math.min(70,(cam.y||0)*0.03));
+  for(const g of GALAXIES){
+    ctx.save();ctx.translate(g.x*W-px*0.5,g.y*H-py*0.5);ctx.rotate(g.rot+frame*0.0004);ctx.scale(1,g.e);
+    const grd=ctx.createRadialGradient(0,0,0,0,0,g.r);
+    grd.addColorStop(0,"rgba("+g.col+","+(g.a*1.8).toFixed(3)+")");
+    grd.addColorStop(0.35,"rgba("+g.col+","+(g.a*0.7).toFixed(3)+")");
+    grd.addColorStop(1,"rgba("+g.col+",0)");
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,g.r,0,6.283);ctx.fill();
+    ctx.restore();
+  }
+  for(const s of SPACE_STARS){
+    const x=s.x*W-px*s.sp,y=s.y*H-py*s.sp;
+    const a=0.15+0.55*Math.abs(Math.sin(t*s.sp+s.tw));
+    ctx.beginPath();ctx.arc(x,y,s.r,0,6.283);
+    ctx.fillStyle=(s.warm?"rgba(255,224,180,":"rgba(220,224,245,")+(a*0.8).toFixed(3)+")";ctx.fill();
+  }
+}
 function draw(){
   frame++;
   if(easing){cam.x+=(tcam.x-cam.x)*0.16;cam.y+=(tcam.y-cam.y)*0.16;cam.s+=(tcam.s-cam.s)*0.16;
     if(Math.hypot(tcam.x-cam.x,tcam.y-cam.y)<0.4&&Math.abs(tcam.s-cam.s)<0.003){cam.x=tcam.x;cam.y=tcam.y;cam.s=tcam.s;easing=false;}}
   ctx.clearRect(0,0,W,H);
+  drawSpace();
   if(view==="constellations")drawConstellations();
   else if(view==="bloodline")drawBloodline();
   else if(view==="solar")drawSolar();
