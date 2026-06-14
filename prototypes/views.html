@@ -16,7 +16,7 @@
   button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:var(--soft);font-size:12.5px;padding:7px 13px;border-radius:999px;cursor:pointer;transition:.2s;white-space:nowrap}
   button:hover{border-color:var(--gold);color:var(--ink)}
   button.on{border-color:var(--gold);color:var(--gold);background:rgba(224,177,90,.1)}
-  .desc{position:fixed;left:20px;bottom:18px;z-index:5;max-width:420px;font-size:12.5px;line-height:1.6;color:var(--soft);background:rgba(22,18,24,.82);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 15px;backdrop-filter:blur(8px)}
+  .desc{position:fixed;left:16px;bottom:14px;z-index:5;max-width:264px;font-size:10.5px;line-height:1.5;color:var(--soft);background:rgba(22,18,24,.78);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 11px;backdrop-filter:blur(8px)}
   .desc b{color:var(--gold)}
   .hint{position:fixed;right:20px;bottom:18px;z-index:5;font-size:11px;color:var(--muted);text-align:right;line-height:1.7}
   .tip{position:fixed;z-index:6;background:rgba(22,18,24,.94);border:1px solid rgba(224,177,90,.4);color:var(--ink);font-size:12px;padding:5px 10px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
@@ -67,10 +67,10 @@ addEventListener("resize",resize);resize();
 
 const VIEWS=[["solar","Solar system"],["bloodline","Bloodline"],["chord","Era chord-web"]];
 const DESCS={
-  constellations:"<b>Named constellations.</b> The tight circles in the data, detected automatically and drawn as outlined star-figures with a connecting spine — the metaphor made real. Hover a figure for its members.",
-  bloodline:"<b>Bloodline.</b> Influence flowing generation by generation from a founder. Click any star to re-root the tree on them and trace who they shaped.",
-  solar:"<b>Solar system.</b> One artist at the centre of their world; connections orbit in rings by relationship — mentors closest, rivals furthest. Click a star to see what they made together (live from MusicBrainz), then centre on them to keep exploring.",
-  chord:"<b>Era chord-web.</b> Everyone on one ring, grouped by era; every relationship a chord across the circle, converging on a living sun. Hover a star to light its threads and name everyone it reaches. Click to pin it, then click a connection to see what they made together.",
+  constellations:"<b>Named constellations.</b> The tight circles in the data, auto-detected and drawn as star-figures. Hover for members.",
+  bloodline:"<b>Bloodline.</b> Influence flowing generation by generation from a founder. Click any star to re-root the tree on them.",
+  solar:"<b>Solar system.</b> One artist centred; connections orbit by relationship — mentors in, rivals out. Click a star to see what they made together, then centre on them.",
+  chord:"<b>Era chord-web.</b> Everyone on a ring by era; ties arc to a living sun. Hover a star to light its connections, each named and tagged by the kind of tie. Click to pin, then click a connection for the records.",
 };
 let genreKey="jazz",view="solar";
 let G,nodes,edges,eras,eraKeys,byId,adj,deg;
@@ -78,6 +78,16 @@ let G,nodes,edges,eras,eraKeys,byId,adj,deg;
 function kindOf(r){if(r==="mentored")return"mentor";if(/influenc/.test(r))return"influence";if(r==="rivals"||r==="beef")return"rivalry";return"collab";}
 /* the nature of a connection, in words — so every line means something even with no co-credits */
 const REL_DIR={mentored:["mentored","was mentored by"],influenced:["influenced","was influenced by"],"influenced by":["was influenced by","influenced"],"arranged for":["arranged for","used as arranger"],produced:["produced","was produced by"],engineered:["engineered","was engineered by"],member:["plays in","includes"],founded:["founded","was founded by"],signed:["signed","is signed to"],dj:["was DJ for","was backed by"]};
+/* short tie label from the focus artist's view, + its line-colour kind */
+function relInfo(focusId,otherId){
+  const sym=new Set(G.sym||[]);
+  const es=edges.filter(e=>(e.a===focusId&&e.b===otherId)||(e.a===otherId&&e.b===focusId));
+  if(!es.length)return null;
+  const e=es[0],kind=kindOf(e.rel);
+  if(sym.has(e.rel))return{word:e.rel,kind};
+  const m=REL_DIR[e.rel];
+  return{word:m?(e.a===focusId?m[0]:m[1]):e.rel,kind};
+}
 function relationPhrase(aId,bId){
   const a=byId[aId],b=byId[bId],sym=new Set(G.sym||[]);
   return edges.filter(e=>(e.a===aId&&e.b===bId)||(e.a===bId&&e.b===aId)).map(e=>{
@@ -373,11 +383,19 @@ function drawChord(){
   // (a) name the focus and everyone its lines land on
   if(active){
     const drawName=(id,big)=>{const p=pos[id];if(!p)return;const ox=Math.cos(p.ang),oy=Math.sin(p.ang);
-      ctx.font=(big?"600 13px":"11.5px")+" Helvetica Neue,Arial";
-      ctx.textAlign=ox>0.12?"left":ox<-0.12?"right":"center";
+      const lx=SX(ox*(chordR+26)),ly=SY(oy*(chordR+26)),align=ox>0.12?"left":ox<-0.12?"right":"center";
       ctx.textBaseline=oy>0.55?"top":oy<-0.55?"bottom":"middle";
-      ctx.fillStyle=big?"rgba(245,222,150,.98)":"rgba(243,236,224,.92)";
-      ctx.fillText(byId[id].name,SX(ox*(chordR+26)),SY(oy*(chordR+26)));};
+      const nm=byId[id].name;
+      ctx.font=(big?"600 13px":"11.5px")+" Helvetica Neue,Arial";ctx.textAlign=align;
+      ctx.fillStyle=big?"rgba(245,222,150,.98)":"rgba(243,236,224,.94)";
+      ctx.fillText(nm,lx,ly);
+      if(!big){const ri=relInfo(active,id);if(ri){
+        const nameW=ctx.measureText(nm).width;
+        ctx.font="9.5px Helvetica Neue,Arial";ctx.fillStyle="rgba("+(KCOL[ri.kind]||KCOL.collab)+",0.95)";
+        if(align==="center"){ctx.textAlign="center";ctx.fillText(ri.word,lx,ly+(oy<0?-12:12));}
+        else if(align==="left"){ctx.fillText("· "+ri.word,lx+nameW+5,ly);}
+        else{ctx.fillText(ri.word+" ·",lx-nameW-5,ly);}
+      }}};
     if(neigh)neigh.forEach(id=>drawName(id,false));
     drawName(active,true);
   }
