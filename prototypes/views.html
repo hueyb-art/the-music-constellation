@@ -20,6 +20,15 @@
   .desc b{color:var(--gold)}
   .hint{position:fixed;right:20px;bottom:18px;z-index:5;font-size:11px;color:var(--muted);text-align:right;line-height:1.7}
   .tip{position:fixed;z-index:6;background:rgba(22,18,24,.94);border:1px solid rgba(224,177,90,.4);color:var(--ink);font-size:12px;padding:5px 10px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
+  .cpanel{position:fixed;top:64px;right:20px;z-index:7;width:300px;max-height:70vh;overflow-y:auto;display:none;background:rgba(22,18,24,.95);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 16px;backdrop-filter:blur(8px);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .cphead{font-size:13px;color:var(--ink);margin-bottom:10px;line-height:1.4;padding-right:16px}
+  .cphead b{color:var(--gold);font-weight:600}
+  .cpx{position:absolute;top:10px;right:12px;cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
+  .cpx:hover{color:var(--ink)}
+  .cprow{display:flex;gap:10px;font-size:12.5px;padding:3px 0;color:var(--soft)}
+  .cpy{color:var(--gold);font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11px;min-width:36px;flex:none}
+  .cpnote{font-size:11.5px;color:var(--muted);padding:4px 0}
+  .cpcenter{margin-top:10px;width:100%;text-align:center}
 </style>
 </head>
 <body>
@@ -31,7 +40,9 @@
 <div class="desc" id="desc"></div>
 <div class="hint">drag to pan &middot; scroll to zoom &middot; click a star to refocus</div>
 <div class="tip" id="tip"></div>
+<div class="cpanel" id="cpanel"></div>
 
+<script src="../js/collab.js"></script>
 <script src="../js/data/jazz.js"></script>
 <script src="../js/data/hiphop.js"></script>
 <script src="../js/data/reggae.js"></script>
@@ -46,7 +57,7 @@ const VIEWS=[["solar","Solar system"],["bloodline","Bloodline"],["chord","Era ch
 const DESCS={
   constellations:"<b>Named constellations.</b> The tight circles in the data, detected automatically and drawn as outlined star-figures with a connecting spine — the metaphor made real. Hover a figure for its members.",
   bloodline:"<b>Bloodline.</b> Influence flowing generation by generation from a founder. Click any star to re-root the tree on them and trace who they shaped.",
-  solar:"<b>Solar system.</b> One artist at the centre of their world; connections orbit in rings by relationship — mentors closest, rivals furthest. Click a star to travel to their system.",
+  solar:"<b>Solar system.</b> One artist at the centre of their world; connections orbit in rings by relationship — mentors closest, rivals furthest. Click a star to see what they made together (live from MusicBrainz), then centre on them to keep exploring.",
   chord:"<b>Era chord-web.</b> Everyone on one ring, grouped by era; every relationship a chord across the circle. Hover an era or a star to light its threads.",
 };
 let genreKey="jazz",view="solar";
@@ -268,7 +279,23 @@ function drawChord(){
 
 /* ===== interaction ===== */
 function pick(mx,my){let best=null,bd=22;Object.keys(pos).forEach(id=>{const p=pos[id];if(p&&!p.stray){const d=Math.hypot(mx-SX(p.x),my-SY(p.y));if(d<bd){bd=d;best=id;}}});return best;}
-function refocus(id){if(!id)return;if(view==="bloodline"){layoutBloodline(id);fit();}else if(view==="solar"){layoutSolar(id);fit();}else hover=id;}
+const esc=s=>String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function refocus(id){if(!id)return;if(view==="bloodline"){layoutBloodline(id);fit();}else if(view==="solar"){if(id===solarFocus)closeCollab();else showCollab(solarFocus,id);}else hover=id;}
+function closeCollab(){document.getElementById("cpanel").style.display="none";}
+function showCollab(aId,bId){
+  const a=byId[aId],b=byId[bId],p=document.getElementById("cpanel");
+  p.style.display="block";
+  p.innerHTML='<span class="cpx">&times;</span><div class="cphead"><b>'+esc(a.name)+'</b> &times; <b>'+esc(b.name)+'</b></div><div class="cpbody"><div class="cpnote">finding shared recordings…</div></div><button class="cpcenter">Centre on '+esc(b.name)+'</button>';
+  p.querySelector(".cpx").onclick=closeCollab;
+  p.querySelector(".cpcenter").onclick=()=>{closeCollab();layoutSolar(bId);fit();};
+  const key="tmc_collab_"+genreKey+"_"+[aId,bId].sort().join("_");
+  window.MB.collab(a.name,b.name,key).then(items=>{
+    const body=p.querySelector(".cpbody");if(!body)return;
+    if(!items.length){body.innerHTML='<div class="cpnote">No shared recordings found on MusicBrainz.</div>';return;}
+    body.innerHTML=items.slice(0,16).map(it=>'<div class="cprow"><span class="cpy">'+(esc(it.year)||"—")+'</span><span>'+esc(it.title)+'</span></div>').join("")
+      +(items.length>16?'<div class="cpnote">+'+(items.length-16)+' more on MusicBrainz</div>':"");
+  }).catch(()=>{const body=p.querySelector(".cpbody");if(body)body.innerHTML='<div class="cpnote">Could not load — try again.</div>';});
+}
 function zoomAt(px,py,f){const ns=Math.max(0.18,Math.min(4,cam.s*f));const wx=cam.x+(px-W/2)/cam.s,wy=cam.y+(py-H/2)/cam.s;cam.s=tcam.s=ns;cam.x=tcam.x=wx-(px-W/2)/cam.s;cam.y=tcam.y=wy-(py-H/2)/cam.s;easing=false;}
 let drag=null;
 canvas.addEventListener("mousedown",e=>{drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y,moved:false};canvas.style.cursor="grabbing";});
@@ -292,8 +319,8 @@ canvas.addEventListener("touchend",e=>{if(drag&&!drag.moved)refocus(pick(drag.x,
 
 /* ===== chrome ===== */
 const vbar=document.getElementById("views"),gbar=document.getElementById("genres");
-VIEWS.forEach(([k,name])=>{const b=document.createElement("button");b.textContent=name;b.dataset.v=k;b.onclick=()=>{view=k;document.getElementById("desc").innerHTML=DESCS[k];vbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.v===k));layout();fit();};vbar.appendChild(b);});
-["jazz","hiphop","reggae"].forEach(k=>{if(!GEN[k])return;const b=document.createElement("button");b.textContent=GEN[k].shortName;b.dataset.g=k;b.onclick=()=>{bloodRoot=null;solarFocus=null;loadGenre(k);gbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.g===k));};gbar.appendChild(b);});
+VIEWS.forEach(([k,name])=>{const b=document.createElement("button");b.textContent=name;b.dataset.v=k;b.onclick=()=>{view=k;closeCollab();document.getElementById("desc").innerHTML=DESCS[k];vbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.v===k));layout();fit();};vbar.appendChild(b);});
+["jazz","hiphop","reggae"].forEach(k=>{if(!GEN[k])return;const b=document.createElement("button");b.textContent=GEN[k].shortName;b.dataset.g=k;b.onclick=()=>{bloodRoot=null;solarFocus=null;closeCollab();loadGenre(k);gbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.g===k));};gbar.appendChild(b);});
 vbar.querySelector("button").classList.add("on");
 gbar.querySelector("button").classList.add("on");
 document.getElementById("desc").innerHTML=DESCS[view];

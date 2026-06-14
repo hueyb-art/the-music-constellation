@@ -340,10 +340,26 @@ function renderPanel(nd){
     <h2>${nd.name}</h2><div class="role">${nd.role}</div><div class="life">${nd.life}</div>
     <div class="bio">${nd.blurb}</div>
     <button class="openpage" id="opBtn">Open full page <span>&rarr;</span></button>
-    <div class="sec">Connections (${cs.length})</div>
-    <div class="conns">${cs.map(c=>`<div class="conn" data-id="${c.other.id}"><span class="rel">${c.rel}</span><span class="nm">${c.other.name}</span></div>`).join("")}</div>`;
+    <div class="sec">Connections (${cs.length}) <span class="sechint">— tap ♪ for shared records</span></div>
+    <div class="conns">${cs.map((c,i)=>`<div class="conn" data-id="${c.other.id}"><span class="rel">${c.rel}</span><span class="nm">${c.other.name}</span><span class="cx" data-i="${i}" title="Shared recordings">♪</span></div><div class="collab" id="cb${i}"></div>`).join("")}</div>`;
   document.getElementById("opBtn").onclick=()=>openPage(nd);
-  panelBody.querySelectorAll(".conn").forEach(el=>{el.onclick=()=>{const t=byId[el.dataset.id];centerOn(t);select(t);};});
+  panelBody.querySelectorAll(".conn").forEach(el=>{el.onclick=ev=>{if(ev.target.classList.contains("cx"))return;const t=byId[el.dataset.id];centerOn(t);select(t);};});
+  panelBody.querySelectorAll(".cx").forEach(el=>{el.onclick=ev=>{ev.stopPropagation();const i=+el.dataset.i;toggleCollab(document.getElementById("cb"+i),nd,byId[cs[i].other.id],el);};});
+}
+function collabKey(a,b){const ids=[a,b].sort();return lsKey("collab_"+ids[0]+"_"+ids[1]);}
+function toggleCollab(box,a,b,chev){
+  if(!box)return;
+  if(box.style.display==="block"){box.style.display="none";chev.classList.remove("on");return;}
+  box.style.display="block";chev.classList.add("on");
+  if(box.dataset.loaded)return;
+  box.innerHTML='<div class="cbnote">finding shared recordings…</div>';
+  window.MB.collab(a.name,b.name,collabKey(a.id,b.id)).then(items=>{
+    box.dataset.loaded="1";
+    if(!items.length){box.innerHTML='<div class="cbnote">No shared recordings found on MusicBrainz.</div>';return;}
+    const top=items.slice(0,12);
+    box.innerHTML=top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbtitle">${esc(it.title)}</span></div>`).join("")
+      +(items.length>12?`<div class="cbnote">+${items.length-12} more on MusicBrainz</div>`:"");
+  }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
 }
 function centerOn(nd){
   if(viewMode==="timeline"){ /* fly to their moment, hold them just ahead of you */
@@ -393,8 +409,9 @@ function openReadingRoom(){
 document.getElementById("rrBtn").onclick=openReadingRoom;
 
 /* ----------  LIVE DISCOGRAPHY (MusicBrainz)  ---------- */
-let mbLast=0;
-function mbFetch(url){const wait=Math.max(0,1100-(Date.now()-mbLast));return new Promise((res,rej)=>setTimeout(()=>{mbLast=Date.now();fetch(url).then(r=>{if(!r.ok)throw new Error("http "+r.status);return r.json();}).then(res,rej);},wait));}
+/* delegate to the shared MusicBrainz queue (js/collab.js) so discographies and
+   collaboration lookups never collide on the rate limit */
+function mbFetch(url){return window.MB.get(url);}
 function resolveAndFetch(nd){
   const getRGs=mbid=>{let items=[],offset=0;const more=()=>mbFetch(`https://musicbrainz.org/ws/2/release-group?artist=${mbid}&fmt=json&limit=100&offset=${offset}`).then(d=>{(d["release-groups"]||[]).forEach(rg=>items.push({title:rg.title,year:(rg["first-release-date"]||"").slice(0,4),primary:rg["primary-type"]||"",secondary:rg["secondary-types"]||[]}));const total=d["release-group-count"]||items.length;offset+=100;return(offset<total&&offset<400)?more():items;});return more();};
   if(nd.mbid)return getRGs(nd.mbid);

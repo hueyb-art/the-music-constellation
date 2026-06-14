@@ -12,7 +12,7 @@ const fail = (msg) => { failures++; console.error("✗ " + msg); };
 const ok = (msg) => console.log("✓ " + msg);
 
 /* 1. Every shipped JS file parses */
-const jsFiles = ["js/engine.js", "js/version.js", ...readdirSync(join(root, "js/data")).map(f => "js/data/" + f)];
+const jsFiles = ["js/engine.js", "js/version.js", "js/collab.js", ...readdirSync(join(root, "js/data")).map(f => "js/data/" + f)];
 for (const f of jsFiles) {
   try { execFileSync(process.execPath, ["--check", join(root, f)], { stdio: "pipe" }); }
   catch (e) { fail(`${f} does not parse: ${e.stderr}`); }

@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-13 — hard data for collaborations
+
+- MusicBrainz co-credit recording search (`recording?query=artist:"A" AND artist:"B"`) is a genuinely good, free source for "what did these two make together": excellent for joint billings and hip-hop features (Jay-Z × Kanye returns 200+), decent for jazz duos; uncredited-sideman-only sessions can be partial. Dedupe by normalised title, keep earliest year, sort.
+- Consolidated ALL MusicBrainz access into one rate-limited queue (`js/collab.js` `window.MB.get`, a serial promise chain ≥1.1s apart) so discographies and collab lookups can't both fire inside the 1 req/sec window. engine.js's `mbFetch` now delegates to it.
+- Preview-verification gotcha: the preview browser aggressively caches subresources (`js/engine.js`), so after editing engine.js a reload can still run the OLD code (`toggleCollab` undefined) even though the dev server serves the new file (confirm with `curl localhost:.../js/engine.js | grep`). Brand-new files (collab.js) and inline scripts in cache-busted HTML (the prototype) load fresh, so verify new logic there; confirm the cached file's wiring via curl+grep on the server.
+
 ## 2026-06-13 — the timeline became a voyage
 
 - The horizontal road was rebuilt as a depth voyage (time runs into the screen, you fly through it). The road's lessons carried over directly: enforce camera invariants in the frame loop, clamp every free axis, give released gestures momentum. One reversal: depth shading and depth-based label priority — disabled on the flat road because micro-jitter made them flicker — are correct again in the voyage, where depth is macro-scale chronology, smooth and meaningful.

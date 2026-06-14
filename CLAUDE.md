@@ -17,6 +17,7 @@ Huey's standing rule: always commit AND push when validation passes — but ask 
 
 ## Conventions and gotchas
 
+- **All MusicBrainz access goes through `js/collab.js`** (`window.MB.get`), a single rate-limited request queue shared by discographies and collaboration lookups so they never collide on MB's ~1 req/sec limit. `window.MB.collab(nameA, nameB, cacheKey)` returns deduped shared recordings; used by the app's connection cards (the ♪ expander in `toggleCollab`) and the prototype's Solar view. Loaded before engine.js in index.html.
 - **`js/data/*.js` are the canonical source.** `scripts/extract-legacy.mjs` and `port-engine.mjs` were one-time migration tools from the three legacy repos (../jazz-constellation etc.) and are frozen — re-running extract-legacy would resurrect data bugs that were fixed here after extraction (see docs/LEARNINGS.md).
 - A pair of artists may have multiple edges with *different* relationships ("produced" + "crew"); the same relationship twice is a validation error.
 - Directional relationship words live in `REL_DIR` in engine.js (union across genres); symmetric words per genre in each data file's `sym`.
