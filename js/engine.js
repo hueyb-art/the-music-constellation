@@ -753,7 +753,7 @@ function setView(mode){
 if(chordBtn)chordBtn.onclick=()=>setView(viewMode==="chord"?"globe":"chord");
 
 /* ----------  GENRE LOADING, THEME & ROUTING  ---------- */
-const legend=document.getElementById("legend");
+const legend=document.getElementById("legend");let legendCollapsed=MOBILE;
 const instrEl=document.getElementById("instr");
 const gtabs=document.getElementById("gtabs");
 GENRE_ORDER.forEach(k=>{
@@ -800,11 +800,14 @@ function loadGenre(key){
   gtabs.querySelectorAll(".gtab").forEach(b=>b.classList.toggle("on",b.dataset.g===key));
   /* legend: eras + connection-line key */
   const kinds=[...new Set(EDGES.map(ed=>ed.kind))];
-  legend.innerHTML=`<div class="lh">Eras — click to filter</div>`
+  legend.innerHTML=`<button class="legh" id="legToggle">Legend<span class="chev">▾</span></button><div class="legbody"><div class="lh">Eras — click to filter</div>`
     +Object.entries(ERAS).map(([k,v])=>`<label data-era="${k}"><span class="dot" style="background:${v.color}"></span>${v.label}</label>`).join("")
     +`<div class="ekey"><div class="lh" style="margin-top:8px">Connections</div>`
     +["collab","mentor","influence","rivalry"].filter(k=>kinds.includes(k)).map(k=>`<label class="ek"><span class="eline ${k}"></span>${KIND_LABEL[k]}</label>`).join("")
-    +`</div>`;
+    +`</div></div>`;
+  legend.classList.toggle("collapsed",legendCollapsed);
+  const legToggle=document.getElementById("legToggle");
+  if(legToggle)legToggle.onclick=()=>{legendCollapsed=!legendCollapsed;legend.classList.toggle("collapsed",legendCollapsed);};
   legend.querySelectorAll("label[data-era]").forEach(el=>{el.onclick=()=>{const k=el.dataset.era;if(activeEras.has(k)){activeEras.delete(k);el.classList.add("off");}else{activeEras.add(k);el.classList.remove("off");}alpha=Math.max(alpha,0.4);};});
   /* filters */
   activeEras=new Set(Object.keys(ERAS));instrFilter=null;

@@ -37,6 +37,11 @@
   .suggest div:hover,.suggest div.active{background:rgba(224,177,90,.14);color:var(--ink)}
 
   .legend{position:fixed;left:22px;bottom:20px;z-index:5;display:flex;flex-direction:column;gap:7px;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px 15px;backdrop-filter:blur(8px)}
+  .legend .legh{display:flex;align-items:center;gap:14px;width:100%;background:none;border:0;padding:0;margin:0;color:var(--muted);font-family:inherit;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+  .legend .legh .chev{margin-left:auto;font-size:9px;transition:transform .2s}
+  .legend.collapsed .legh .chev{transform:rotate(-90deg)}
+  .legend .legbody{display:flex;flex-direction:column;gap:7px}
+  .legend.collapsed .legbody{display:none}
   .legend .lh{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
   .legend label{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--soft);cursor:pointer;user-select:none}
   .legend .dot{width:11px;height:11px;border-radius:50%;flex:none}
