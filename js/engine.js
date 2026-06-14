@@ -173,7 +173,9 @@ function drawChordView(){
   for(const nd of NODES){const ea=nd._cang+chordSpin;nd._cea=ea;nd._sx=cx+Math.cos(ea)*CHORD_R*zoom;nd._sy=cy+Math.sin(ea)*CHORD_R*zoom;nd._r=Math.max(2,radius(nd)*0.8*zoom);nd._d=0;}
   drawChordSpace();
   drawSunCorona(cx,cy,R);
-  const active=selNode||hoverNode, aid=active&&active.id, neigh=aid?adj[aid]:null;
+  /* hover wins over the anchor so moving around the ring always reveals the
+     star you're over; falls back to the anchored star when not hovering. */
+  const active=hoverNode||selNode, aid=active&&active.id, neigh=aid?adj[aid]:null;
   const ekeys=Object.keys(ERAS);let i=0;const N=NODES.length;
   ekeys.forEach(k=>{const cnt=NODES.filter(n=>n.era===k).length;if(!cnt)return;const a0=i/N*6.2832-1.5708+chordSpin,a1=(i+cnt)/N*6.2832-1.5708+chordSpin;i+=cnt;
     ctx.strokeStyle=hexA(ERAS[k].color,0.85);ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R+14,a0+0.01,a1-0.01);ctx.stroke();
