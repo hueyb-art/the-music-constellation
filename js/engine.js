@@ -42,10 +42,7 @@ const KIND_DASH={collab:[],mentor:[],influence:[6,5],rivalry:[2,5]};
 const KIND_COLOR={collab:"224,177,90",mentor:"245,222,150",influence:"150,180,215",rivalry:"217,96,122"};
 
 let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,pulse=0,spread=1.5,viewY=0,tviewY=0;
-/* ----------  TIMELINE VOYAGE  ---------- */
-/* Time runs INTO the screen: the earliest years sit at your nose, the future
-   recedes into the deep, and you pull yourself through the artists. */
-let viewMode="globe",viewX=0,tviewX=0,panVX=0,panVY=0;
+let viewMode="globe",viewX=0,tviewX=0;
 /* ----------  CHORD-WEB VIEW  ---------- */
 let chordSpin=0,chordIdle=0;
 const CHORD_R=520;
@@ -65,13 +62,6 @@ function relInfo(focusId,otherId){
   const m=REL_DIR[e.rel];
   return{word:m?(e.a===focusId?m[0]:m[1]):e.rel,kind};
 }
-const THIS_YEAR=new Date().getFullYear();
-let TL={y0:1900,y1:THIS_YEAR};
-let camYear=1900,tcamYear=1900,camV=0;
-/* depth world-units per year — the Tight↔Spread slider stretches time itself */
-const DPY=()=>56*(spread/1.5);
-/* a year's depth relative to the camera: negative = ahead of you, positive = passed */
-const ZOF=yr=>(camYear-yr)*DPY();
 const CAM=760;
 const MOBILE=(typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(max-width:700px)").matches)||false;
 const BLURK=MOBILE?0.5:1;
@@ -82,24 +72,17 @@ let alpha=1;
 function step(){
   const vis=NODES.filter(visible);
   const rep=5200*spread,link=120*spread;
-  const tl=viewMode==="timeline";
-  /* timeline: springs own the layout; only contact collision remains, so era lanes hold.
-     Collision is soft and capped there — hard kicks against pinned springs make names jitter */
-  const repK=tl?0:1,colK=tl?0.55:0.6,damp=tl?0.78:0.85;
   for(let i=0;i<vis.length;i++){
     const a=vis[i];
-    if(tl){a.vx+=(a._lx-a.x)*0.08;a.vy+=(a._ly-a.y)*0.08;a.vz+=(ZOF(a._ay)-a.z)*0.14;}
-    else{a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;}
+    a.vx-=a.x*0.0010*alpha;a.vy-=a.y*0.0010*alpha;a.vz-=a.z*0.0010*alpha;
     for(let j=i+1;j<vis.length;j++){
       const b=vis[j];let dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z,d2=dx*dx+dy*dy+dz*dz||.01,d=Math.sqrt(d2);
-      const minD=26;let f=rep*repK/d2;if(d<minD)f+=(minD-d)*colK/(tl?Math.max(d,10):d);
-      /* in the voyage, depth belongs to chronology — collision only spreads artists laterally */
-      const kz=tl?0:1;
-      const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f*kz;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
+      const minD=26;let f=rep/d2;if(d<minD)f+=(minD-d)*0.6/d;
+      const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;a.vx+=fx;a.vy+=fy;a.vz+=fz;b.vx-=fx;b.vy-=fy;b.vz-=fz;
     }
   }
-  if(!tl)EDGES.forEach(ed=>{if(!ed.s||!visible(ed.s)||!visible(ed.t))return;let dx=ed.t.x-ed.s.x,dy=ed.t.y-ed.s.y,dz=ed.t.z-ed.s.z,d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01;const f=(d-link)*0.010,fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;ed.s.vx+=fx;ed.s.vy+=fy;ed.s.vz+=fz;ed.t.vx-=fx;ed.t.vy-=fy;ed.t.vz-=fz;});
-  vis.forEach(nd=>{nd.vx*=damp;nd.vy*=damp;nd.vz*=damp;nd.x+=nd.vx;nd.y+=nd.vy;nd.z+=nd.vz;});
+  EDGES.forEach(ed=>{if(!ed.s||!visible(ed.s)||!visible(ed.t))return;let dx=ed.t.x-ed.s.x,dy=ed.t.y-ed.s.y,dz=ed.t.z-ed.s.z,d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01;const f=(d-link)*0.010,fx=dx/d*f,fy=dy/d*f,fz=dz/d*f;ed.s.vx+=fx;ed.s.vy+=fy;ed.s.vz+=fz;ed.t.vx-=fx;ed.t.vy-=fy;ed.t.vz-=fz;});
+  vis.forEach(nd=>{nd.vx*=0.85;nd.vy*=0.85;nd.vz*=0.85;nd.x+=nd.vx;nd.y+=nd.vy;nd.z+=nd.vz;});
   if(alpha>0.05)alpha*=0.992;
 }
 
@@ -233,11 +216,7 @@ function draw(){
   for(const st of stars){
     let rx=st.x*cy-st.z*sy,rz=st.x*sy+st.z*cy,ry=st.y*cp-rz*spp;rz=st.y*spp+rz*cp;
     const t=(rz+1)/2,a=(0.10+0.42*t)*(0.6+0.4*Math.sin(tick*0.02+st.tw));
-    let px=W/2+rx*Rstar,py=H/2+ry*Rstar;
-    if(viewMode==="timeline"){ /* depth-weighted parallax: the sky drifts past as you travel */
-      px=(((px+viewX*(0.04+0.06*t))%(W+80))+(W+80))%(W+80)-40;
-      py=(((py+viewY*(0.04+0.06*t))%(H+80))+(H+80))%(H+80)-40;
-    }
+    const px=W/2+rx*Rstar,py=H/2+ry*Rstar;
     ctx.beginPath();ctx.arc(px,py,st.r*(0.5+t),0,6.283);
     ctx.fillStyle="rgba(226,212,184,"+a.toFixed(3)+")";ctx.fill();
   }
@@ -248,49 +227,12 @@ function draw(){
     if(!visible(nd)){nd._sx=null;continue;}
     let x=nd.x*cy-nd.z*sy,z=nd.x*sy+nd.z*cy,y=nd.y*cp-z*spp;z=nd.y*spp+z*cp;
     const zz=z*zoom,pf=CAM/Math.max(120,CAM-zz);
-    if(viewMode==="timeline"&&zz>CAM-150){nd._sx=null;continue;} // already passed you
     nd._sx=W/2+viewX+x*zoom*pf;nd._sy=H/2+viewY+y*zoom*pf;nd._d=zz;nd._pf=pf;
     vis.push(nd);
   }
   let dmin=1e9,dmax=-1e9;for(const nd of vis){if(nd._d<dmin)dmin=nd._d;if(nd._d>dmax)dmax=nd._d;}
   const dr=Math.max(1,dmax-dmin),bright=nd=>(nd._d-dmin)/dr;
   const key=hoverNode||selNode;
-  if(viewMode==="timeline"){
-    /* decade gates ahead, career trails streaming through depth — fade in as the globe finishes flattening */
-    const ax=Math.max(0,1-(Math.abs(yaw)+Math.abs(pitch))*2.5)*F;
-    if(ax>0.02){
-      const gx=W/2+viewX,gy=H/2+viewY;
-      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 12px Helvetica Neue, Arial";
-      for(let yr=Math.ceil((camYear-1)/10)*10;yr<=Math.min(TL.y1+3,camYear+80);yr+=10){
-        const zz=ZOF(yr)*zoom;if(zz>CAM-200)continue;
-        const pf=CAM/Math.max(120,CAM-zz);
-        const rad=420*pf*zoom,fa=Math.max(0,Math.min(1,pf*1.4-0.18));
-        ctx.strokeStyle="rgba(226,212,184,"+(0.22*fa*ax).toFixed(3)+")";ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.arc(gx,gy,rad,0,6.283);ctx.stroke();
-        ctx.fillStyle="rgba(226,212,184,"+(0.50*fa*ax).toFixed(3)+")";
-        ctx.fillText(String(yr),gx,gy+rad+6);
-      }
-      /* career trails: from each star's debut deeper to their final year — you fly alongside the careers */
-      for(const nd of vis){
-        const dim=focusSet&&!focusSet.has(nd.id),col=ERAS[nd.era].color,b=bright(nd);
-        const z0=Math.min(ZOF(nd._ay)*zoom,CAM-160),z1=Math.min(ZOF(nd._y1)*zoom,CAM-160);
-        const p0=CAM/Math.max(120,CAM-z0),p1=CAM/Math.max(120,CAM-z1);
-        ctx.strokeStyle=hexA(col,(dim?0.04:0.09+0.16*b)*ax);ctx.lineWidth=Math.max(1,(nd._r||4)*0.16);
-        ctx.beginPath();ctx.moveTo(gx+nd.x*zoom*p0,gy+nd.y*zoom*p0);ctx.lineTo(gx+nd.x*zoom*p1,gy+nd.y*zoom*p1);ctx.stroke();
-        const hot=nd===hoverNode||nd===selNode;
-        for(const ry of nd._recs){
-          const rz=ZOF(ry)*zoom;if(rz>CAM-160)continue;
-          const rp=CAM/Math.max(120,CAM-rz);
-          ctx.fillStyle=hexA(col,(dim?0.08:hot?0.95:0.4)*ax);
-          ctx.beginPath();ctx.arc(gx+nd.x*zoom*rp,gy+nd.y*zoom*rp,(hot?2.6:1.6)*Math.min(rp,2),0,6.283);ctx.fill();
-        }
-      }
-      /* the year you're flying through */
-      ctx.textAlign="center";ctx.textBaseline="top";ctx.font="600 13px Helvetica Neue, Arial";
-      ctx.fillStyle="rgba(226,212,184,"+(0.30*ax).toFixed(3)+")";
-      ctx.fillText("· "+Math.round(camYear)+" ·",W/2,175);
-    }
-  }
   EDGES.forEach(ed=>{
     if(!ed.s||!visible(ed.s)||!visible(ed.t))return;
     const s=ed.s,t=ed.t,on=!focusSet||(focusSet.has(ed.a)&&focusSet.has(ed.b)),lit=key&&(ed.a===key.id||ed.b===key.id);
@@ -308,32 +250,29 @@ function draw(){
   vis.sort((a,b)=>a._d-b._d);
   for(const nd of vis){
     const dim=focusSet&&!focusSet.has(nd.id),col=ERAS[nd.era].color,b=bright(nd);
-    /* near-plane dissolve: stars melt away over their last few years instead of popping at the cull */
-    const nf=viewMode==="timeline"?Math.max(0,Math.min(1,(CAM-150-nd._d)/220)):1;nd._nf=nf;
     const twk=0.9+0.1*Math.sin(tick*0.045+nd.twp);
     const r=Math.max(1.3,radius(nd)*nd._pf*zoom*0.9*(1+0.5*nd.hl));nd._r=r;
     ctx.save();
-    ctx.globalAlpha=(dim?0.28:Math.min(1,(0.45+0.55*b)*twk))*F*nf;
+    ctx.globalAlpha=(dim?0.28:Math.min(1,(0.45+0.55*b)*twk))*F;
     ctx.shadowColor=col;ctx.shadowBlur=(dim?2:(6+16*nd.hl)*twk)*(0.6+b)*BLURK;
     ctx.beginPath();ctx.arc(nd._sx,nd._sy,r,0,6.283);ctx.fillStyle=col;ctx.fill();
     ctx.restore();
-    if(nd===selNode||nd===hoverNode){ctx.globalAlpha=F*nf;ctx.lineWidth=2;ctx.strokeStyle="#f3ece0";ctx.beginPath();ctx.arc(nd._sx,nd._sy,r+1,0,6.283);ctx.stroke();ctx.globalAlpha=1;}
+    if(nd===selNode||nd===hoverNode){ctx.globalAlpha=F;ctx.lineWidth=2;ctx.strokeStyle="#f3ece0";ctx.beginPath();ctx.arc(nd._sx,nd._sy,r+1,0,6.283);ctx.stroke();ctx.globalAlpha=1;}
   }
   const cand=vis.filter(nd=>!focusSet||focusSet.has(nd.id)||nd===hoverNode||nd===selNode);
   cand.sort((a,b)=>prio(b)-prio(a));
   /* photos fade in on close zoom: the stars become faces */
-  const showPhotos=(viewMode==="timeline"||zoom>PHOTO_ZOOM)&&!trans;
+  const showPhotos=zoom>PHOTO_ZOOM&&!trans;
   let shown=0;
   for(const nd of cand){
     const onScreen=nd._sx>-40&&nd._sx<W+40&&nd._sy>-40&&nd._sy<H+40;
-    const near=viewMode!=="timeline"||nd._pf>1.3; // in the voyage, faces resolve as they approach
-    const want=showPhotos&&near&&onScreen&&shown<PHOTO_MAX&&!(focusSet&&!focusSet.has(nd.id));
+    const want=showPhotos&&onScreen&&shown<PHOTO_MAX&&!(focusSet&&!focusSet.has(nd.id));
     let st=null;
     if(want){st=photoState(nd);shown++;}
     const ok=st&&st.ok&&st.img;
     nd._pa=nd._pa||0;nd._pa+=(((want&&ok)?1:0)-nd._pa)*0.12;
     if(nd._pa>0.02&&ok){
-      const pr=Math.max(12,nd._r*1.7),pa=nd._pa*F*(nd._nf!=null?nd._nf:1);
+      const pr=Math.max(12,nd._r*1.7),pa=nd._pa*F;
       ctx.save();ctx.globalAlpha=pa;
       ctx.beginPath();ctx.arc(nd._sx,nd._sy,pr,0,6.283);ctx.clip();
       ctx.drawImage(st.img,nd._sx-pr,nd._sy-pr,pr*2,pr*2);
@@ -344,9 +283,6 @@ function draw(){
   const placed=[];ctx.textAlign="center";ctx.textBaseline="top";
   for(const nd of cand){
     const big=nd===hoverNode||nd===selNode,b=bright(nd);
-    /* in the voyage, names materialise only as artists come near — the deep future stays anonymous */
-    let lf=1;
-    if(viewMode==="timeline"){lf=Math.max(0,Math.min(1,(nd._pf-0.42)/0.25))*(nd._nf!=null?nd._nf:1);if(big)lf=Math.max(lf,0.6);if(lf<=0.03)continue;}
     const fs=Math.max(10.5,(9+3*b)*(0.85+0.35*zoom));
     ctx.font=(big?"600 ":"400 ")+fs.toFixed(1)+"px Helvetica Neue, Arial";
     const off=nd._pa>0.02?Math.max(12,nd._r*1.7):nd._r;
@@ -354,11 +290,11 @@ function draw(){
     let clash=false;if(!big)for(const o of placed){if(rc.x<o.x+o.w&&rc.x+rc.w>o.x&&rc.y<o.y+o.h&&rc.y+rc.h>o.y){clash=true;break;}}
     if(clash)continue;placed.push(rc);
     const dim=focusSet&&!focusSet.has(nd.id);
-    ctx.fillStyle=dim?`rgba(243,236,224,${(0.18*F*lf).toFixed(3)})`:`rgba(243,236,224,${((0.4+0.5*b)*F*lf).toFixed(2)})`;
+    ctx.fillStyle=dim?`rgba(243,236,224,${(0.18*F).toFixed(3)})`:`rgba(243,236,224,${((0.4+0.5*b)*F).toFixed(2)})`;
     ctx.fillText(nd.name,nd._sx,y);
   }
 }
-function prio(nd){return (nd===hoverNode||nd===selNode?1e9:0)+(focusSet&&focusSet.has(nd.id)?1e6:0)+nd.deg*120+(viewMode==="timeline"?nd.twp:(nd._d||0));}
+function prio(nd){return (nd===hoverNode||nd===selNode?1e9:0)+(focusSet&&focusSet.has(nd.id)?1e6:0)+nd.deg*120+(nd._d||0);}
 function loop(){
   tick++;pulse=(pulse+0.012)%1;
   if(trans){
@@ -374,23 +310,11 @@ function loop(){
     draw();requestAnimationFrame(loop);return;
   }
   if(!pointer.down){
-    /* timeline owns the camera: always ease flat, so an interrupted flatten can never strand the axis invisible */
-    if(viewMode==="timeline"){yaw+=(0-yaw)*0.12;pitch+=(0-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(yaw)<0.0005)yaw=0;if(Math.abs(pitch)<0.0005)pitch=0;
-      /* released pulls keep flying through the years; lateral drift settles quickly */
-      if(camV){tcamYear+=camV;camV*=0.965;if(Math.abs(camV)<0.002)camV=0;}
-      if(panVX){tviewX+=panVX;viewX+=panVX;panVX*=0.85;if(Math.abs(panVX)<0.05)panVX=0;}}
-    else if(tyaw!=null){const dd=((tyaw-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;yaw+=dd*0.12;pitch+=(tpitch-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(dd)<0.01&&Math.abs(tpitch-pitch)<0.01)tyaw=null;}
+    if(tyaw!=null){const dd=((tyaw-yaw+Math.PI*3)%(Math.PI*2))-Math.PI;yaw+=dd*0.12;pitch+=(tpitch-pitch)*0.12;vyaw=0;vpitch=0;if(Math.abs(dd)<0.01&&Math.abs(tpitch-pitch)<0.01)tyaw=null;}
     else{yaw+=vyaw;pitch+=vpitch;vyaw+=(0.0012-vyaw)*0.03;vpitch*=0.9;}
     pitch=Math.max(-1.3,Math.min(1.3,pitch));
   }
   zoom+=(tzoom-zoom)*0.12;viewY+=(tviewY-viewY)*0.12;viewX+=(tviewX-viewX)*0.12;
-  if(viewMode==="timeline"){
-    tcamYear=Math.max(TL.y0-3,Math.min(TL.y1+2,tcamYear));
-    camYear+=(tcamYear-camYear)*0.12;
-    const lim=560*zoom; // lateral peek bounds — can't lose the tunnel
-    tviewX=Math.max(-lim,Math.min(lim,tviewX));viewX=Math.max(-lim,Math.min(lim,viewX));
-    tviewY=Math.max(-lim,Math.min(lim,tviewY));viewY=Math.max(-lim,Math.min(lim,viewY));
-  }
   NODES.forEach(nd=>{nd.hl+=(((nd===hoverNode||nd===selNode)?1:0)-nd.hl)*0.16;});
   if(!pageOpen)step();
   draw();requestAnimationFrame(loop);
@@ -402,24 +326,21 @@ canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;
   if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;
     if(viewMode==="chord"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
-    else if(viewMode==="timeline"){tviewX=viewX+=dx;panVX=panVX*0.5+dx*0.5;const dyr=dy*0.035*(1.5/spread);tcamYear+=dyr;camYear+=dyr;camV=camV*0.5+dyr*0.5;}
     else{yaw+=dx*0.005;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.005));vyaw=dx*0.005;vpitch=dy*0.005;}}
     pointer.x=px;pointer.y=py;return;}
   const nd=nodeAt(px,py);if(nd!==hoverNode){hoverNode=nd;if(!selNode)computeFocus(nd);canvas.style.cursor=nd?"pointer":"grab";}
   pointer.x=px;pointer.y=py;
 });
-canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;panVX=0;panVY=0;camV=0;canvas.style.cursor="grabbing";});
+canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer.moved=false;pointer.x=ev.clientX;pointer.y=ev.clientY;canvas.style.cursor="grabbing";});
 addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
 canvas.addEventListener("dblclick",ev=>{const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
 canvas.addEventListener("wheel",ev=>{ev.preventDefault();
-  /* in the voyage, scrolling flies you through the years; pinch (ctrl/meta+wheel) still zooms */
-  if(viewMode==="timeline"&&!ev.ctrlKey&&!ev.metaKey){tcamYear+=(ev.deltaY+ev.deltaX)*0.012*(1.5/spread);return;}
   const f=ev.deltaY<0?1.1:0.91;tzoom=Math.max(0.3,Math.min(3,tzoom*f));},{passive:false});
 /* touch */
 let touchMode=0,pinchD=0,tapXY=null,lastTap=0;
 canvas.addEventListener("touchstart",ev=>{
   ev.preventDefault();unlockAudio();
-  if(ev.touches.length===1){pointer.down=true;pointer.moved=false;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;tapXY={x:pointer.x,y:pointer.y};touchMode=1;panVX=0;panVY=0;camV=0;}
+  if(ev.touches.length===1){pointer.down=true;pointer.moved=false;pointer.x=ev.touches[0].clientX;pointer.y=ev.touches[0].clientY;tapXY={x:pointer.x,y:pointer.y};touchMode=1;}
   else if(ev.touches.length>=2){touchMode=2;pointer.down=false;pinchD=Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX,ev.touches[0].clientY-ev.touches[1].clientY);}
 },{passive:false});
 canvas.addEventListener("touchmove",ev=>{
@@ -428,7 +349,6 @@ canvas.addEventListener("touchmove",ev=>{
     const px=ev.touches[0].clientX,py=ev.touches[0].clientY,dx=px-pointer.x,dy=py-pointer.y;
     if(Math.abs(dx)+Math.abs(dy)>1.5){pointer.moved=true;tyaw=null;
       if(viewMode==="chord"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
-      else if(viewMode==="timeline"){tviewX=viewX+=dx;panVX=panVX*0.5+dx*0.5;const dyr=dy*0.04*(1.5/spread);tcamYear+=dyr;camYear+=dyr;camV=camV*0.5+dyr*0.5;}
       else{yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}}
     pointer.x=px;pointer.y=py;
   } else if(touchMode===2&&ev.touches.length>=2){
@@ -489,9 +409,7 @@ function toggleCollab(box,a,b,chev){
   }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
 }
 function centerOn(nd){
-  if(viewMode==="timeline"){ /* fly to their moment, hold them just ahead of you */
-    camV=0;tcamYear=nd._ay+280/DPY();
-    const pf=1.55;tviewX=-nd.x*zoom*pf;tviewY=-nd.y*zoom*pf-(MOBILE?H*0.18:0);return;}
+  if(viewMode==="chord")return; /* chord has its own framing; don't rotate the globe */
   const R=Math.hypot(nd.x,nd.z);tyaw=Math.atan2(nd.x,nd.z);tpitch=Math.max(-1.3,Math.min(1.3,Math.atan2(nd.y,R)));tzoom=Math.max(tzoom,1.2);}
 
 /* full encyclopedia page */
@@ -699,48 +617,26 @@ function playClip(nd){
 }
 
 /* frame the voyage: recentre the tunnel (toStart=true snaps back to the genre's beginnings) */
-function frameTimeline(toStart){
-  tzoom=1;tviewX=0;tviewY=0;
-  if(toStart){camYear=tcamYear=TL.y0-2;camV=0;}
-}
-function fitView(){if(viewMode==="chord"){frameChord();return;}if(viewMode==="timeline"){frameTimeline(false);tyaw=null;return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
+function fitView(){if(viewMode==="chord"){frameChord();return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
 const fitBtn=document.getElementById("fitBtn");if(fitBtn)fitBtn.onclick=fitView;
 let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(ev,()=>{userFramed=true;}));
 
-/* ----------  GLOBE ⇄ TIMELINE TOGGLE  ---------- */
-const tlBtn=document.getElementById("tlBtn");
+/* ----------  GLOBE ⇄ CHORD-WEB TOGGLE  ---------- */
 const chordBtn=document.getElementById("chordBtn");
 const hintEl=document.querySelector(".hint");
 const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
-const HINT_TL='<b>Hover</b> to trace ties &middot; <b>Click</b> for a card &middot; <b>Double-click</b> for the full page<br><b>Pull or scroll</b> to fly through the years &middot; <b>Spread</b> stretches time &middot; dots are records';
 const HINT_CHORD='<b>Hover</b> to light a star\'s ties &amp; name them &middot; <b>Click</b> for its card &amp; records<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
 function frameChord(){tviewX=0;tviewY=0;tzoom=Math.max(0.32,Math.min(2,(Math.min(W,H)-150)/(CHORD_R*2)));}
 function setView(mode){
   if(viewMode===mode)return;
   viewMode=mode;
-  if(tlBtn)tlBtn.classList.toggle("on",mode==="timeline");
   if(chordBtn)chordBtn.classList.toggle("on",mode==="chord");
-  if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TL:(mode==="chord"?HINT_CHORD:HINT_GLOBE);
+  if(hintEl)hintEl.innerHTML=mode==="chord"?HINT_CHORD:HINT_GLOBE;
   alpha=1;userFramed=false;
-  panVX=0;panVY=0;camV=0;
   updateHashView();
   if(mode==="chord"){chordSpin=0;chordIdle=0;deselect();yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameChord();}
-  else if(mode==="timeline"){
-    /* bake the current rotation into the star positions so entry is seamless —
-       no tumbling upright; the sky simply streams away into depth */
-    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
-    NODES.forEach(nd=>{
-      const x=nd.x*cy-nd.z*sy,z1=nd.x*sy+nd.z*cy,y=nd.y*cp-z1*sp,z=nd.y*sp+z1*cp;
-      nd.x=x;nd.y=y;nd.z=z;
-      const vx=nd.vx*cy-nd.vz*sy,vz1=nd.vx*sy+nd.vz*cy,vy=nd.vy*cp-vz1*sp,vz=nd.vy*sp+vz1*cp;
-      nd.vx=vx;nd.vy=vy;nd.vz=vz;
-    });
-    yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;
-    frameTimeline(true);
-  }
-  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);} // globe needs time to fold back in from far down the road
+  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);}
 }
-if(tlBtn)tlBtn.onclick=()=>setView(viewMode==="timeline"?"globe":"timeline");
 if(chordBtn)chordBtn.onclick=()=>setView(viewMode==="chord"?"globe":"chord");
 
 /* ----------  GENRE LOADING, THEME & ROUTING  ---------- */
@@ -775,32 +671,10 @@ function loadGenre(key){
     nd.mbid=(G.mbid||{})[nd.id]||null;
   });
   NODES.forEach(nd=>{nd._sname=fold(nd.name);nd._swords=nd._sname.split(/\s+/);nd._srole=fold(nd.role+" "+nd.instr);});
-  /* timeline targets: lifespan from `life`, record years from the curated essentials */
-  let ymin=1e9,ymax=-1e9;
-  NODES.forEach(nd=>{
-    const yrs=(nd.life.match(/\d{4}/g)||[]).map(Number);
-    const recs=nd.disco.map(d=>{const m=String(d[0]).match(/\d{4}/);return m?+m[0]:null;}).filter(Boolean);
-    nd._y0=yrs[0]||recs[0]||1950;
-    nd._y1=Math.min(yrs[1]||THIS_YEAR,THIS_YEAR);
-    nd._recs=recs.filter(y=>y>=nd._y0-5&&y<=THIS_YEAR);
-    ymin=Math.min(ymin,nd._y0);ymax=Math.max(ymax,nd._y1);
-  });
-  TL={y0:Math.floor(ymin/10)*10,y1:Math.min(THIS_YEAR,Math.ceil(ymax/10)*10)};
-  /* era strands: each era owns an angular sector of the tunnel, with a clear corridor down the middle */
-  const ekeys=Object.keys(ERAS),eraIdx={};ekeys.forEach((k,i)=>eraIdx[k]=i);
-  NODES.forEach((nd,i)=>{
-    /* the star marks the artist's arrival: their first essential record
-       (lifespan midpoint only for those with no surviving records) */
-    nd._ay=nd._recs.length?Math.min(...nd._recs):(nd._y0+nd._y1)/2;
-    const h1=((i*7919)%1000)/1000,h2=((i*104729)%1000)/1000;
-    const th=(eraIdx[nd.era]+0.5)/ekeys.length*6.2832+(h1-0.5)*(6.2832/ekeys.length)*0.85;
-    const rr=150+h2*190;
-    nd._lx=Math.cos(th)*rr;nd._ly=Math.sin(th)*rr;
-  });
   /* chord-web: each star's fixed angle on the ring, ordered by era (matches the era arcs) */
-  let ci=0;ekeys.forEach(k=>{NODES.forEach(nd=>{if(nd.era===k){nd._cang=ci/NODES.length*6.2832-1.5708;ci++;}});});
+  const ekeys=Object.keys(ERAS);let ci=0;
+  ekeys.forEach(k=>{NODES.forEach(nd=>{if(nd.era===k){nd._cang=ci/NODES.length*6.2832-1.5708;ci++;}});});
   chordSpin=0;chordIdle=0;
-  camYear=tcamYear=TL.y0-2;camV=0;
   viewX=0;tviewX=0;viewY=0;tviewY=0;
   /* theme — @property-registered vars cross-fade in CSS */
   const rs=document.documentElement.style;
@@ -831,7 +705,7 @@ function loadGenre(key){
 }
 instrEl.onchange=()=>{instrFilter=instrEl.value||null;alpha=Math.max(alpha,0.8);userFramed=true;setTimeout(fitView,650);};
 
-function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:(v==="chord"||v==="timeline")?v:"globe"};}
+function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:v==="chord"?"chord":"globe"};}
 function updateHashView(){if(!G)return;const h="#/"+G.key+(viewMode==="globe"?"":"/"+viewMode);if(location.hash!==h)try{history.replaceState(null,"",h);}catch(e){}}
 addEventListener("hashchange",()=>{const p=parseHash();if(p.genre&&!trans&&G&&G.key!==p.genre)switchGenre(p.genre);if(p.view!==viewMode&&!trans)setView(p.view);});
 

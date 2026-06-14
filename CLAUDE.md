@@ -17,10 +17,9 @@ Huey's standing rule: always commit AND push when validation passes — but ask 
 
 ## Views
 
-Three view modes in engine.js, all genre-themed and routed via the hash:
+Two view modes in engine.js, both genre-themed and routed via the hash:
 - **globe** (`#/<genre>`, default) — the 3D force-directed constellation.
-- **timeline** (`#/<genre>/timeline`) — the depth voyage; x pinned to debut years, fly through.
-- **chord** (`#/<genre>/chord`) — everyone on a ring by era, ties arcing to a living sun, ambient slow spin, deep-space backdrop. Hover lights+names a star's ties; click → the standard card (with the ♪ collab records). Self-contained `drawChordView()` + `drawChordSpace`/`drawSunCorona`/`drawRingFire`; node ring angle is `nd._cang` (set in loadGenre, ordered by era to match the era arcs). `setView()` switches modes and writes the hash; `parseHash()`/`updateHashView()` keep URL ↔ view in sync; `switchGenre()` preserves the current view in the hash.
+- **chord** (`#/<genre>/chord`) — everyone on a ring by era, ties arcing to a living sun, ambient slow spin, deep-space backdrop. Hover lights+names a star's ties; click → the standard card (with the ♪ collab records). Self-contained `drawChordView()` + `drawChordSpace`/`drawSunCorona`/`drawRingFire`; node ring angle is `nd._cang` (set in loadGenre, ordered by era to match the era arcs). `setView()` switches modes and writes the hash; `parseHash()`/`updateHashView()` keep URL ↔ view in sync; `switchGenre()` preserves the current view in the hash. (`parseHash()` maps any non-`chord` view — including stale `#/<genre>/timeline` links from the removed Timeline view — back to globe.)
 
 ## Conventions and gotchas
 
@@ -30,8 +29,8 @@ Three view modes in engine.js, all genre-themed and routed via the hash:
 - Directional relationship words live in `REL_DIR` in engine.js (union across genres); symmetric words per genre in each data file's `sym`.
 - localStorage keys are namespaced `tmc_<genre>_…` because this origin is shared with the legacy sites (which use `jc_…`). Don't change prefixes casually — it orphans users' caches.
 - The iTunes relay (`https://jazz-itunes.hueyb.workers.dev`) is genre-agnostic despite the name; deployment guide in docs/itunes-relay-setup.md.
-- Preview-test locally: `.claude/launch.json` serves the repo on :8741 (python http.server). The genre switch, search ("stephane", "thelonius"), node select, photo-zoom (`tzoom=1.8` after `centerOn`), and the Timeline toggle (lanes stay separated per era; globe re-inflates on return) are the key manual checks.
-- Timeline mode (`viewMode` in engine.js) is a depth voyage: `camYear` is the camera's position in history, each star's depth target is `ZOF(nd._ay)` (debut year — first essential record, lifespan midpoint if none survive; `DPY()` world-units per year, stretched by the Spread slider), lateral positions are per-era angular strands (`_lx/_ly`), and collision is lateral-only — depth belongs to chronology. Drag-down/scroll = travel with a momentum float (`camV`); stars whose `zz>CAM-150` have passed the camera and are culled; decade gate rings, career z-trails, record dots, and the camYear readout render in draw(); `frameTimeline(true)` snaps back to the genre's origins; ctrl/meta+wheel zooms.
+- Preview-test locally: `.claude/launch.json` serves the repo on :8741 (python http.server). The genre switch, search ("stephane", "thelonius"), node select, photo-zoom (`tzoom=1.8` after `centerOn`), and the Chord web toggle (ring stays grouped by era; globe re-inflates on return) are the key manual checks.
+- A Timeline/depth-voyage view existed earlier and was fully removed on 2026-06-14 (Huey only wanted globe + chord). All of its state and renderers are gone from engine.js; `#/<genre>/timeline` URLs now resolve to globe. Don't reintroduce it without an explicit ask. (Prototype code for time views still lives in `prototypes/views.html`.)
 - The preview panel pauses requestAnimationFrame when hidden — for physics assertions in evals, pump `step()` manually instead of waiting.
 - Mobile layout kicks in under 700px width; the bottom-sheet panel replaces the side panel.
 

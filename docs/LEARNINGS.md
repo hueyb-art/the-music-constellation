@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-14 — Timeline view fully removed (globe + chord only)
+
+- Huey only ever wanted two views: the floating globe and the era chord-web. The Timeline/depth-voyage (the 2026-06-13 "voyage" entry below, and the timeline branches woven through the engine) was removed entirely at his request — "I don't want the timeline included." Deleted rather than feature-flagged, since the self-contained chord view proved a clean second mode and a third dormant code path was pure liability.
+- What came out of engine.js: all timeline state (`camYear/tcamYear/camV/TL/ZOF/DPY/THIS_YEAR/panVX/panVY`), the timeline branches in `step()`/`draw()`/`loop()`/`prio()` and every pointer handler, `frameTimeline()`, and the timeline arms of `setView`/`fitView`/`centerOn`/`loadGenre`/`parseHash`. The `tlBtn` button came out of index.html. The chord ring (`nd._cang`) computation in `loadGenre` stayed.
+- **Graceful fallback for dead routes:** `parseHash()` already maps any non-`chord` view to globe, so old `#/<genre>/timeline` links (and anything bookmarked) resolve to the globe and rewrite the hash — no 404, no broken state. When you remove a routed view, make the router fall through rather than assuming the old value never appears.
+- The earlier timeline entries in this log are kept as historical record; the prototype time-views still live in `prototypes/views.html` if the idea is ever revisited.
+
 ## 2026-06-14 — chord-web promoted to a real view; the silent version-bump bug
 
 - Promoted the prototype chord-web into engine.js as a third `viewMode` (globe/timeline/chord) with `#/<genre>/chord` routing. Kept it self-contained (`drawChordView` + helpers, early-returns in draw()/loop(), chord branches in the pointer handlers) rather than threading it through the globe/timeline 3D paths — far less risk. Clicking a star reuses the app's existing card + ♪ collab panel, so no separate collab UI was needed.
