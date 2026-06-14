@@ -12,24 +12,31 @@ const fail = (msg) => { failures++; console.error("✗ " + msg); };
 const ok = (msg) => console.log("✓ " + msg);
 
 /* 1. Every shipped JS file parses */
-const jsFiles = ["js/engine.js", "js/version.js", "js/collab.js", ...readdirSync(join(root, "js/data")).map(f => "js/data/" + f)];
+const jsFiles = ["js/engine.js", "js/collab.js", ...readdirSync(join(root, "js/data")).map(f => "js/data/" + f)];
 for (const f of jsFiles) {
   try { execFileSync(process.execPath, ["--check", join(root, f)], { stdio: "pipe" }); }
   catch (e) { fail(`${f} does not parse: ${e.stderr}`); }
 }
 ok(`${jsFiles.length} JS files parse`);
 
-/* 2. index.html references exist */
+/* 2. index.html references exist (static tags + the versioned script loader) */
 const html = readFileSync(join(root, "index.html"), "utf8");
 for (const m of html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)) {
-  try { readFileSync(join(root, m[1])); } catch { fail(`index.html references missing file ${m[1]}`); }
+  const path = m[1].split("?")[0]; // strip ?v= cache-bust
+  try { readFileSync(join(root, path)); } catch { fail(`index.html references missing file ${path}`); }
+}
+for (const m of html.matchAll(/"(js\/[^"?]+\.js)"/g)) {
+  try { readFileSync(join(root, m[1])); } catch { fail(`index.html loader references missing file ${m[1]}`); }
 }
 ok("index.html asset references resolve");
 
-/* 3. Version stamp format */
-const ver = readFileSync(join(root, "js/version.js"), "utf8").match(/MC_BUILD="(\d{4}-\d{2}-\d{2})"/);
-if (!ver) fail("js/version.js: MC_BUILD must be a YYYY-MM-DD string");
-else ok(`build stamp ${ver[1]}`);
+/* 3. Build stamp present and cache-bust in sync (MC_BUILD must equal style.css?v=) */
+const build = html.match(/MC_BUILD\s*=\s*"(\d{4}-\d{2}-\d{2})"/);
+const cssv = html.match(/style\.css\?v=(\d{4}-\d{2}-\d{2})/);
+if (!build) fail("index.html: window.MC_BUILD must be a YYYY-MM-DD string");
+else if (!cssv) fail("index.html: style.css link must carry ?v=<build>");
+else if (build[1] !== cssv[1]) fail(`cache-bust drift: MC_BUILD ${build[1]} ≠ style.css?v=${cssv[1]}`);
+else ok(`build stamp ${build[1]} (assets cache-busted)`);
 
 /* 4. Genre data integrity */
 const sandbox = { window: {} };
