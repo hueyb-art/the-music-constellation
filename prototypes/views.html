@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Constellation views — prototype playground</title>
+<style>
+  :root{--bg:#0c0a0d;--glow:#1a1420;--ink:#f3ece0;--soft:#b6aaa0;--muted:#8d8378;--gold:#e0b15a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:radial-gradient(1200px 800px at 70% -10%,var(--glow) 0%,var(--bg) 60%);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+  canvas{display:block;position:fixed;inset:0}
+  .bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;gap:18px;align-items:center;padding:14px 20px;pointer-events:none;flex-wrap:wrap}
+  .grp{display:flex;gap:6px;pointer-events:auto}
+  .lbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);align-self:center;margin-right:2px}
+  button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:var(--soft);font-size:12.5px;padding:7px 13px;border-radius:999px;cursor:pointer;transition:.2s;white-space:nowrap}
+  button:hover{border-color:var(--gold);color:var(--ink)}
+  button.on{border-color:var(--gold);color:var(--gold);background:rgba(224,177,90,.1)}
+  .desc{position:fixed;left:20px;bottom:18px;z-index:5;max-width:420px;font-size:12.5px;line-height:1.6;color:var(--soft);background:rgba(22,18,24,.82);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 15px;backdrop-filter:blur(8px)}
+  .desc b{color:var(--gold)}
+  .hint{position:fixed;right:20px;bottom:18px;z-index:5;font-size:11px;color:var(--muted);text-align:right;line-height:1.7}
+  .tip{position:fixed;z-index:6;background:rgba(22,18,24,.94);border:1px solid rgba(224,177,90,.4);color:var(--ink);font-size:12px;padding:5px 10px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="bar">
+  <div class="grp" id="views"></div>
+  <div class="grp" id="genres" style="margin-left:auto"></div>
+</div>
+<div class="desc" id="desc"></div>
+<div class="hint">drag to pan &middot; scroll to zoom &middot; click a star to refocus</div>
+<div class="tip" id="tip"></div>
+
+<script src="../js/data/jazz.js"></script>
+<script src="../js/data/hiphop.js"></script>
+<script src="../js/data/reggae.js"></script>
+<script>
+const GEN=window.GENRE_DATA;
+const canvas=document.getElementById("c"),ctx=canvas.getContext("2d");
+let W,H,DPR;
+function resize(){DPR=devicePixelRatio||1;W=innerWidth;H=innerHeight;canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener("resize",resize);resize();
+
+const VIEWS=[["constellations","Named constellations"],["bloodline","Bloodline"],["solar","Solar system"],["chord","Era chord-web"]];
+const DESCS={
+  constellations:"<b>Named constellations.</b> The tight circles in the data, detected automatically and drawn as outlined star-figures with a connecting spine — the metaphor made real. Hover a figure for its members.",
+  bloodline:"<b>Bloodline.</b> Influence flowing generation by generation from a founder. Click any star to re-root the tree on them and trace who they shaped.",
+  solar:"<b>Solar system.</b> One artist at the centre of their world; connections orbit in rings by relationship — mentors closest, rivals furthest. Click a star to travel to their system.",
+  chord:"<b>Era chord-web.</b> Everyone on one ring, grouped by era; every relationship a chord across the circle. Hover an era or a star to light its threads.",
+};
+let genreKey="jazz",view="constellations";
+let G,nodes,edges,eras,eraKeys,byId,adj,deg;
+
+function kindOf(r){if(r==="mentored")return"mentor";if(/influenc/.test(r))return"influence";if(r==="rivals"||r==="beef")return"rivalry";return"collab";}
+const KCOL={mentor:"245,222,150",influence:"150,180,215",rivalry:"217,96,122",collab:"224,177,90"};
+const STRONG=new Set(["member","co-founded","founded","crew","group","duo","bandmate","recorded with","played with","collaborated","frequent collaborators","produced","peer","backed by","dj"]);
+function hexA(hex,a){const v=parseInt(hex.slice(1),16);return`rgba(${v>>16&255},${v>>8&255},${v&255},${a})`;}
+
+function loadGenre(k){
+  genreKey=k;G=GEN[k];nodes=G.nodes;edges=G.edges;eras=G.eras;eraKeys=Object.keys(eras);
+  byId={};nodes.forEach(n=>byId[n.id]=n);
+  adj={};deg={};nodes.forEach(n=>{adj[n.id]=[];deg[n.id]=0;});
+  edges.forEach(e=>{if(byId[e.a]&&byId[e.b]){adj[e.a].push(e.b);adj[e.b].push(e.a);deg[e.a]++;deg[e.b]++;}});
+  layout();fit();
+}
+
+/* ----- camera ----- */
+let cam={x:0,y:0,s:1},tcam={x:0,y:0,s:1};
+const SX=wx=>W/2+(wx-cam.x)*cam.s, SY=wy=>H/2+(wy-cam.y)*cam.s;
+function fitTo(pts,pad){
+  if(!pts.length)return;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  pts.forEach(p=>{x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y);});
+  const w=Math.max(1,x1-x0),h=Math.max(1,y1-y0);
+  tcam.s=Math.min((W-(pad||120))/w,(H-(pad||160))/h,2.2);
+  tcam.x=(x0+x1)/2;tcam.y=(y0+y1)/2;
+}
+function fit(){const pts=Object.values(pos);fitTo(pts);}
+
+/* ===== layouts produce world positions in `pos` {id:{x,y}} ===== */
+let pos={},clusters=[],bloodRoot=null,bloodLayers=[],solarFocus=null,solarRings=[];
+
+function layout(){
+  pos={};
+  if(view==="constellations")layoutConstellations();
+  else if(view==="bloodline")layoutBloodline(bloodRootDefault());
+  else if(view==="solar")layoutSolar(solarFocusDefault());
+  else if(view==="chord")layoutChord();
+}
+
+/* --- 1. communities via label propagation on strong-tie graph --- */
+function detectCommunities(){
+  const sadj={};nodes.forEach(n=>sadj[n.id]=[]);
+  edges.forEach(e=>{if(byId[e.a]&&byId[e.b]&&STRONG.has(e.rel)){sadj[e.a].push(e.b);sadj[e.b].push(e.a);}});
+  const lab={};nodes.forEach((n,i)=>lab[n.id]=n.id);
+  let seed=12345;const rnd=()=>(seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  for(let it=0;it<15;it++){
+    const order=nodes.map(n=>n.id).sort(()=>rnd()-0.5);let ch=false;
+    order.forEach(id=>{
+      const c={};sadj[id].forEach(nb=>c[lab[nb]]=(c[lab[nb]]||0)+1);
+      let best=lab[id],bc=0;for(const k in c){if(c[k]>bc){bc=c[k];best=k;}}
+      if(best!==lab[id]){lab[id]=best;ch=true;}
+    });
+    if(!ch)break;
+  }
+  const m={};nodes.forEach(n=>{(m[lab[n.id]]=m[lab[n.id]]||[]).push(n);});
+  return Object.values(m);
+}
+function layoutConstellations(){
+  let comms=detectCommunities();
+  comms.sort((a,b)=>b.length-a.length);
+  const big=comms.filter(c=>c.length>=3),small=comms.filter(c=>c.length<3);
+  clusters=[];
+  // phyllotaxis placement of cluster centroids, radius ~ sqrt(size)
+  const GA=2.39996;let i=0;
+  big.forEach(c=>{
+    const cr=26+Math.sqrt(c.length)*16;
+    const t=i++, rad=Math.sqrt(t+0.5)*(cr*1.7+60), th=t*GA;
+    const cx=Math.cos(th)*rad, cy=Math.sin(th)*rad;
+    // members on a jittered ring
+    const top=c.slice().sort((a,b)=>deg[b.id]-deg[a.id])[0];
+    c.forEach((n,j)=>{
+      const a=j/c.length*6.2832, rr=cr*(0.45+0.55*((j*7%c.length)/c.length));
+      pos[n.id]={x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr};
+    });
+    clusters.push({members:c,cx,cy,r:cr,name:top.name});
+  });
+  // relax overlapping centroids a touch
+  for(let it=0;it<40;it++)clusters.forEach((a,ai)=>clusters.forEach((b,bi)=>{
+    if(ai>=bi)return;let dx=b.cx-a.cx,dy=b.cy-a.cy,d=Math.hypot(dx,dy)||1,need=a.r+b.r+40;
+    if(d<need){const push=(need-d)/2/d;const ox=dx*push,oy=dy*push;
+      a.cx-=ox;a.cy-=oy;b.cx+=ox;b.cy+=oy;
+      a.members.forEach(m=>{pos[m.id].x-=ox;pos[m.id].y-=oy;});
+      b.members.forEach(m=>{pos[m.id].x+=ox;pos[m.id].y+=oy;});}
+  }));
+  // strays orbit far out faintly
+  let k=0;small.flat().forEach(n=>{const a=k++*GA,rad=Math.sqrt(k)*70+900;pos[n.id]={x:Math.cos(a)*rad,y:Math.sin(a)*rad,stray:1};});
+}
+
+/* --- 2. bloodline: directed "shaped" graph, layered from a root --- */
+function shapedGraph(){
+  const s={};nodes.forEach(n=>s[n.id]=[]);
+  edges.forEach(e=>{const r=e.rel;
+    if(r==="mentored"||r==="influenced"||r==="produced"||r==="founded")s[e.a].push(e.b);
+    else if(r==="influenced by")s[e.b].push(e.a);
+  });return s;
+}
+function reach(s,root){const seen=new Set([root]),q=[root];while(q.length){const x=q.shift();(s[x]||[]).forEach(y=>{if(!seen.has(y)){seen.add(y);q.push(y);}});}return seen.size;}
+function bloodRootDefault(){
+  if(bloodRoot&&byId[bloodRoot])return bloodRoot;
+  const s=shapedGraph();let best=nodes[0].id,bc=-1;
+  nodes.forEach(n=>{const r=reach(s,n.id);if(r>bc){bc=r;best=n.id;}});
+  return bloodRoot=best;
+}
+function layoutBloodline(root){
+  bloodRoot=root;const s=shapedGraph();
+  const gen={[root]:0},q=[root];bloodLayers=[[root]];
+  while(q.length){const x=q.shift();(s[x]||[]).forEach(y=>{if(gen[y]==null){gen[y]=gen[x]+1;(bloodLayers[gen[y]]=bloodLayers[gen[y]]||[]).push(y);q.push(y);}});}
+  const colW=240;
+  bloodLayers.forEach((layer,gi)=>{
+    const n=layer.length, gapY=Math.max(46,Math.min(120,1400/Math.max(1,n)));
+    layer.forEach((id,j)=>{pos[id]={x:gi*colW,y:(j-(n-1)/2)*gapY};});
+  });
+}
+
+/* --- 3. solar: focus + rings by relationship kind --- */
+function solarFocusDefault(){
+  if(solarFocus&&byId[solarFocus])return solarFocus;
+  let best=nodes[0].id,bc=-1;nodes.forEach(n=>{if(deg[n.id]>bc){bc=deg[n.id];best=n.id;}});
+  return solarFocus=best;
+}
+const RING_ORDER=["mentor","collab","influence","rivalry"];
+const RING_R={mentor:150,collab:270,influence:390,rivalry:500};
+function layoutSolar(focus){
+  solarFocus=focus;pos={};solarRings=[];
+  pos[focus]={x:0,y:0,focus:1};
+  const conn={};edges.forEach(e=>{let other=null;if(e.a===focus)other=e.b;else if(e.b===focus)other=e.a;if(other&&byId[other]){const k=kindOf(e.rel);if(!conn[other]||RING_ORDER.indexOf(k)<RING_ORDER.indexOf(conn[other]))conn[other]=k;}});
+  const byKind={};Object.entries(conn).forEach(([id,k])=>{(byKind[k]=byKind[k]||[]).push(id);});
+  const shown=new Set([focus]);
+  RING_ORDER.forEach(k=>{const arr=byKind[k]||[];const R=RING_R[k];arr.forEach((id,j)=>{const a=j/arr.length*6.2832-1.57;pos[id]={x:Math.cos(a)*R,y:Math.sin(a)*R,kind:k};shown.add(id);});if(arr.length)solarRings.push({r:R,k});});
+  // second-degree halo
+  let halo=[];Object.keys(conn).forEach(id=>{adj[id].forEach(nb=>{if(!shown.has(nb)){shown.add(nb);halo.push(nb);}});});
+  halo.forEach((id,j)=>{const a=j/Math.max(1,halo.length)*6.2832,R=640+((j*53)%90);pos[id]={x:Math.cos(a)*R,y:Math.sin(a)*R,halo:1};});
+}
+
+/* --- 4. chord: ring grouped by era --- */
+let chordR=0;
+function layoutChord(){
+  const ordered=[];eraKeys.forEach(k=>nodes.filter(n=>n.era===k).forEach(n=>ordered.push(n)));
+  chordR=Math.min(W,H)*0.42/Math.min(1,1);chordR=520;
+  const N=ordered.length;
+  ordered.forEach((n,i)=>{const a=i/N*6.2832-1.5708;pos[n.id]={x:Math.cos(a)*chordR,y:Math.sin(a)*chordR,ang:a};});
+}
+
+/* ===== rendering ===== */
+let hover=null;
+function radius(n){return 3+Math.sqrt(deg[n.id]||0)*1.7;}
+function draw(){
+  cam.x+=(tcam.x-cam.x)*0.12;cam.y+=(tcam.y-cam.y)*0.12;cam.s+=(tcam.s-cam.s)*0.12;
+  ctx.clearRect(0,0,W,H);
+  if(view==="constellations")drawConstellations();
+  else if(view==="bloodline")drawBloodline();
+  else if(view==="solar")drawSolar();
+  else if(view==="chord")drawChord();
+  requestAnimationFrame(draw);
+}
+
+function star(n,r,alpha,col){
+  const x=SX(pos[n.id].x),y=SY(pos[n.id].y);
+  ctx.save();ctx.globalAlpha=alpha;ctx.shadowColor=col;ctx.shadowBlur=8;
+  ctx.beginPath();ctx.arc(x,y,r,0,6.283);ctx.fillStyle=col;ctx.fill();ctx.restore();
+  return[x,y];
+}
+function label(n,x,y,a,size){ctx.globalAlpha=a;ctx.fillStyle="rgba(243,236,224,"+a+")";ctx.font=(size||11)+"px Helvetica Neue,Arial";ctx.textAlign="center";ctx.fillText(n.name,x,y);ctx.globalAlpha=1;}
+
+function drawConstellations(){
+  // spines (MST per cluster via internal edges, fallback nearest)
+  clusters.forEach(c=>{
+    const ids=new Set(c.members.map(m=>m.id));
+    ctx.strokeStyle=hexA(eras[c.members[0].era].color,0.22);ctx.lineWidth=1;
+    edges.forEach(e=>{if(ids.has(e.a)&&ids.has(e.b)){ctx.beginPath();ctx.moveTo(SX(pos[e.a].x),SY(pos[e.a].y));ctx.lineTo(SX(pos[e.b].x),SY(pos[e.b].y));ctx.stroke();}});
+  });
+  nodes.forEach(n=>{const p=pos[n.id];if(!p)return;const col=eras[n.era].color;star(n,p.stray?1.5:radius(n),p.stray?0.25:0.9,col);});
+  // names
+  clusters.forEach(c=>{
+    const x=SX(c.cx),y=SY(c.cy-c.r-14);
+    const hot=hover&&c.members.some(m=>m.id===hover);
+    ctx.fillStyle=hot?"rgba(224,177,90,.95)":"rgba(243,236,224,.5)";
+    ctx.font=(hot?"600 13px":"12px")+" Helvetica Neue,Arial";ctx.textAlign="center";
+    ctx.fillText(c.name+" group",x,y);
+  });
+  if(hover&&byId[hover]){const p=pos[hover];label(byId[hover],SX(p.x),SY(p.y)-radius(byId[hover])-6,0.95,12);}
+}
+function drawBloodline(){
+  const s=shapedGraph();
+  ctx.lineWidth=1;
+  Object.keys(pos).forEach(a=>{(s[a]||[]).forEach(b=>{if(pos[b]){const lit=hover&&(a===hover||b===hover);
+    ctx.strokeStyle=lit?"rgba(245,222,150,.8)":"rgba(224,177,90,.13)";
+    const x1=SX(pos[a].x),y1=SY(pos[a].y),x2=SX(pos[b].x),y2=SY(pos[b].y);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo((x1+x2)/2,y1,(x1+x2)/2,y2,x2,y2);ctx.stroke();}});});
+  Object.keys(pos).forEach(id=>{const n=byId[id];const[x,y]=star(n,radius(n)+(id===bloodRoot?3:0),id===bloodRoot?1:0.9,eras[n.era].color);
+    if(cam.s>0.55||id===bloodRoot||id===hover)label(n,x,y-radius(n)-5,id===hover?0.95:0.55,id===bloodRoot?13:11);});
+}
+function drawSolar(){
+  const cx=SX(0),cy=SY(0);
+  solarRings.forEach(r=>{ctx.strokeStyle=hexA("#"+(0).toString(),0);ctx.strokeStyle="rgba("+KCOL[r.k]+",0.16)";ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r.r*cam.s,0,6.283);ctx.stroke();
+    ctx.fillStyle="rgba("+KCOL[r.k]+",0.5)";ctx.font="9px Helvetica Neue,Arial";ctx.textAlign="center";ctx.fillText(r.k.toUpperCase(),cx,cy-r.r*cam.s-4);});
+  Object.keys(pos).forEach(id=>{const p=pos[id];if(p.focus||p.halo)return;ctx.strokeStyle=hexA(eras[byId[id].era].color,0.18);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(SX(p.x),SY(p.y));ctx.stroke();});
+  Object.keys(pos).forEach(id=>{const n=byId[id],p=pos[id];const[x,y]=star(n,p.focus?radius(n)+5:p.halo?1.6:radius(n),p.halo?0.3:1,eras[n.era].color);
+    if(!p.halo&&(cam.s>0.5||p.focus))label(n,x,y-radius(n)-5,p.focus?0.95:0.6,p.focus?14:11);});
+}
+function drawChord(){
+  const cx=SX(0),cy=SY(0),R=chordR*cam.s;
+  // era arcs
+  let i=0;const N=nodes.length;
+  eraKeys.forEach(k=>{const cnt=nodes.filter(n=>n.era===k).length;if(!cnt)return;const a0=i/N*6.2832-1.5708,a1=(i+cnt)/N*6.2832-1.5708;i+=cnt;
+    ctx.strokeStyle=hexA(eras[k].color,0.8);ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R+14,a0+0.01,a1-0.01);ctx.stroke();
+    const am=(a0+a1)/2;ctx.fillStyle=hexA(eras[k].color,0.7);ctx.font="9px Helvetica Neue,Arial";ctx.textAlign="center";ctx.save();ctx.translate(cx+Math.cos(am)*(R+34),cy+Math.sin(am)*(R+34));ctx.fillText(eras[k].label,0,0);ctx.restore();});
+  // chords
+  edges.forEach(e=>{if(!pos[e.a]||!pos[e.b])return;const lit=hover&&(e.a===hover||e.b===hover);
+    ctx.strokeStyle="rgba("+KCOL[kindOf(e.rel)]+","+(lit?0.85:0.07)+")";ctx.lineWidth=lit?1.4:0.7;
+    const x1=SX(pos[e.a].x),y1=SY(pos[e.a].y),x2=SX(pos[e.b].x),y2=SY(pos[e.b].y);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.quadraticCurveTo(cx,cy,x2,y2);ctx.stroke();});
+  nodes.forEach(n=>{const[x,y]=star(n,radius(n)*0.8,0.9,eras[n.era].color);if(n.id===hover)label(n,x,y-8,0.95,12);});
+}
+
+/* ===== interaction ===== */
+function pick(mx,my){let best=null,bd=18;Object.keys(pos).forEach(id=>{const p=pos[id];if(p&&!p.stray){const d=Math.hypot(mx-SX(p.x),my-SY(p.y));if(d<bd){bd=d;best=id;}}});return best;}
+let drag=null;
+canvas.addEventListener("mousedown",e=>drag={x:e.clientX,y:e.clientY,cx:tcam.x,cy:tcam.y,moved:false});
+addEventListener("mouseup",e=>{
+  if(drag&&!drag.moved){const id=pick(e.clientX,e.clientY);if(id){if(view==="bloodline"){layoutBloodline(id);fit();}else if(view==="solar"){layoutSolar(id);fit();}}}
+  drag=null;});
+addEventListener("mousemove",e=>{
+  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;tcam.x=drag.cx-dx/cam.s;tcam.y=drag.cy-dy/cam.s;cam.x=tcam.x;cam.y=tcam.y;return;}
+  const id=pick(e.clientX,e.clientY);hover=id;
+  const tip=document.getElementById("tip");
+  if(id){const n=byId[id];tip.style.opacity=1;tip.style.left=(e.clientX+12)+"px";tip.style.top=(e.clientY+12)+"px";tip.textContent=n.name+" · "+n.role;}else tip.style.opacity=0;
+});
+canvas.addEventListener("wheel",e=>{e.preventDefault();tcam.s=Math.max(0.2,Math.min(3.5,tcam.s*(e.deltaY<0?1.12:0.89)));},{passive:false});
+
+/* ===== chrome ===== */
+const vbar=document.getElementById("views"),gbar=document.getElementById("genres");
+VIEWS.forEach(([k,name])=>{const b=document.createElement("button");b.textContent=name;b.dataset.v=k;b.onclick=()=>{view=k;document.getElementById("desc").innerHTML=DESCS[k];vbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.v===k));layout();fit();};vbar.appendChild(b);});
+["jazz","hiphop","reggae"].forEach(k=>{if(!GEN[k])return;const b=document.createElement("button");b.textContent=GEN[k].shortName;b.dataset.g=k;b.onclick=()=>{bloodRoot=null;solarFocus=null;loadGenre(k);gbar.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.g===k));};gbar.appendChild(b);});
+vbar.querySelector("button").classList.add("on");
+gbar.querySelector("button").classList.add("on");
+document.getElementById("desc").innerHTML=DESCS.constellations;
+loadGenre("jazz");
+draw();
+</script>
+</body>
+</html>
