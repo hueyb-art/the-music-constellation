@@ -321,7 +321,12 @@ function loop(){
 }
 
 /* pointer */
-function nodeAt(px,py){let best=null,bz=-1e9;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const r=(nd._r||6)+6;if(Math.hypot(px-nd._sx,py-nd._sy)<r&&nd._d>bz){bz=nd._d;best=nd;}}return best;}
+function nodeAt(px,py){
+  /* chord: every node sits on the ring at _d=0, so the globe's frontmost-depth
+     tiebreak is meaningless and would return whichever ring-neighbour comes
+     first in array order. Pick the node actually closest to the cursor. */
+  if(viewMode==="chord"){let best=null,bd=1e18;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const r=(nd._r||6)+8,d=Math.hypot(px-nd._sx,py-nd._sy);if(d<r&&d<bd){bd=d;best=nd;}}return best;}
+  let best=null,bz=-1e9;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const r=(nd._r||6)+6;if(Math.hypot(px-nd._sx,py-nd._sy)<r&&nd._d>bz){bz=nd._d;best=nd;}}return best;}
 canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;
   if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;
