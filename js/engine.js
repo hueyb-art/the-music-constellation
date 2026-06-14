@@ -346,7 +346,7 @@ function renderPanel(nd){
   panelBody.querySelectorAll(".conn").forEach(el=>{el.onclick=ev=>{if(ev.target.classList.contains("cx"))return;const t=byId[el.dataset.id];centerOn(t);select(t);};});
   panelBody.querySelectorAll(".cx").forEach(el=>{el.onclick=ev=>{ev.stopPropagation();const i=+el.dataset.i;toggleCollab(document.getElementById("cb"+i),nd,byId[cs[i].other.id],el);};});
 }
-function collabKey(a,b){const ids=[a,b].sort();return lsKey("collab_"+ids[0]+"_"+ids[1]);}
+function collabKey(a,b){const ids=[a,b].sort();return lsKey("collab2_"+ids[0]+"_"+ids[1]);}
 function toggleCollab(box,a,b,chev){
   if(!box)return;
   if(box.style.display==="block"){box.style.display="none";chev.classList.remove("on");return;}
@@ -360,7 +360,7 @@ function toggleCollab(box,a,b,chev){
   let band=null;
   if(dA&&(dA===dB||lc(dA).includes(lc(b.name))))band=dA;
   else if(dB&&(dA===dB||lc(dB).includes(lc(a.name))))band=dB;
-  const records=band?window.MB.bandDisco(band,lsKey("bd_"+band.replace(/[^a-z0-9]+/gi,""))):window.MB.collab(a.name,b.name,collabKey(a.id,b.id));
+  const records=band?window.MB.bandDisco(band,lsKey("bd_"+band.replace(/[^a-z0-9]+/gi,""))):window.MB.collab({name:a.name,mbid:a.mbid},{name:b.name,mbid:b.mbid},collabKey(a.id,b.id));
   const secRow=band?`<div class="cbnote" style="color:var(--gold)">Records together · as ${esc(band)}</div>`:"";
   records.then(items=>{
     box.dataset.loaded="1";

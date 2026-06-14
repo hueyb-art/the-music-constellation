@@ -14,9 +14,15 @@
   /* Shared recordings between two artists — the hard data of "what did they make together".
      MusicBrainz co-credit search catches joint billings and features well; pure uncredited
      sideman sessions can be partial. Deduped by title, earliest year kept, sorted. */
+  /* a search term per artist: exact arid: when an MBID is pinned (bypasses the
+     name-resolution that fails on punctuation/ambiguity), else artist:"name". */
+  function term(x){
+    if(x&&typeof x==="object"&&x.mbid)return "arid:"+x.mbid;
+    const nm=String((x&&typeof x==="object")?(x.name||""):(x||"")).replace(/"/g,"").trim();
+    return 'artist:"'+nm+'"';
+  }
   function collab(a,b){
-    const clean=s=>String(s||"").replace(/"/g,"").trim();
-    const q=encodeURIComponent('artist:"'+clean(a)+'" AND artist:"'+clean(b)+'"');
+    const q=encodeURIComponent(term(a)+" AND "+term(b));
     const seen={},out=[];
     const add=(title,year)=>{
       title=(title||"").trim();

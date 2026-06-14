@@ -445,13 +445,14 @@ function showCollab(aId,bId){
     +'<button class="cpcenter">'+btn+'</button>';
   p.querySelector(".cpx").onclick=closeCollab;
   p.querySelector(".cpcenter").onclick=()=>{closeCollab();if(view==="chord"){chordFocus=bId;}else{layoutSolar(bId);fit();}};
-  const key="tmc_collab_"+genreKey+"_"+[aId,bId].sort().join("_");
+  const key="tmc_collab2_"+genreKey+"_"+[aId,bId].sort().join("_");
   /* band members: their work lives under the band's name — show the band catalogue */
   const dA=(G.discoAs||{})[aId],dB=(G.discoAs||{})[bId],lc=s=>(s||"").toLowerCase();
   let band=null;
   if(dA&&(dA===dB||lc(dA).includes(lc(b.name))))band=dA;
   else if(dB&&(dA===dB||lc(dB).includes(lc(a.name))))band=dB;
-  const records=band?window.MB.bandDisco(band,"tmc_bd_"+genreKey+"_"+band.replace(/[^a-z0-9]+/gi,"")):window.MB.collab(a.name,b.name,key);
+  const mb=(G.mbid||{});
+  const records=band?window.MB.bandDisco(band,"tmc_bd_"+genreKey+"_"+band.replace(/[^a-z0-9]+/gi,"")):window.MB.collab({name:a.name,mbid:mb[aId]},{name:b.name,mbid:mb[bId]},key);
   const secLabel=band?"Records together · as "+esc(band):"Records together · MusicBrainz";
   records.then(items=>{
     const body=p.querySelector(".cpbody");if(!body)return;
