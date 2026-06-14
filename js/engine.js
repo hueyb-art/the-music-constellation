@@ -375,7 +375,7 @@ function select(nd){selNode=nd;computeFocus(nd);renderPanel(nd);panel.classList.
 function deselect(){selNode=null;chordAnchor=null;if(!hoverNode)focusSet=null;panel.classList.remove("open");tviewY=0;if(clip)clip.pause();clipNote("");}
 /* In chord view, closing the breakout card returns to the anchored-and-silent
    state (the star stays lit) rather than clearing the whole selection. */
-document.getElementById("close").onclick=()=>{if(viewMode==="chord")panel.classList.remove("open");else deselect();};
+document.getElementById("close").onclick=()=>{if(viewMode==="chord"){panel.classList.remove("open");clipFor=null;if(clip)clip.pause();clipNote("");}else deselect();};
 function connsFor(nd){return EDGES.filter(ed=>ed.a===nd.id||ed.b===nd.id).map(ed=>({other:ed.a===nd.id?byId[ed.b]:byId[ed.a],rel:relWord(ed,nd)})).sort((a,b)=>b.other.deg-a.other.deg);}
 function renderPanel(nd){
   const era=ERAS[nd.era],cs=connsFor(nd);
@@ -403,7 +403,7 @@ function toggleCollab(box,a,b,chev){
    (or a band's catalogue when one is a member of the other), each with listen
    links, plus a "hear them together" search row. Used both by the card's ♪
    expanders and by the chord-web breakout card. */
-function loadCollabInto(box,a,b){
+function loadCollabInto(box,a,b,onLoad){
   const sq=encodeURIComponent((a.name+" "+b.name).replace(/\s+/g," ").trim());
   const searchRow=`<div class="cbsearch">Hear them together — <a href="https://open.spotify.com/search/${sq}" target="_blank" rel="noopener">Spotify</a> · <a href="https://music.apple.com/us/search?term=${sq}" target="_blank" rel="noopener">Apple</a> · <a href="https://www.youtube.com/results?search_query=${sq}" target="_blank" rel="noopener">YouTube</a> · <a href="https://www.discogs.com/search/?q=${sq}&type=release" target="_blank" rel="noopener">Discogs</a></div>`;
   /* band members: their catalogue lives under the band's name, invisible to co-credit search */
@@ -420,7 +420,34 @@ function loadCollabInto(box,a,b){
     box.innerHTML=secRow+top.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbmain"><span class="cbtitle">${esc(it.title)}</span>${svc((band||a.name+" "+b.name)+" "+it.title)}</span></div>`).join("")
       +(items.length>14?`<div class="cbnote">+${items.length-14} more</div>`:"")+searchRow;
     wireApple(box);
+    if(onLoad)onLoad(items,band);
   }).catch(()=>{box.innerHTML='<div class="cbnote">Couldn\'t load — tap again to retry.</div>';box.dataset.loaded="";});
+}
+/* Chord-web: when a collab card opens, play a preview of one of the records the
+   two actually made together (verified to a collaborator or the band) — so the
+   tie you opened is also something you hear. Cached per pair. */
+function playCollabClip(a,b,items,band){
+  if(!clip||!items||!items.length)return;
+  const id=[a.id,b.id].sort().join("_"),tag="cc:"+id,key=lsKey("cclip_"+id);
+  clipFor=tag;
+  let cached=null;try{cached=localStorage.getItem(key);}catch(e){}
+  if(cached){if(cached!=="none"){try{const c=JSON.parse(cached);if(c&&c.url)playPreview(c.url,c.name);}catch(e){}}return;}
+  const names=[a.name,b.name].concat(band?[band]:[]).map(pnorm);
+  const ok=an=>{an=pnorm(an);return !!an&&names.some(n=>n&&(an===n||an.includes(n)||n.includes(an)));};
+  const cands=items.slice(0,4);let i=0;
+  clipNote("♪  finding a track…",6500);
+  const tryNext=()=>{
+    if(clipFor!==tag)return;
+    if(i>=cands.length){try{localStorage.setItem(key,"none");}catch(e){}clipNote("");return;}
+    const rec=cands[i++],q=(band||a.name+" "+b.name)+" "+rec.title;
+    dzSearch(q,arr=>{
+      if(clipFor!==tag)return;
+      const t=(arr||[]).find(x=>x&&x.preview&&ok(x.artist&&x.artist.name));
+      if(t){try{localStorage.setItem(key,JSON.stringify({url:t.preview,name:rec.title}));}catch(e){}playPreview(t.preview,rec.title);}
+      else tryNext();
+    });
+  };
+  tryNext();
 }
 /* ----- chord-web two-step interaction -----
    1st click anchors a star and lights its ties — in silence, no card, no audio.
@@ -429,9 +456,10 @@ function loadCollabInto(box,a,b){
    isn't a tie re-anchors to it; clicking empty space clears the anchor. */
 let chordAnchor=null;
 function chordPick(nd){
-  if(!nd){chordAnchor=null;selNode=null;focusSet=null;panel.classList.remove("open");return;}
+  if(!nd){chordAnchor=null;selNode=null;focusSet=null;panel.classList.remove("open");clipFor=null;if(clip)clip.pause();clipNote("");return;}
   if(chordAnchor&&nd!==chordAnchor&&adj[chordAnchor.id]&&adj[chordAnchor.id].has(nd.id)){renderChordCollab(chordAnchor,nd);return;}
-  chordAnchor=nd;selNode=nd;computeFocus(nd);panel.classList.remove("open");
+  /* anchoring (or re-anchoring) is silent — stop any collab clip still playing */
+  chordAnchor=nd;selNode=nd;computeFocus(nd);panel.classList.remove("open");clipFor=null;if(clip)clip.pause();clipNote("");
 }
 function renderChordCollab(a,b){
   const ri=relInfo(a.id,b.id),kc=(ri&&KIND_COLOR[ri.kind])||KIND_COLOR.collab;
@@ -442,7 +470,7 @@ function renderChordCollab(a,b){
     <div class="collab ccbox" id="ccbox"><div class="cbnote">finding records together…</div></div>`;
   panel.classList.add("open");
   const box=document.getElementById("ccbox");box.style.display="block";
-  loadCollabInto(box,a,b);
+  loadCollabInto(box,a,b,(items,band)=>playCollabClip(a,b,items,band));
 }
 function centerOn(nd){
   if(viewMode==="chord")return; /* chord has its own framing; don't rotate the globe */
