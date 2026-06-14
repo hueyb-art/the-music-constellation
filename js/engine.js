@@ -324,10 +324,18 @@ function loop(){
 
 /* pointer */
 function nodeAt(px,py){
-  /* chord: every node sits on the ring at _d=0, so the globe's frontmost-depth
-     tiebreak is meaningless and would return whichever ring-neighbour comes
-     first in array order. Pick the node actually closest to the cursor. */
-  if(viewMode==="chord"){let best=null,bd=1e18;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const r=(nd._r||6)+8,d=Math.hypot(px-nd._sx,py-nd._sy);if(d<r&&d<bd){bd=d;best=nd;}}return best;}
+  /* chord: the stars are tiny dots on a thin ring, so hit-testing against each
+     dot makes hover/click frustrating — you have to land exactly on one. Since
+     every star sits on the ring at a known angle (_cea), instead pick the star
+     whose angle is nearest the cursor's, as long as the cursor is anywhere in
+     the ring band. Moving around the circle then always reveals a name. */
+  if(viewMode==="chord"){
+    const cx=W/2+viewX, cy=H/2+viewY, R=CHORD_R*zoom, dx=px-cx, dy=py-cy, dist=Math.hypot(dx,dy);
+    if(dist<R*0.6||dist>R*1.25)return null;        /* not near the ring (deep centre / far outside) */
+    const ang=Math.atan2(dy,dx);let best=null,bd=1e9;
+    for(const nd of NODES){if(!visible(nd)||nd._cea==null)continue;const da=Math.abs(((nd._cea-ang+Math.PI*3)%(Math.PI*2))-Math.PI);if(da<bd){bd=da;best=nd;}}
+    return best;
+  }
   let best=null,bz=-1e9;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const r=(nd._r||6)+6;if(Math.hypot(px-nd._sx,py-nd._sy)<r&&nd._d>bz){bz=nd._d;best=nd;}}return best;}
 canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;

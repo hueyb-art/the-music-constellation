@@ -2,6 +2,11 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — chord-web "no names": hit-test a ring by angle, not by dot
+
+- "No names come up when scrolling around the circle" had two layered causes, and the first fix only addressed the smaller one. (1) `drawChordView`'s active highlight was `selNode||hoverNode`, so once a star was anchored (and closing a collab card keeps the anchor) hover was ignored — fixed by flipping to `hoverNode||selNode`. (2) The real cause: `nodeAt` hit-tested each star's tiny disc, so on a thin ring you had to land the cursor *exactly* on a dot — nearly impossible while "scrolling around". Fixed by making the chord hit-test **angle-based**: when the cursor is anywhere in the ring band (`R*0.6`–`R*1.25` from centre), return the star whose angle (`_cea`) is nearest the cursor's. Hover and click both became forgiving; moving anywhere near the ring now reveals the nearest star.
+- **Lesson on verifying interaction fixes:** my eval "tests" fed `nd._sx,nd._sy` straight in as the cursor coords, so they always hit and reported success — they validated the *state machine* but not the *hit-test geometry*, which is exactly where the bug was. To catch this class of bug, probe with cursor points deliberately *off* the target (e.g. 60px away, between two nodes) and assert the right node is still found. A screenshot of a forced-hover proved rendering was fine, which correctly redirected the search from "labels don't draw" to "hover doesn't fire". (DPR was ruled out: `resize()` sets `canvas.style.width/height` in CSS px and `ctx.setTransform(DPR,…)`, so cursor coords and node coords share the CSS-pixel space.)
+
 ## 2026-06-14 — the chord-web is its own interaction, not the globe's
 
 - When the chord-web was promoted into the app its click was wired to the globe's `select()`, which pops a bio card *and* plays a preview clip. That quietly destroyed the prototype's two-step, silent model — and it took Huey describing the lost behaviour to surface it (a behaviour regression with no error). The chord-web reads in two steps: 1st click anchors a star and lights its ties **in silence** (no card, no audio); 2nd click on a tie reveals a breakout collab card. Lesson: when a view has its own mental model, give it its own input handler — don't borrow another view's `select()` just because the node type is the same.
