@@ -5,7 +5,7 @@ A running log of non-obvious findings. Append, don't rewrite.
 ## 2026-06-14 — chord-web as the favourite
 
 - The Era chord-web (prototype) became Huey's favourite view; built it up: hover/pin a star to light its chords AND name every node they land on (radial labels just outside the ring, anchored left/right by angle), click a pinned star's connection to open the shared-recordings panel (reuses window.MB.collab), and an animated "living sun" corona (pulsing core + flickering lighter-blend flares) where the chords converge. `frame` counter drives the animation; the prototype draw loop already runs rAF continuously so animation was free.
-- Known rough edge: when a hub's connections cluster within one era arc, their outward names overlap (no radial label de-collision yet). Fine for low-degree stars; a hub like Miles stacks. If promoted, add angular label nudging.
+- ~~Known rough edge: dense hubs overlap labels~~ FIXED 2026-06-14: labels now (1) name the tie kind beside each connection (relInfo, color-matched to the line) and (2) de-collide — pushed apart vertically within each side, clamped to the viewport, with thin leader lines from each star to its nudged label. Blakey's 17 mentees are fully legible. Pattern: 1D greedy y-separation per side (sort by y, enforce min gap, then clamp-and-reflow from whichever end overflowed).
 
 ## 2026-06-14 — tightening "peer" labels with a data-assisted pass
 
