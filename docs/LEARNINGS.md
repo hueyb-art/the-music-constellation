@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — instrument/role tag under names (all genres, free from existing data)
+
+- Non-experts don't know a name→instrument mapping a fan takes for granted. Added a small gold instrument/role tag under each name, shown **only while exploring** (the hovered/anchored musician + their lit connections; `focusSet` in the globe, the always-focused label set in chord). No new data: it's `nd.roleTag = role.split("·")[0].trim()` — the primary segment of the curated `role` ("Trumpet · bandleader" → "Trumpet"; "Bandleader · arranger" → "Bandleader"). Because it's drawn in the shared engine from a field every genre has, it lit up jazz, hip-hop (MC/Producer/DJ) and reggae (Vocals/Deejay/Bass/Drums/Producer) in one change.
+- Chord labels became two lines (name + tag), so the de-collision `gap` grew (26 desktop / 31 mobile) and the tap hitbox re-centred on the two-line block (`it.ay + lineGap/2`) — tap accuracy stayed 17/17. The globe only adds the tag for `focusSet` members, keeping the default zoomed-out scatter clean; the collision box height grows by the tag line so neighbours don't collide.
+- Kept the *specific* primary role (e.g. "Tenor & soprano sax", "Alto saxophone") rather than the normalised `instr` category ("Saxophone") — the curated specificity is what a fan would actually say, and the full role is still on the card.
+
 ## 2026-06-15 — chord-web on touch: make the names the tap targets
 
 - On the iPhone the chord-web's second step ("tap a collaborator") mostly hit the wrong, adjacent artist. Two reasons: (1) no hover on touch, so a tap is the only aim — you can't preview; (2) the angle-based ring hit-test resolves the cursor's angle-from-centre to the nearest star, but the connection *names* are de-collided (pushed up/down to avoid overlap), so the name you tap is no longer at its star's angle → you get a neighbour. Fix: register each drawn name as a tappable hitbox (`chordLabelBoxes`, rebuilt every frame in `drawChordView`) and have `nodeAt` check those *first* in chord view. Tapping a name now selects exactly that artist (verified 17/17 on a 375px viewport). Names and spacing are larger on mobile, and box height = the de-collision gap so the boxes tile the column with no dead zones.

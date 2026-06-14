@@ -198,7 +198,7 @@ function drawChordView(){
     items.forEach(it=>it.ay=it.ay0);
     /* bigger names + wider spacing on touch, where the names are the tap targets */
     const NFS=MOBILE?13.5:11.5, BFS=MOBILE?15.5:13, RFS=MOBILE?11:9.5;
-    const gap=MOBILE?28:15,top=MOBILE?152:80,bot=H-(MOBILE?92:54),margin=MOBILE?10:14;
+    const gap=MOBILE?31:26,top=MOBILE?152:80,bot=H-(MOBILE?92:54),margin=MOBILE?10:14;  /* wider: each label is now name + instrument */
     /* vertical de-collision per side */
     [1,-1].forEach(s=>{const col=items.filter(it=>it.side===s).sort((a,b)=>a.ay-b.ay);
       for(let j=1;j<col.length;j++)if(col[j].ay<col[j-1].ay+gap)col[j].ay=col[j-1].ay+gap;
@@ -215,17 +215,19 @@ function drawChordView(){
     /* leader line from the star to its (possibly moved) name */
     items.forEach(it=>{if(!it.big&&Math.hypot(it.ax-it.rax,it.ay-it.ay0)>3){ctx.strokeStyle="rgba(243,236,224,0.14)";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(it.nx,it.ny);ctx.lineTo(it.ax,it.ay);ctx.stroke();}});
     ctx.textBaseline="middle";
-    items.forEach(it=>{const align=it.side>=0?"left":"right";ctx.textAlign=align;const nm=it.nd.name,nf=it.big?BFS:NFS;
+    const TGS=MOBILE?11:10;   /* instrument-tag font size */
+    items.forEach(it=>{const align=it.side>=0?"left":"right";ctx.textAlign=align;const nm=it.nd.name,nf=it.big?BFS:NFS,tagY=it.ay+nf*0.95;
       ctx.save();ctx.shadowColor="rgba(0,0,0,0.92)";ctx.shadowBlur=3;   /* keep names legible if they land over the ring */
       ctx.font=(it.big?"600 ":"")+nf+"px Helvetica Neue, Arial";
       ctx.fillStyle=it.big?"rgba(245,222,150,.98)":"rgba(243,236,224,.94)";
       ctx.fillText(nm,it.ax,it.ay);
       if(it.ri){ctx.font=RFS+"px Helvetica Neue, Arial";ctx.fillStyle="rgba("+(KIND_COLOR[it.ri.kind]||KIND_COLOR.collab)+",0.95)";
         if(align==="left")ctx.fillText("· "+it.ri.word,it.ax+it.nameW+5,it.ay);else ctx.fillText(it.ri.word+" ·",it.ax-it.nameW-5,it.ay);}
+      if(it.nd.roleTag){ctx.font=TGS+"px Helvetica Neue, Arial";ctx.fillStyle="rgba(224,177,90,"+(it.big?0.9:0.66)+")";ctx.fillText(it.nd.roleTag,it.ax,tagY);}
       ctx.restore();
-      if(!it.big){const padX=MOBILE?18:8,total=it.nameW+(it.ri?5+it.relTextW:0),hh=gap/2;
+      if(!it.big){const padX=MOBILE?18:8,total=it.nameW+(it.ri?5+it.relTextW:0),hh=gap/2,lg=nf*0.95/2;
         const x0=align==="left"?it.ax-padX:it.ax-total-padX, x1=align==="left"?it.ax+total+padX:it.ax+padX;
-        chordLabelBoxes.push({id:it.nd.id,x0,y0:it.ay-hh,x1,y1:it.ay+hh});}});
+        chordLabelBoxes.push({id:it.nd.id,x0,y0:it.ay+lg-hh,x1,y1:it.ay+lg+hh});}});
   }
 }
 function draw(){
@@ -303,15 +305,21 @@ function draw(){
   const placed=[];ctx.textAlign="center";ctx.textBaseline="top";
   for(const nd of cand){
     const big=nd===hoverNode||nd===selNode,b=bright(nd);
+    const inFocus=!!(focusSet&&focusSet.has(nd.id))&&!!nd.roleTag;  /* instrument shows only while exploring */
     const fs=Math.max(10.5,(9+3*b)*(0.85+0.35*zoom));
-    ctx.font=(big?"600 ":"400 ")+fs.toFixed(1)+"px Helvetica Neue, Arial";
+    const nameFont=(big?"600 ":"400 ")+fs.toFixed(1)+"px Helvetica Neue, Arial";ctx.font=nameFont;
     const off=nd._pa>0.02?Math.max(12,nd._r*1.7):nd._r;
-    const w=ctx.measureText(nd.name).width,y=nd._sy+off+3,rc={x:nd._sx-w/2-3,y:y-1,w:w+6,h:fs+3};
+    const nameW=ctx.measureText(nd.name).width;
+    const tagFs=Math.max(8.5,fs*0.8);let tagW=0;
+    if(inFocus){ctx.font=tagFs.toFixed(1)+"px Helvetica Neue, Arial";tagW=ctx.measureText(nd.roleTag).width;}
+    const w=Math.max(nameW,tagW),y=nd._sy+off+3,rc={x:nd._sx-w/2-3,y:y-1,w:w+6,h:fs+3+(inFocus?tagFs+2:0)};
     let clash=false;if(!big)for(const o of placed){if(rc.x<o.x+o.w&&rc.x+rc.w>o.x&&rc.y<o.y+o.h&&rc.y+rc.h>o.y){clash=true;break;}}
     if(clash)continue;placed.push(rc);
     const dim=focusSet&&!focusSet.has(nd.id);
+    ctx.font=nameFont;
     ctx.fillStyle=dim?`rgba(243,236,224,${(0.18*F).toFixed(3)})`:`rgba(243,236,224,${((0.4+0.5*b)*F).toFixed(2)})`;
     ctx.fillText(nd.name,nd._sx,y);
+    if(inFocus){ctx.font=tagFs.toFixed(1)+"px Helvetica Neue, Arial";ctx.fillStyle=`rgba(224,177,90,${(0.8*F).toFixed(2)})`;ctx.fillText(nd.roleTag,nd._sx,y+fs+2);}
   }
 }
 function prio(nd){return (nd===hoverNode||nd===selNode?1e9:0)+(focusSet&&focusSet.has(nd.id)?1e6:0)+nd.deg*120+(nd._d||0);}
@@ -780,6 +788,7 @@ function loadGenre(key){
     nd.x=rr*Math.sin(th)*Math.cos(ph);nd.y=rr*Math.sin(th)*Math.sin(ph);nd.z=rr*Math.cos(th);
     nd.vx=0;nd.vy=0;nd.vz=0;nd.hl=0;nd._pa=0;nd.twp=Math.random()*6.28;
     nd.instr=instrumentOf(nd.role);
+    nd.roleTag=(nd.role||"").split("·")[0].trim();   /* short instrument/role tag, e.g. "Trumpet", "Arranger" */
     nd.discoAs=G.discoAs[nd.id]||null;
     nd.mbid=(G.mbid||{})[nd.id]||null;
   });
