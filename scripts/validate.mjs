@@ -72,8 +72,8 @@ for (const [key, g] of Object.entries(genres)) {
     seenEdges.add(k);
   }
 
-  for (const map of ["lib", "wiki", "preview", "discoAs"])
-    for (const id of Object.keys(g[map]))
+  for (const map of ["lib", "wiki", "preview", "discoAs", "mbid"])
+    for (const id of Object.keys(g[map] || {}))
       if (!ids.has(id)) p(`${map} references missing node "${id}"`);
 
   for (const [k2, v] of Object.entries(g.eras))

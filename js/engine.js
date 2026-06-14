@@ -648,6 +648,7 @@ function loadGenre(key){
     nd.vx=0;nd.vy=0;nd.vz=0;nd.hl=0;nd._pa=0;nd.twp=Math.random()*6.28;
     nd.instr=instrumentOf(nd.role);
     nd.discoAs=G.discoAs[nd.id]||null;
+    nd.mbid=(G.mbid||{})[nd.id]||null;
   });
   NODES.forEach(nd=>{nd._sname=fold(nd.name);nd._swords=nd._sname.split(/\s+/);nd._srole=fold(nd.role+" "+nd.instr);});
   /* timeline targets: lifespan from `life`, record years from the curated essentials */

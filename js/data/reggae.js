@@ -585,6 +585,9 @@ window.GENRE_DATA["reggae"]={
   roleGroups:[["producer|label|studio","Producer"],["engineer|dub|mixing","Engineer & dub"],["deejay|dj|toaster|toasting|mc|rapper","Deejay/MC"],["voc|singer|voice","Vocals"],["bass","Bass"],["drum|percussion","Drums"],["guitar","Guitar"],["keyboard|organ|piano|melodica","Keys"],["sax","Saxophone"],["trombone","Trombone"],["trumpet","Trumpet"],["poet","Dub poet"],["band|group","Band/Group"]],
   /* artists whose own catalogue is thin: pull this act's discography instead */
   discoAs:{"tootshibbert":"Toots & The Maytals","familyman":"Bob Marley and the Wailers","carltonbarrett":"Bob Marley and the Wailers"},
+/* Pinned MusicBrainz ids — for artists whose name doesn't resolve (punctuation/
+   ambiguity) or resolves to the wrong artist. Verified against real albums. */
+mbid:{"bunnylee":"16ad0626-7c09-455c-8841-0cc4b157c22b","wailingsouls":"f28a0e2e-d469-4f9d-8080-f5548fc1a239","gussieclarke":"4d4a4ac0-07de-4c63-9617-214b5a869655","bobbydigital":"26e73c94-5995-473f-b87d-20be85815773","damianmarley":"cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c","koffee":"7d04679e-a855-4214-9543-febaf02de725"},
   /* preview overrides: did = pinned Deezer artist id, artist = exact name a clip
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"tootshibbert":{"artist":"Toots and the Maytals","q":"Toots and the Maytals"},"bobmarley":{"did":719},"charliechaplin":{"q":"Charlie Chaplin Tribute to Reggae","only":true},"scientist":{"q":"Scientist Vampires Dub"},"koffee":{"q":"Koffee Toast"},"coxsone":{"artist":"The Skatalites","q":"The Skatalites Guns of Navarone"},"bunnylee":{"artist":"Johnny Clarke","q":"Johnny Clarke None Shall Escape the Judgement"},"winstonriley":{"artist":"Tenor Saw","q":"Tenor Saw Ring the Alarm"},"carltonbarrett":{"did":719},"bobbydigital":{"artist":"Sizzla","q":"Sizzla Black Woman and Child"}},

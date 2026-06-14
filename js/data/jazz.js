@@ -950,6 +950,9 @@ window.GENRE_DATA["jazz"]={
   roleGroups:[["trumpet|cornet|flugel","Trumpet"],["reeds|sax","Saxophone"],["clarinet","Clarinet"],["piano","Piano"],["organ|keyboard","Organ & keys"],["bass","Bass"],["drums","Drums"],["guitar","Guitar"],["trombone","Trombone"],["vibraphone|vibes","Vibraphone"],["violin","Violin"],["harmonica","Harmonica"],["harp","Harp"],["voice","Voice"],["composer|arranger|bandleader|theorist|producer","Composer & arranger"]],
   /* artists whose own catalogue is thin: pull this act's discography instead */
   discoAs:{},
+/* Pinned MusicBrainz ids — for artists whose name doesn't resolve (punctuation/
+   ambiguity) or resolves to the wrong artist. Verified against real albums. */
+mbid:{"hiromi":"8472f0ce-c57d-46f2-93db-d4a6f6e6473a","jojones":"ceda2457-e16f-4938-a276-af854b20b22a"},
   /* preview overrides: did = pinned Deezer artist id, artist = exact name a clip
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{},
