@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — chord-web on touch: make the names the tap targets
+
+- On the iPhone the chord-web's second step ("tap a collaborator") mostly hit the wrong, adjacent artist. Two reasons: (1) no hover on touch, so a tap is the only aim — you can't preview; (2) the angle-based ring hit-test resolves the cursor's angle-from-centre to the nearest star, but the connection *names* are de-collided (pushed up/down to avoid overlap), so the name you tap is no longer at its star's angle → you get a neighbour. Fix: register each drawn name as a tappable hitbox (`chordLabelBoxes`, rebuilt every frame in `drawChordView`) and have `nodeAt` check those *first* in chord view. Tapping a name now selects exactly that artist (verified 17/17 on a 375px viewport). Names and spacing are larger on mobile, and box height = the de-collision gap so the boxes tile the column with no dead zones.
+- **Touch tap-slop:** the touch-move handler set `pointer.moved` (which cancels the tap and starts a pan) at >1.5px of travel — a fingertip easily wobbles more than that on press, so taps were being silently swallowed as drags. Switched to a ~10px cumulative slop measured from the touch-start point; small wobble still counts as a tap, panning starts only past the slop.
+- Open nuance (not yet addressed): on a narrow phone the ring nearly fills the width, so left/right connection labels clip at the screen edges. Tap targets still work; readability of edge labels is the next thing to improve (draw labels inside the ring near edges, or shrink the ring on mobile).
+
 ## 2026-06-15 — chord-web "no names": hit-test a ring by angle, not by dot
 
 - "No names come up when scrolling around the circle" had two layered causes, and the first fix only addressed the smaller one. (1) `drawChordView`'s active highlight was `selNode||hoverNode`, so once a star was anchored (and closing a collab card keeps the anchor) hover was ignored — fixed by flipping to `hoverNode||selNode`. (2) The real cause: `nodeAt` hit-tested each star's tiny disc, so on a thin ring you had to land the cursor *exactly* on a dot — nearly impossible while "scrolling around". Fixed by making the chord hit-test **angle-based**: when the cursor is anywhere in the ring band (`R*0.6`–`R*1.25` from centre), return the star whose angle (`_cea`) is nearest the cursor's. Hover and click both became forgiving; moving anywhere near the ring now reveals the nearest star.

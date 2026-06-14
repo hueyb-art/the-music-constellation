@@ -44,7 +44,7 @@ const KIND_COLOR={collab:"224,177,90",mentor:"245,222,150",influence:"150,180,21
 let yaw=0,pitch=0,tyaw=null,tpitch=0,vyaw=0.0012,vpitch=0,zoom=1,tzoom=1,tick=0,pulse=0,spread=1.5,viewY=0,tviewY=0;
 let viewMode="globe",viewX=0,tviewX=0;
 /* ----------  CHORD-WEB VIEW  ---------- */
-let chordSpin=0,chordIdle=0;
+let chordSpin=0,chordIdle=0,chordLabelBoxes=[];
 const CHORD_R=520;
 const SPACE_STARS=[];for(let i=0;i<220;i++)SPACE_STARS.push({x:Math.random(),y:Math.random(),r:Math.random()*Math.random()*1.8+0.25,tw:Math.random()*6.28,sp:0.3+Math.random()*0.9,warm:Math.random()<0.18});
 const GALAXIES=[
@@ -177,6 +177,7 @@ function drawChordView(){
      follow the lines and click its collaborators. Hover only previews names
      before anything is anchored (selNode null). */
   const active=selNode||hoverNode, aid=active&&active.id, neigh=aid?adj[aid]:null;
+  chordLabelBoxes=[];   /* tappable name targets, rebuilt below when a star is active */
   const ekeys=Object.keys(ERAS);let i=0;const N=NODES.length;
   ekeys.forEach(k=>{const cnt=NODES.filter(n=>n.era===k).length;if(!cnt)return;const a0=i/N*6.2832-1.5708+chordSpin,a1=(i+cnt)/N*6.2832-1.5708+chordSpin;i+=cnt;
     ctx.strokeStyle=hexA(ERAS[k].color,0.85);ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R+14,a0+0.01,a1-0.01);ctx.stroke();
@@ -195,7 +196,9 @@ function drawChordView(){
     if(neigh)neigh.forEach(id=>{if(byId[id]&&visible(byId[id]))pushL(byId[id],false);});
     pushL(active,true);
     items.forEach(it=>it.ay=it.ay0);
-    const gap=15,top=80,bot=H-54;
+    /* bigger names + wider spacing on touch, where the names are the tap targets */
+    const NFS=MOBILE?13.5:11.5, BFS=MOBILE?15.5:13, RFS=MOBILE?11:9.5;
+    const gap=MOBILE?28:15,top=MOBILE?64:80,bot=H-(MOBILE?44:54);
     [1,-1].forEach(s=>{const col=items.filter(it=>it.side===s).sort((a,b)=>a.ay-b.ay);
       for(let j=1;j<col.length;j++)if(col[j].ay<col[j-1].ay+gap)col[j].ay=col[j-1].ay+gap;
       if(col.length){if(col[col.length-1].ay>bot){col[col.length-1].ay=bot;for(let j=col.length-2;j>=0;j--)if(col[j].ay>col[j+1].ay-gap)col[j].ay=col[j+1].ay-gap;}
@@ -203,12 +206,20 @@ function drawChordView(){
     items.forEach(it=>{if(!it.big&&Math.abs(it.ay-it.ay0)>3){ctx.strokeStyle="rgba(243,236,224,0.14)";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(it.nx,it.ny);ctx.lineTo(it.ax,it.ay);ctx.stroke();}});
     ctx.textBaseline="middle";
     items.forEach(it=>{const align=it.side>=0?"left":"right";ctx.textAlign=align;const nm=it.nd.name;
-      ctx.font=(it.big?"600 13px":"11.5px")+" Helvetica Neue, Arial";
+      const nf=it.big?BFS:NFS;
+      ctx.font=(it.big?"600 ":"")+nf+"px Helvetica Neue, Arial";
       ctx.fillStyle=it.big?"rgba(245,222,150,.98)":"rgba(243,236,224,.94)";
       ctx.fillText(nm,it.ax,it.ay);
-      if(!it.big){const ri=relInfo(aid,it.nd.id);if(ri){const nameW=ctx.measureText(nm).width;
-        ctx.font="9.5px Helvetica Neue, Arial";ctx.fillStyle="rgba("+(KIND_COLOR[ri.kind]||KIND_COLOR.collab)+",0.95)";
-        if(align==="left")ctx.fillText("· "+ri.word,it.ax+nameW+5,it.ay);else ctx.fillText(ri.word+" ·",it.ax-nameW-5,it.ay);}}});
+      const nameW=ctx.measureText(nm).width;let relW=0;
+      if(!it.big){const ri=relInfo(aid,it.nd.id);if(ri){
+        ctx.font=RFS+"px Helvetica Neue, Arial";relW=ctx.measureText("· "+ri.word).width+6;
+        ctx.fillStyle="rgba("+(KIND_COLOR[ri.kind]||KIND_COLOR.collab)+",0.95)";
+        if(align==="left")ctx.fillText("· "+ri.word,it.ax+nameW+5,it.ay);else ctx.fillText(ri.word+" ·",it.ax-nameW-5,it.ay);}
+        /* record a generous tappable box over the name (+relationship). Height is
+           the de-collision gap so the boxes tile the column with no dead zones. */
+        const padX=MOBILE?18:8,total=nameW+relW,hh=gap/2;
+        const x0=align==="left"?it.ax-padX:it.ax-total-padX, x1=align==="left"?it.ax+total+padX:it.ax+padX;
+        chordLabelBoxes.push({id:it.nd.id,x0,y0:it.ay-hh,x1,y1:it.ay+hh});}});
   }
 }
 function draw(){
@@ -324,6 +335,10 @@ function loop(){
 }
 
 /* pointer */
+/* a connection name shown beside an anchored star is a big, de-collided tap
+   target — check it first so tapping the second name selects exactly that
+   artist (crucial on touch, where you can't hover to aim). */
+function chordLabelAt(px,py){for(let i=0;i<chordLabelBoxes.length;i++){const b=chordLabelBoxes[i];if(px>=b.x0&&px<=b.x1&&py>=b.y0&&py<=b.y1)return byId[b.id];}return null;}
 function nodeAt(px,py){
   /* chord: the stars are tiny dots on a thin ring, so hit-testing against each
      dot makes hover/click frustrating — you have to land exactly on one. Since
@@ -331,6 +346,7 @@ function nodeAt(px,py){
      whose angle is nearest the cursor's, as long as the cursor is anywhere in
      the ring band. Moving around the circle then always reveals a name. */
   if(viewMode==="chord"){
+    const lab=chordLabelAt(px,py);if(lab)return lab;
     const cx=W/2+viewX, cy=H/2+viewY, R=CHORD_R*zoom, dx=px-cx, dy=py-cy, dist=Math.hypot(dx,dy);
     if(dist<R*0.6||dist>R*1.25)return null;        /* not near the ring (deep centre / far outside) */
     const ang=Math.atan2(dy,dx);let best=null,bd=1e9;
@@ -362,8 +378,11 @@ canvas.addEventListener("touchstart",ev=>{
 canvas.addEventListener("touchmove",ev=>{
   ev.preventDefault();
   if(touchMode===1&&ev.touches.length===1){
-    const px=ev.touches[0].clientX,py=ev.touches[0].clientY,dx=px-pointer.x,dy=py-pointer.y;
-    if(Math.abs(dx)+Math.abs(dy)>1.5){pointer.moved=true;tyaw=null;
+    const px=ev.touches[0].clientX,py=ev.touches[0].clientY;
+    /* tap-slop: ignore small finger wobble so a tap isn't misread as a drag
+       (and the selection cancelled) — only start panning past ~10px of travel. */
+    if(!pointer.moved&&tapXY&&Math.abs(px-tapXY.x)+Math.abs(py-tapXY.y)>10)pointer.moved=true;
+    if(pointer.moved){const dx=px-pointer.x,dy=py-pointer.y;tyaw=null;
       if(viewMode==="chord"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
       else{yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}}
     pointer.x=px;pointer.y=py;
@@ -711,7 +730,9 @@ let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(e
 const chordBtn=document.getElementById("chordBtn");
 const hintEl=document.querySelector(".hint");
 const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
-const HINT_CHORD='<b>Click a star</b> to anchor it &amp; light its ties (in silence) &middot; <b>then click a tie</b> to reveal records they made together<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
+const HINT_CHORD=MOBILE
+  ? '<b>Tap a star</b> to anchor it &amp; light its ties &middot; <b>then tap a name</b> to reveal the records they made together<br><b>Drag</b> to pan &middot; <b>pinch</b> to zoom &middot; it drifts slowly until you touch it'
+  : '<b>Click a star</b> to anchor it &amp; light its ties (in silence) &middot; <b>then click a tie</b> to reveal records they made together<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
 function frameChord(){tviewX=0;tviewY=0;tzoom=Math.max(0.32,Math.min(2,(Math.min(W,H)-150)/(CHORD_R*2)));}
 function setView(mode){
   if(viewMode===mode)return;
