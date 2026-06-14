@@ -191,33 +191,39 @@ function drawChordView(){
     ctx.beginPath();ctx.arc(nd._sx,nd._sy,isF?6:isN?4.5:nd._r,0,6.283);ctx.fillStyle=col;ctx.fill();ctx.restore();}
   if(active){
     const items=[];
-    const pushL=(nd,big)=>{if(!nd)return;const ox=Math.cos(nd._cea),oy=Math.sin(nd._cea);
-      items.push({nd,big,nx:nd._sx,ny:nd._sy,ax:cx+ox*(CHORD_R+26)*zoom,ay0:cy+oy*(CHORD_R+26)*zoom,side:ox>=0?1:-1});};
+    const pushL=(nd,big)=>{if(!nd)return;const ox=Math.cos(nd._cea),oy=Math.sin(nd._cea),rax=cx+ox*(CHORD_R+26)*zoom;
+      items.push({nd,big,nx:nd._sx,ny:nd._sy,rax,ax:rax,ay0:cy+oy*(CHORD_R+26)*zoom,side:ox>=0?1:-1});};
     if(neigh)neigh.forEach(id=>{if(byId[id]&&visible(byId[id]))pushL(byId[id],false);});
     pushL(active,true);
     items.forEach(it=>it.ay=it.ay0);
     /* bigger names + wider spacing on touch, where the names are the tap targets */
     const NFS=MOBILE?13.5:11.5, BFS=MOBILE?15.5:13, RFS=MOBILE?11:9.5;
-    const gap=MOBILE?28:15,top=MOBILE?64:80,bot=H-(MOBILE?44:54);
+    const gap=MOBILE?28:15,top=MOBILE?152:80,bot=H-(MOBILE?92:54),margin=MOBILE?10:14;
+    /* vertical de-collision per side */
     [1,-1].forEach(s=>{const col=items.filter(it=>it.side===s).sort((a,b)=>a.ay-b.ay);
       for(let j=1;j<col.length;j++)if(col[j].ay<col[j-1].ay+gap)col[j].ay=col[j-1].ay+gap;
       if(col.length){if(col[col.length-1].ay>bot){col[col.length-1].ay=bot;for(let j=col.length-2;j>=0;j--)if(col[j].ay>col[j+1].ay-gap)col[j].ay=col[j+1].ay-gap;}
         if(col[0].ay<top){col[0].ay=top;for(let j=1;j<col.length;j++)if(col[j].ay<col[j-1].ay+gap)col[j].ay=col[j-1].ay+gap;}}});
-    items.forEach(it=>{if(!it.big&&Math.abs(it.ay-it.ay0)>3){ctx.strokeStyle="rgba(243,236,224,0.14)";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(it.nx,it.ny);ctx.lineTo(it.ax,it.ay);ctx.stroke();}});
+    /* measure each label, then clamp its x so the whole name (+relationship) stays
+       on screen — stops left/right names clipping off the edges on narrow viewports */
+    items.forEach(it=>{const nf=it.big?BFS:NFS;ctx.font=(it.big?"600 ":"")+nf+"px Helvetica Neue, Arial";it.nameW=ctx.measureText(it.nd.name).width;
+      it.ri=it.big?null:relInfo(aid,it.nd.id);it.relTextW=0;
+      if(it.ri){ctx.font=RFS+"px Helvetica Neue, Arial";it.relTextW=ctx.measureText("· "+it.ri.word).width;}
+      const ext=it.nameW+(it.ri?5+it.relTextW:0);
+      if(it.side>=0)it.ax=Math.max(margin,Math.min(it.ax,W-margin-ext));
+      else it.ax=Math.min(W-margin,Math.max(it.ax,margin+ext));});
+    /* leader line from the star to its (possibly moved) name */
+    items.forEach(it=>{if(!it.big&&Math.hypot(it.ax-it.rax,it.ay-it.ay0)>3){ctx.strokeStyle="rgba(243,236,224,0.14)";ctx.lineWidth=0.7;ctx.beginPath();ctx.moveTo(it.nx,it.ny);ctx.lineTo(it.ax,it.ay);ctx.stroke();}});
     ctx.textBaseline="middle";
-    items.forEach(it=>{const align=it.side>=0?"left":"right";ctx.textAlign=align;const nm=it.nd.name;
-      const nf=it.big?BFS:NFS;
+    items.forEach(it=>{const align=it.side>=0?"left":"right";ctx.textAlign=align;const nm=it.nd.name,nf=it.big?BFS:NFS;
+      ctx.save();ctx.shadowColor="rgba(0,0,0,0.92)";ctx.shadowBlur=3;   /* keep names legible if they land over the ring */
       ctx.font=(it.big?"600 ":"")+nf+"px Helvetica Neue, Arial";
       ctx.fillStyle=it.big?"rgba(245,222,150,.98)":"rgba(243,236,224,.94)";
       ctx.fillText(nm,it.ax,it.ay);
-      const nameW=ctx.measureText(nm).width;let relW=0;
-      if(!it.big){const ri=relInfo(aid,it.nd.id);if(ri){
-        ctx.font=RFS+"px Helvetica Neue, Arial";relW=ctx.measureText("· "+ri.word).width+6;
-        ctx.fillStyle="rgba("+(KIND_COLOR[ri.kind]||KIND_COLOR.collab)+",0.95)";
-        if(align==="left")ctx.fillText("· "+ri.word,it.ax+nameW+5,it.ay);else ctx.fillText(ri.word+" ·",it.ax-nameW-5,it.ay);}
-        /* record a generous tappable box over the name (+relationship). Height is
-           the de-collision gap so the boxes tile the column with no dead zones. */
-        const padX=MOBILE?18:8,total=nameW+relW,hh=gap/2;
+      if(it.ri){ctx.font=RFS+"px Helvetica Neue, Arial";ctx.fillStyle="rgba("+(KIND_COLOR[it.ri.kind]||KIND_COLOR.collab)+",0.95)";
+        if(align==="left")ctx.fillText("· "+it.ri.word,it.ax+it.nameW+5,it.ay);else ctx.fillText(it.ri.word+" ·",it.ax-it.nameW-5,it.ay);}
+      ctx.restore();
+      if(!it.big){const padX=MOBILE?18:8,total=it.nameW+(it.ri?5+it.relTextW:0),hh=gap/2;
         const x0=align==="left"?it.ax-padX:it.ax-total-padX, x1=align==="left"?it.ax+total+padX:it.ax+padX;
         chordLabelBoxes.push({id:it.nd.id,x0,y0:it.ay-hh,x1,y1:it.ay+hh});}});
   }
