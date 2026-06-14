@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-14 — the chord-web is its own interaction, not the globe's
+
+- When the chord-web was promoted into the app its click was wired to the globe's `select()`, which pops a bio card *and* plays a preview clip. That quietly destroyed the prototype's two-step, silent model — and it took Huey describing the lost behaviour to surface it (a behaviour regression with no error). The chord-web reads in two steps: 1st click anchors a star and lights its ties **in silence** (no card, no audio); 2nd click on a tie reveals a breakout collab card. Lesson: when a view has its own mental model, give it its own input handler — don't borrow another view's `select()` just because the node type is the same.
+- **`nodeAt()` picked the wrong star on the ring.** Its tiebreak among overlapping hits is `nd._d` (depth) — meaningful on the globe but `0` for every node on the flat chord ring, so it returned whichever ring-neighbour came first in array order. On a ring where nodes sit ~10px apart under a ~15px hit radius, that's almost always the wrong star (clicking Blakey selected Bill Evans). Fixed by selecting the *closest* node in chord; globe's frontmost-depth pick is untouched. Lesson: a hit-test tiebreak that assumes a property only one view populates is a latent bug for every other view.
+- Shared the records loader: `loadCollabInto(box,a,b)` was extracted from the card's `toggleCollab` ♪ expander so the new chord breakout card reuses exactly the same band-vs-collab logic, listen links, and "no co-credited records" fallback — one code path, two entry points.
+
 ## 2026-06-14 — Timeline view fully removed (globe + chord only)
 
 - Huey only ever wanted two views: the floating globe and the era chord-web. The Timeline/depth-voyage (the 2026-06-13 "voyage" entry below, and the timeline branches woven through the engine) was removed entirely at his request — "I don't want the timeline included." Deleted rather than feature-flagged, since the self-contained chord view proved a clean second mode and a third dormant code path was pure liability.

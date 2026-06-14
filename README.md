@@ -20,7 +20,7 @@ This repo supersedes three earlier single-file apps ([jazz-](https://github.com/
 - **Discographies** load live from MusicBrainz; **photos** from Wikipedia; **preview clips** from Deezer/Apple (artist-verified before playing); **Apple Music links** via Apple's iTunes lookup.
 - **Collaborations are clickable**: tap the ♪ on any connection in an artist's card and it unfolds the recordings the two actually made together — title and year, pulled live from MusicBrainz co-credits (strong for joint billings and features; uncredited sideman sessions can be partial).
 - Search is diacritic-folded and typo-tolerant ("thelonius" finds Thelonious Monk).
-- A **Chord web** view (`#/<genre>/chord`) lays everyone on a ring grouped by era, every relationship arcing across to a living, flickering sun, the whole figure drifting slowly in starfield-and-galaxy space until you touch it. Hover a star to light its ties and name each connection by kind; click for its card and the records.
+- A **Chord web** view (`#/<genre>/chord`) lays everyone on a ring grouped by era, every relationship arcing across to a living, flickering sun, the whole figure drifting slowly in starfield-and-galaxy space until you touch it. It reads in two quiet steps: **click a star** to anchor it and light its ties (named by kind), then **click one of those ties** to reveal the records the two actually made together — years and direct Spotify / Apple Music / YouTube links — or a clear note when there are none.
 - Connection lines are styled by relationship: quiet gold = collaboration, bright white-gold = mentorship, dashed silver-blue = influence, dotted rose = rivalry (line styles double as a colorblind-safe encoding).
 
 ## Repo layout
