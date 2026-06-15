@@ -778,6 +778,36 @@ const wiki={
   "fiviforeign":"Fivio Foreign",
 };
 
+/* Films & docs: {title, year, director, note, url?} */
+const films=[
+  {title:"Wild Style",year:"1983",director:"Charlie Ahearn",note:"The first hip-hop movie — graffiti, b-boys and MCs in the South Bronx, with the real pioneers playing themselves."},
+  {title:"Style Wars",year:"1983",director:"Tony Silver",note:"The definitive document of New York subway graffiti and the culture around it; essential early footage."},
+  {title:"Scratch",year:"2001",director:"Doug Pray",note:"A loving history of the DJ and turntablism, from Grandmaster Flash to the Invisibl Skratch Piklz."},
+  {title:"Beats, Rhymes & Life: The Travels of A Tribe Called Quest",year:"2011",director:"Michael Rapaport",note:"An intimate, sometimes painful portrait of the group's brotherhood and friction."},
+  {title:"Time Is Illmatic",year:"2014",director:"One9",note:"How a teenage Nas and the Queensbridge projects produced the most revered debut in rap."},
+  {title:"The Defiant Ones",year:"2017",director:"Allen Hughes",note:"The Dr. Dre and Jimmy Iovine story — N.W.A, Death Row, Aftermath and Beats across four episodes."},
+  {title:"Hip-Hop Evolution",year:"2016",director:"Darby Wheeler",note:"A genial, interview-rich series walking the timeline decade by decade — a great primer."},
+  {title:"Fresh Dressed",year:"2015",director:"Sacha Jenkins",note:"Hip-hop told through fashion, from Bronx style wars to billion-dollar brands."},
+  {title:"Our Vinyl Weighs a Ton",year:"2013",director:"Jeff Broadway",note:"The story of Stones Throw Records — Madlib, J Dilla and the underground's beating heart."},
+  {title:"Rhyme & Reason",year:"1997",director:"Peter Spirer",note:"A mid-90s snapshot of the culture at a crossroads, voiced by dozens of its biggest names."},
+];
+
+/* Deep cuts: {title, artist, year, kind, note, id?} */
+const deepcuts=[
+  {title:"Critical Beatdown",artist:"Ultramagnetic MCs",year:"1988",kind:"Album",id:"ultramagnetic",note:"Kool Keith and Ced-Gee's sample-science and abstract rhyming arrived a decade early; a producer's-favourite cornerstone."},
+  {title:"Mecca and the Soul Brother",artist:"Pete Rock & CL Smooth",year:"1992",kind:"Album",id:"peterock",note:"The deepest well of dusty, horn-laden boom-bap — an album-length case for Pete Rock as a top-five producer."},
+  {title:"Stress: The Extinction Agenda",artist:"Organized Konfusion",year:"1994",kind:"Album",note:"Pharoahe Monch and Prince Po bend rhyme schemes into shapes the mainstream still hasn't caught up to."},
+  {title:"Enta da Stage",artist:"Black Moon",year:"1993",kind:"Album",note:"The Beatminerz' smoked-out basslines launched the Boot Camp Clik and a whole shade of mid-90s Brooklyn."},
+  {title:"Word...Life",artist:"O.C.",year:"1994",kind:"Album",note:"Home of “Time's Up,” a manifesto against fakeness — the quiet classic of the D.I.T.C. crew."},
+  {title:"Dr. Octagonecologyst",artist:"Dr. Octagon",year:"1996",kind:"Album",note:"Kool Keith and Dan the Automator's surreal sci-fi gross-out — the template for left-field rap to come."},
+  {title:"Funcrusher Plus",artist:"Company Flow",year:"1997",kind:"Album",note:"El-P's dystopian production and indie-label defiance built the lane Definitive Jux would pave."},
+  {title:"93 'til Infinity",artist:"Souls of Mischief",year:"1993",kind:"Album",note:"Teenage Oakland jazz-rap — breezy, complex and endlessly re-listenable; the Hieroglyphics crew's high point."},
+  {title:"Lifestylez ov da Poor & Dangerous",artist:"Big L",year:"1995",kind:"Album",id:"bigl",note:"Harlem's sharpest punchliner before his murder at 24 — every bar quotable, the whole record under-heard."},
+  {title:"The Sun Rises in the East",artist:"Jeru the Damaja",year:"1994",kind:"Album",note:"DJ Premier at his most minimal and menacing under one of rap's most cerebral voices."},
+  {title:"Soul Food",artist:"Goodie Mob",year:"1995",kind:"Album",id:"goodiemob",note:"The album that named the “Dirty South,” pairing Organized Noize's swamp-funk with conscience and CeeLo's wail."},
+  {title:"Madvillainy",artist:"Madvillain",year:"2004",kind:"Album",note:"MF DOOM and Madlib's masterpiece of mumbled menace and micro-beats — beloved by heads, invisible on radio."},
+];
+
 window.GENRE_DATA=window.GENRE_DATA||{};
 window.GENRE_DATA["hiphop"]={
   key:"hiphop",
@@ -796,6 +826,6 @@ mbid:{"funky4":"50498fa1-b339-4ac8-9327-d5db0e98a1f8","busybee":"bc7f8533-0ec6-4
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"crazylegs":{"artist":"Rock Steady Crew","q":"Rock Steady Crew Hey You"},"theneptunes":{"artist":"Clipse","q":"Clipse Grindin"},"jammasterjay":{"did":79236},"scottlarock":{"did":8618},"souljaboy":{"did":352219},"puffdaddy":{"did":173581},"keithcowboy":{"artist":"Grandmaster Flash & The Furious Five","q":"Grandmaster Flash The Message"},"juicecrew":{"artist":"Marley Marl","q":"Marley Marl The Symphony"},"chuckd":{"artist":"Public Enemy","q":"Public Enemy Fight the Power"},"questlove":{"artist":"The Roots","q":"The Roots You Got Me"},"rickrubin":{"artist":"Beastie Boys","q":"Beastie Boys Fight for Your Right"},"madlib":{"artist":"Madvillain","q":"Madvillain Accordion"},"busybee":{"artist":"Busy Bee","q":"Busy Bee Suicide"},"tooshort":{"q":"Too Short Blow the Whistle"},"deathrow":{"artist":"Dr. Dre","q":"Dr. Dre Nuthin but a G Thang"},"badboy":{"artist":"The Notorious B.I.G.","q":"Notorious B.I.G. Hypnotize"},"cashmoney":{"artist":"Lil Wayne","q":"Lil Wayne A Milli"},"tde":{"artist":"Kendrick Lamar","q":"Kendrick Lamar HUMBLE"}},
   sym:["peer","collaborated","rivals","beef","crew","group","duo","co-founded","frequent collaborators"],
-  eras,nodes,edges,lib,critics,resources,wiki,
+  eras,nodes,edges,lib,critics,resources,films,deepcuts,wiki,
 };
 })();

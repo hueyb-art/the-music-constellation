@@ -574,6 +574,36 @@ const wiki={
   "gracejones":"Grace Jones",
 };
 
+/* Films & docs: {title, year, director, note, url?} */
+const films=[
+  {title:"The Harder They Come",year:"1972",director:"Perry Henzell",note:"Jimmy Cliff stars in the film that broke reggae worldwide; its soundtrack is a genre primer in itself."},
+  {title:"Rockers",year:"1978",director:"Theodoros Bafaloukos",note:"A Robin Hood tale acted by real musicians (Leroy “Horsemouth” Wallace and friends) — a joyous snapshot of roots-era Kingston."},
+  {title:"Marley",year:"2012",director:"Kevin Macdonald",note:"The definitive, family-sanctioned documentary on Bob Marley — exhaustive and moving."},
+  {title:"Roots, Rock, Reggae",year:"1977",director:"Jeremy Marre",note:"A field film of 1970s Jamaica, with Lee Perry, the Mighty Diamonds and Jimmy Cliff caught at work."},
+  {title:"Babylon",year:"1980",director:"Franco Rosso",note:"A raw drama of a London sound-system crew facing racism — long unreleased in the US, now a cult classic."},
+  {title:"Stepping Razor: Red X",year:"1992",director:"Nicholas Campbell",note:"Peter Tosh narrates his own life from beyond, via the “Red X” tapes — fierce and prophetic."},
+  {title:"The Upsetter: The Life and Music of Lee Scratch Perry",year:"2008",director:"Ethan Higbee & Adam Bhala Lough",note:"A trip through the mind of dub's mad genius, narrated by Perry himself."},
+  {title:"Word, Sound and Power",year:"1980",director:"Jeremy Marre",note:"A portrait of the Soul Syndicate session band — the players behind countless roots hits."},
+  {title:"Made in Jamaica",year:"2006",director:"Jérôme Laperrousaz",note:"A widescreen survey linking roots reggae and modern dancehall, filmed across the island."},
+  {title:"Countryman",year:"1982",director:"Dickie Jobson",note:"A mystical island adventure with an all-star Island Records soundtrack — pure early-80s atmosphere."},
+];
+
+/* Deep cuts: {title, artist, year, kind, note, id?} */
+const deepcuts=[
+  {title:"Heart of the Congos",artist:"The Congos",year:"1977",kind:"Album",id:"congos",note:"Lee Perry's masterpiece at the Black Ark: harmony singing drenched in echo, mooing cows and tape decay. Reggae's most beautiful headphone record."},
+  {title:"King Tubbys Meets Rockers Uptown",artist:"Augustus Pablo",year:"1976",kind:"Album",id:"augustuspablo",note:"The melodica meets King Tubby's mixing desk — the album that defined dub as an art of space and shadow."},
+  {title:"Satta Massagana",artist:"The Abyssinians",year:"1976",kind:"Album",id:"abyssinians",note:"The deep Rastafari hymn that gave roots reggae its spiritual template, collected on an album years after the single."},
+  {title:"Marcus Garvey",artist:"Burning Spear",year:"1975",kind:"Album",id:"burningspear",note:"Winston Rodney's hypnotic Garveyite anthems; chase it with the dub companion “Garvey's Ghost.”"},
+  {title:"Police and Thieves",artist:"Junior Murvin",year:"1977",kind:"Album",id:"juniormurvin",note:"A falsetto and a Perry production so perfect the Clash covered the title track; the rest of the LP runs just as deep."},
+  {title:"Two Sevens Clash",artist:"Culture",year:"1977",kind:"Album",id:"culture",note:"Apocalyptic harmony reggae so potent that parts of Jamaica reportedly stayed home on 7 July 1977, the day it foretold."},
+  {title:"Pick a Dub",artist:"Keith Hudson",year:"1974",kind:"Album",note:"One of the first albums conceived as dub from the ground up — dark, dread and years ahead of its time."},
+  {title:"In the Light",artist:"Horace Andy",year:"1977",kind:"Album",id:"horaceandy",note:"The quavering voice later borrowed by Massive Attack, here at his rootsy peak with a dub disc attached."},
+  {title:"Wild Suspense",artist:"The Wailing Souls",year:"1979",kind:"Album",id:"wailingsouls",note:"Tougher, sweeter harmony-group reggae cut for Channel One — a connoisseur's favourite that never crossed over."},
+  {title:"Scientist Rids the World of the Evil Curse of the Vampires",artist:"Scientist",year:"1981",kind:"Album",id:"scientist",note:"Comic-book sleeve, deadly serious dub: a young King Tubby protégé reshaping Roots Radics rhythms into monster movies."},
+  {title:"Conquering Lion",artist:"Yabby You",year:"1975",kind:"Album",note:"The “Jesus Dread” — austere, otherworldly roots from a singer outside the usual orthodoxy."},
+  {title:"African Dub All-Mighty, Chapter 3",artist:"Joe Gibbs & The Professionals",year:"1978",kind:"Album",id:"joegibbs",note:"The dub series with the sound effects — ringing phones, sirens, thunder — playful, populist and hugely influential."},
+];
+
 window.GENRE_DATA=window.GENRE_DATA||{};
 window.GENRE_DATA["reggae"]={
   key:"reggae",
@@ -592,6 +622,6 @@ mbid:{"bunnylee":"16ad0626-7c09-455c-8841-0cc4b157c22b","wailingsouls":"f28a0e2e
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"tootshibbert":{"artist":"Toots and the Maytals","q":"Toots and the Maytals"},"bobmarley":{"did":719},"charliechaplin":{"q":"Charlie Chaplin Tribute to Reggae","only":true},"scientist":{"q":"Scientist Vampires Dub"},"koffee":{"q":"Koffee Toast"},"coxsone":{"artist":"The Skatalites","q":"The Skatalites Guns of Navarone"},"bunnylee":{"artist":"Johnny Clarke","q":"Johnny Clarke None Shall Escape the Judgement"},"winstonriley":{"artist":"Tenor Saw","q":"Tenor Saw Ring the Alarm"},"carltonbarrett":{"did":719},"bobbydigital":{"artist":"Sizzla","q":"Sizzla Black Woman and Child"}},
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
-  eras,nodes,edges,lib,critics,resources,wiki,
+  eras,nodes,edges,lib,critics,resources,films,deepcuts,wiki,
 };
 })();

@@ -22,6 +22,8 @@ This repo supersedes three earlier single-file apps ([jazz-](https://github.com/
 - Search is diacritic-folded and typo-tolerant ("thelonius" finds Thelonious Monk).
 - A **Chord web** view (`#/<genre>/chord`) lays everyone on a ring grouped by era, every relationship arcing across to a living, flickering sun, the whole figure drifting slowly in starfield-and-galaxy space until you touch it. It reads in two quiet steps: **click a star** to anchor it and light its ties (named by kind), then **click one of those ties** to reveal the records the two actually made together — years and direct Spotify / Apple Music / YouTube links — and hear a preview of one of those shared songs start to play (or a clear note when there are none).
 - Connection lines are styled by relationship: quiet gold = collaboration, bright white-gold = mentorship, dashed silver-blue = influence, dotted rose = rivalry (line styles double as a colorblind-safe encoding).
+- A small **instrument/role tag** ("Trumpet", "Producer", "MC"…) appears under each name while you explore a musician and their connections — so a newcomer learns who played what.
+- The **Rooms** open beyond the map: a *Reading* shelf of critics and histories, a *Films & docs* list of documentaries and films worth watching, and *Deep Cuts* — essential but under-the-radar records, each with listen links and a path back to the artist's page.
 
 ## Repo layout
 

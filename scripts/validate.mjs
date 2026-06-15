@@ -82,6 +82,15 @@ for (const [key, g] of Object.entries(genres)) {
   for (const r of g.resources)
     if (!Array.isArray(r) || r.length !== 3 || !/^https:\/\//.test(r[2])) p(`resource ${JSON.stringify(r && r[0])} must be [title, note, https-url]`);
 
+  for (const f of g.films || []) {
+    if (!f || typeof f.title !== "string" || typeof f.note !== "string") p(`film ${JSON.stringify(f && f.title)} must have a title and note`);
+    else if (f.url && !/^https:\/\//.test(f.url)) p(`film "${f.title}" url must be an https url`);
+  }
+  for (const d of g.deepcuts || []) {
+    if (!d || typeof d.title !== "string" || typeof d.artist !== "string" || typeof d.note !== "string") p(`deep cut ${JSON.stringify(d && d.title)} must have title, artist and note`);
+    else if (d.id && !ids.has(d.id)) p(`deep cut "${d.title}" links to missing node "${d.id}"`);
+  }
+
   for (const [re] of g.roleGroups) {
     try { new RegExp(re); } catch { p(`roleGroups pattern "${re}" is not a valid regex`); }
   }

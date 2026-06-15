@@ -6,7 +6,7 @@
 const GENRES=window.GENRE_DATA||{};
 const GENRE_ORDER=["jazz","hiphop","reggae"].filter(k=>GENRES[k]);
 let G=null;
-let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],WIKI={},SYM=[];
+let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],FILMS=[],DEEPCUTS=[],WIKI={},SYM=[];
 let byId={},adj={};
 const lsKey=s=>"tmc_"+G.key+"_"+s;
 
@@ -559,18 +559,41 @@ function openPage(nd){
   selNode=nd;computeFocus(nd);centerOn(nd);
 }
 function closePage(){pageEl.classList.remove("open");pageOpen=false;}
-function openReadingRoom(){
-  pageInner.innerHTML=`<button class="back" id="backBtn"><span>&larr;</span> Back to the constellation</button>
-    <span class="pill" style="background:rgba(224,177,90,.18);color:#e0b15a">The reading room</span>
-    <h1>The reading room</h1>
-    <p class="lead">A shelf of the writers who shaped how we hear this music — the critics, historians, and memoirists worth seeking out beyond any single musician's page.</p>
+/* ----------  THE ROOMS: Reading / Films / Deep Cuts (one tabbed page)  ---------- */
+let roomTab="read";
+const ROOM_TABS=[["read","Reading"],["watch","Films & docs"],["cuts","Deep cuts"]];
+function roomReadingHTML(){
+  return `<p class="lead">A shelf of the writers who shaped how we hear this music — the critics, historians, and memoirists worth seeking out beyond any single musician's page.</p>
     ${CRITICS.map(c=>`<div class="critic"><h4>${c.name}</h4><div class="cnote">${c.note}</div>${c.books.map(b=>`<div class="brow"><span class="btitle">${b[0]}</span> <span class="bmeta">— ${b[1]}</span></div>`).join("")}</div>`).join("")}
     <h3 style="margin-top:40px">Periodicals, archives &amp; forums</h3>
     <div class="reslist">${RESOURCES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`;
+}
+function roomFilmsHTML(){
+  if(!FILMS.length)return `<p class="lead">Film picks for this constellation are on the way.</p>`;
+  return `<p class="lead">Documentaries and films that bring this music to life — portraits, concert films, and the histories worth watching.</p>
+    ${FILMS.map(f=>{const yt=`https://www.youtube.com/results?search_query=${encodeURIComponent(f.title+" "+(f.year||"")+" trailer")}`,jw=`https://www.justwatch.com/us/search?q=${encodeURIComponent(f.title)}`;
+      return `<div class="film"><div class="frow"><span class="ftitle">${esc(f.title)}</span><span class="fmeta">${[f.year,f.director?"dir. "+esc(f.director):""].filter(Boolean).join(" · ")}</span></div><div class="fnote">${esc(f.note)}</div><div class="flinks">${f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">More</a>`:""}<a href="${yt}" target="_blank" rel="noopener">YouTube</a><a href="${jw}" target="_blank" rel="noopener">Where to watch</a></div></div>`;}).join("")}`;
+}
+function roomCutsHTML(){
+  if(!DEEPCUTS.length)return `<p class="lead">Deep cuts for this constellation are on the way.</p>`;
+  return `<p class="lead">Deep cuts — essential but under-the-radar records and tracks, the ones aficionados press into your hands. Tap a service to listen; tap a name in the constellation to open their page.</p>
+    ${DEEPCUTS.map(d=>{const artist=(d.id&&byId[d.id])?`<a class="dcartist" data-id="${d.id}">${esc(d.artist)}</a>`:esc(d.artist);
+      return `<div class="dc"><div class="dcrow"><span class="dctitle">${esc(d.title)}</span> <span class="dcby">${artist}</span> <span class="dcmeta">${[d.year,d.kind].filter(Boolean).map(esc).join(" · ")}</span></div><div class="dcnote">${esc(d.note)}</div><div class="dclinks">${svc(d.artist+" "+d.title)}</div></div>`;}).join("")}`;
+}
+function openRooms(tab){
+  if(tab)roomTab=tab;
+  const body=roomTab==="watch"?roomFilmsHTML():roomTab==="cuts"?roomCutsHTML():roomReadingHTML();
+  pageInner.innerHTML=`<button class="back" id="backBtn"><span>&larr;</span> Back to the constellation</button>
+    <span class="pill" style="background:rgba(224,177,90,.18);color:#e0b15a">The rooms</span>
+    <div class="roomtabs">${ROOM_TABS.map(([k,l])=>`<button class="roomtab${k===roomTab?" on":""}" data-tab="${k}">${l}</button>`).join("")}</div>
+    <div class="roombody">${body}</div>`;
   document.getElementById("backBtn").onclick=closePage;
+  pageInner.querySelectorAll(".roomtab").forEach(b=>b.onclick=()=>openRooms(b.dataset.tab));
+  pageInner.querySelectorAll(".dcartist[data-id]").forEach(el=>el.onclick=()=>{const nd=byId[el.dataset.id];if(nd)openPage(nd);});
+  wireApple(pageInner);
   pageEl.scrollTop=0;pageEl.classList.add("open");pageOpen=true;
 }
-document.getElementById("rrBtn").onclick=openReadingRoom;
+document.getElementById("rrBtn").onclick=()=>openRooms();
 
 /* ----------  LIVE DISCOGRAPHY (MusicBrainz)  ---------- */
 /* delegate to the shared MusicBrainz queue (js/collab.js) so discographies and
@@ -772,7 +795,7 @@ GENRE_ORDER.forEach(k=>{
 });
 function loadGenre(key){
   G=GENRES[key];
-  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;WIKI=G.wiki;SYM=G.sym;
+  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];WIKI=G.wiki;SYM=G.sym;
   /* reset interaction state */
   hoverNode=null;selNode=null;chordAnchor=null;focusSet=null;curId=null;
   panel.classList.remove("open");closePage();if(clip)clip.pause();clipNote("");

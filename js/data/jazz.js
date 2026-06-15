@@ -939,6 +939,40 @@ const wiki={
   "dimeola":"Al Di Meola",
 };
 
+/* Films & docs: {title, year, director, note, url?} — url optional (else search links) */
+const films=[
+  {title:"Jazz",year:"2001",director:"Ken Burns",note:"The sweeping 19-hour PBS history — the standard popular introduction, from New Orleans to the 1960s."},
+  {title:"Jazz on a Summer's Day",year:"1959",director:"Bert Stern",note:"A luminous concert film of the 1958 Newport Jazz Festival, as much about the light and the crowd as the music."},
+  {title:"A Great Day in Harlem",year:"1994",director:"Jean Bach",note:"The story behind the famous 1958 photograph that gathered 57 musicians on a Harlem stoop."},
+  {title:"Straight, No Chaser",year:"1988",director:"Charlotte Zwerin",note:"Thelonious Monk on tour in 1967–68, built from rediscovered footage and produced by Clint Eastwood."},
+  {title:"Let's Get Lost",year:"1988",director:"Bruce Weber",note:"A gorgeous, melancholy portrait of trumpeter-singer Chet Baker in his final year."},
+  {title:"I Called Him Morgan",year:"2016",director:"Kasper Collin",note:"The tender, tragic story of Lee Morgan and Helen, the woman who shaped his life and ended it."},
+  {title:"Chasing Trane",year:"2016",director:"John Scheinfeld",note:"A clear-eyed life of John Coltrane, with Denzel Washington voicing his words."},
+  {title:"Miles Davis: Birth of the Cool",year:"2019",director:"Stanley Nelson",note:"A full-scale documentary biography drawing on Davis's own gravel-voiced memoir."},
+  {title:"'Round Midnight",year:"1986",director:"Bertrand Tavernier",note:"Dexter Gordon's Oscar-nominated turn as an expatriate saxophonist in Paris — fiction, but the realest jazz film."},
+  {title:"Bird",year:"1988",director:"Clint Eastwood",note:"Forest Whitaker as Charlie Parker in a dark, devoted biopic."},
+  {title:"Keep On Keepin' On",year:"2014",director:"Alan Hicks",note:"Ailing trumpet elder Clark Terry mentors a young blind pianist — one of the warmest films jazz has."},
+  {title:"Ornette: Made in America",year:"1985",director:"Shirley Clarke",note:"A kaleidoscopic, time-skipping portrait of Ornette Coleman by an avant-garde filmmaker."},
+];
+
+/* Deep cuts: {title, artist, year, kind, note, id?} — id links to a node when the artist is in the constellation */
+const deepcuts=[
+  {title:"Point of Departure",artist:"Andrew Hill",year:"1964",kind:"Album",id:"andrewhill",note:"A high-water mark of Blue Note's adventurous mid-60s — Dolphy, Joe Henderson and a teenage Tony Williams floating free of the bar line."},
+  {title:"Out Front",artist:"Booker Little",year:"1961",kind:"Album",id:"bookerlittle",note:"The dazzling trumpeter's statement of intent, made the year before he died at 23 — daring writing that only hints at what was lost."},
+  {title:"Fuchsia Swing Song",artist:"Sam Rivers",year:"1964",kind:"Album",id:"rivers",note:"“Inside-outside” playing at its most lyrical: a quiet bridge between hard bop and the avant-garde that far too few have heard."},
+  {title:"Unity",artist:"Larry Young",year:"1965",kind:"Album",id:"larryyoung",note:"The “Coltrane of the organ” reinvents the Hammond B-3 for modal jazz, with Woody Shaw and Elvin Jones pushing hard."},
+  {title:"Idle Moments",artist:"Grant Green",year:"1964",kind:"Album",id:"grantgreen",note:"The most languid, late-night record in the Blue Note catalogue — the title track unspools for fifteen unhurried minutes."},
+  {title:"Evolution",artist:"Grachan Moncur III",year:"1963",kind:"Album",note:"A trombonist-composer's eerie, spacious one-off; proof the Blue Note vaults still hide masterpieces."},
+  {title:"True Blue",artist:"Tina Brooks",year:"1960",kind:"Album",note:"The only album released in the lifetime of a tenor player whose warm, blue tone became a collector's holy grail."},
+  {title:"The Black Saint and the Sinner Lady",artist:"Charles Mingus",year:"1963",kind:"Album",id:"mingus",note:"A single through-composed ballet in six movements — Mingus's most ambitious canvas, equal parts Ellington, flamenco and the church."},
+  {title:"Let Freedom Ring",artist:"Jackie McLean",year:"1962",kind:"Album",id:"mclean",note:"The moment a hard-bop altoist leans into the new freedom without losing the blues — a hinge record of the era."},
+  {title:"Complete Communion",artist:"Don Cherry",year:"1966",kind:"Album",id:"cherry",note:"Four themes flowing into two side-long suites; the warm, questing heart of Cherry's “world” jazz before the term existed."},
+  {title:"Ptah, the El Daoud",artist:"Alice Coltrane",year:"1970",kind:"Album",id:"alice",note:"Harp, piano and two tenors (Sanders and Joe Henderson) conjure a spiritual jazz that still sounds beamed in from elsewhere."},
+  {title:"Tauhid",artist:"Pharoah Sanders",year:"1967",kind:"Album",id:"pharoah",note:"His Impulse! debut: long, patient, incantatory — the gentler, deeper side of the fire-music revolution."},
+  {title:"The Quest",artist:"Mal Waldron",year:"1961",kind:"Album",note:"A pianist's somber, knotty session featuring Eric Dolphy and Booker Ervin — under-celebrated and quietly perfect."},
+  {title:"The Moontrane",artist:"Woody Shaw",year:"1974",kind:"Album",id:"woodyshaw",note:"The last great trumpet stylist's breakout as a leader — modern, muscular post-bop pointing a way forward in a fusion age."},
+];
+
 window.GENRE_DATA=window.GENRE_DATA||{};
 window.GENRE_DATA["jazz"]={
   key:"jazz",
@@ -957,6 +991,6 @@ mbid:{"hiromi":"8472f0ce-c57d-46f2-93db-d4a6f6e6473a","jojones":"ceda2457-e16f-4
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{},
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
-  eras,nodes,edges,lib,critics,resources,wiki,
+  eras,nodes,edges,lib,critics,resources,films,deepcuts,wiki,
 };
 })();

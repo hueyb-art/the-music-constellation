@@ -34,6 +34,17 @@ e("idA","idB","relationship"),
 - `preview` — audio preview overrides: `{did:<deezer artist id>}` pins the artist; `{artist, q}` plays a signature track; `only:true` skips fallback searches for famous-namesake collisions
 - `discoAs` — pull another act's discography (sidemen with thin solo catalogues)
 
+## The rooms (Reading / Films / Deep Cuts)
+
+The **Rooms** button opens one page with three tabs, each backed by a per-genre array:
+
+- `critics` — Reading tab: `[{name, note, books:[[title, year], …]}, …]`
+- `resources` — Reading tab footer: `[[title, note, https-url], …]`
+- `films` — Films & docs tab: `[{title, year, director, note, url?}, …]`. `url` is optional; without it the app shows YouTube + "where to watch" search links built from the title.
+- `deepcuts` — Deep Cuts tab: `[{title, artist, year, kind, note, id?}, …]`. `kind` is a free label ("Album", "Track", "Project"). `id` is optional — set it to a node id and the artist name becomes a link that opens that artist's page; listen links (Spotify/Apple/YouTube) are generated automatically from `artist + title`. The validator checks that any `id` references a real node.
+
+`films` and `deepcuts` are optional (a genre without them just shows a "coming soon" line). Remember to list every new const in the `window.GENRE_DATA[...]` object literal at the bottom of the file.
+
 ## Adding a genre
 
 1. Copy an existing data file to `js/data/<key>.js`; replace key, names, theme colors, eras, roleGroups, and curation.
