@@ -248,6 +248,8 @@ n("sanborn","David Sanborn","modern","Alto saxophone","1945–2024 · American",
 n("evanparker","Evan Parker","free","Saxophone","b.1944 · British","The frontier of solo saxophone.","A British free-improvisation pioneer whose extended techniques — circular breathing, multiphonics — redrew the map of what the saxophone could do.",[["1975","Saxophone Solos",""]]),
 n("bailey","Derek Bailey","free","Guitar","1930–2005 · British","Free improvisation's restless conscience.","A British guitarist who abandoned idiom entirely for pure non-idiomatic improvisation — one of the most radical figures in free music.",[["1971","Solo Guitar",""]]),
 n("brotzmann","Peter Brötzmann","free","Saxophone","1941–2023 · German","European free jazz at full force.","A German saxophonist of ferocious, blasting power whose 'Machine Gun' became a landmark of European free jazz.",[["1968","Machine Gun",""]]),
+n("viviangarry","Vivian Garry","bebop","Bass · bandleader","1920–2008 · American","Led one of the first all-women bebop combos.","A double bassist who fronted her own quartets and quintets on 1940s 52nd Street — among the first women to lead a bebop group, in a scene that rarely made room for them.",[["c.1945","52nd Street small-group sides",""]]),
+n("nancywilson","Nancy Wilson","hardbop","Voice","1937–2018 · American","The consummate song stylist.","A singer of impeccable phrasing and control who moved between jazz, R&B and pop without ever sounding less than herself; her 1962 album with Cannonball Adderley remains a touchstone.",[["1962","Nancy Wilson/Cannonball Adderley",""],["1964","How Glad I Am",""]]),
 ];
 
 const edges=[
@@ -795,6 +797,11 @@ e("bailey","frisell","influenced"),
 e("bailey","zorn","collaborated"),
 e("brotzmann","ayler","influenced by"),
 e("brotzmann","shepp","peer"),
+e("nancywilson","cannonball","collaborated"),
+e("dinah","nancywilson","influenced"),
+e("nancywilson","carmen","peer"),
+e("viviangarry","marylou","peer"),
+e("viviangarry","pettiford","peer"),
 ];
 
 /* Biographies & further reading shown on artist pages */
