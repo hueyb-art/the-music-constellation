@@ -6,7 +6,7 @@
 const GENRES=window.GENRE_DATA||{};
 const GENRE_ORDER=["jazz","hiphop","reggae"].filter(k=>GENRES[k]);
 let G=null;
-let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],FILMS=[],DEEPCUTS=[],WIKI={},SYM=[];
+let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],ARCHIVES=[],FILMS=[],DEEPCUTS=[],WIKI={},SYM=[];
 let byId={},adj={};
 const lsKey=s=>"tmc_"+G.key+"_"+s;
 
@@ -565,7 +565,9 @@ const ROOM_TABS=[["read","Reading"],["watch","Films & docs"],["cuts","Deep cuts"
 function roomReadingHTML(){
   return `<p class="lead">A shelf of the writers who shaped how we hear this music — the critics, historians, and memoirists worth seeking out beyond any single musician's page.</p>
     ${CRITICS.map(c=>`<div class="critic"><h4>${c.name}</h4><div class="cnote">${c.note}</div>${c.books.map(b=>`<div class="brow"><span class="btitle">${b[0]}</span> <span class="bmeta">— ${b[1]}</span></div>`).join("")}</div>`).join("")}
-    <h3 style="margin-top:40px">Periodicals, archives &amp; forums</h3>
+    ${ARCHIVES.length?`<h3 style="margin-top:40px">Archives &amp; primary sources</h3>
+    <div class="reslist">${ARCHIVES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`:""}
+    <h3 style="margin-top:40px">Periodicals &amp; community</h3>
     <div class="reslist">${RESOURCES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`;
 }
 function roomFilmsHTML(){
@@ -795,7 +797,7 @@ GENRE_ORDER.forEach(k=>{
 });
 function loadGenre(key){
   G=GENRES[key];
-  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];WIKI=G.wiki;SYM=G.sym;
+  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;ARCHIVES=G.archives||[];FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];WIKI=G.wiki;SYM=G.sym;
   /* reset interaction state */
   hoverNode=null;selNode=null;chordAnchor=null;focusSet=null;curId=null;
   panel.classList.remove("open");closePage();if(clip)clip.pause();clipNote("");

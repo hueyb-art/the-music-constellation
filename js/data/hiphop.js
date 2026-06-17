@@ -667,6 +667,14 @@ const resources=[
   ["Discogs — Hip-Hop","Detailed release and label data","https://www.discogs.com/genre/hip-hop"],
 ];
 
+/* Archives & primary sources: [title, note, https-url] */
+const archives=[
+  ["Cornell Hip Hop Collection","250,000+ artifacts documenting hip-hop's origins — the field's largest archive","https://rmc.library.cornell.edu/hiphop/"],
+  ["Hiphop Archive & Research Institute, Harvard","Founded 2002 at the Hutchins Center; scholarship, lectures and the global study of hip-hop","https://hutchinscenter.fas.harvard.edu/institutes/hiphop-archive-research-institute"],
+  ["Smithsonian Anthology of Hip-Hop and Rap","129 tracks across nine discs with a 300-page book of essays — curated with Chuck D, MC Lyte, Questlove and 9th Wonder","https://folkways.si.edu/smithsonian-anthology-of-hip-hop-and-rap"],
+  ["The Hip Hop Museum (Bronx)","Hip-hop's forthcoming forever home, rising on the Harlem River in the South Bronx","https://thhm.org/"],
+];
+
 /* Wikipedia page-title overrides for photo lookups */
 const wiki={
   "koolherc":"DJ Kool Herc",
@@ -802,6 +810,10 @@ const films=[
   {title:"Fresh Dressed",year:"2015",director:"Sacha Jenkins",note:"Hip-hop told through fashion, from Bronx style wars to billion-dollar brands."},
   {title:"Our Vinyl Weighs a Ton",year:"2013",director:"Jeff Broadway",note:"The story of Stones Throw Records — Madlib, J Dilla and the underground's beating heart."},
   {title:"Rhyme & Reason",year:"1997",director:"Peter Spirer",note:"A mid-90s snapshot of the culture at a crossroads, voiced by dozens of its biggest names."},
+  {title:"Rubble Kings",year:"2015",director:"Shan Nicholson",note:"How a 1971 gang truce in the Bronx cleared the ground for hip-hop to be born."},
+  {title:"Freestyle: The Art of Rhyme",year:"2000",director:"Kevin Fitzgerald",note:"A deep look at improvised rhyming and the battle tradition, from Supernatural to street cyphers."},
+  {title:"Something from Nothing: The Art of Rap",year:"2012",director:"Ice-T",note:"Ice-T sits MC to MC with the greats — craft talk on writing and flow, no hooks or videos."},
+  {title:"Straight Outta Compton",year:"2015",director:"F. Gary Gray",note:"The N.W.A biopic — Compton, Ruthless Records and the birth of gangsta rap (dramatized but vivid)."},
 ];
 
 /* Deep cuts: {title, artist, year, kind, note, id?} */
@@ -838,6 +850,6 @@ mbid:{"funky4":"50498fa1-b339-4ac8-9327-d5db0e98a1f8","busybee":"bc7f8533-0ec6-4
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"crazylegs":{"artist":"Rock Steady Crew","q":"Rock Steady Crew Hey You"},"theneptunes":{"artist":"Clipse","q":"Clipse Grindin"},"jammasterjay":{"did":79236},"scottlarock":{"did":8618},"souljaboy":{"did":352219},"puffdaddy":{"did":173581},"keithcowboy":{"artist":"Grandmaster Flash & The Furious Five","q":"Grandmaster Flash The Message"},"juicecrew":{"artist":"Marley Marl","q":"Marley Marl The Symphony"},"chuckd":{"artist":"Public Enemy","q":"Public Enemy Fight the Power"},"questlove":{"artist":"The Roots","q":"The Roots You Got Me"},"rickrubin":{"artist":"Beastie Boys","q":"Beastie Boys Fight for Your Right"},"madlib":{"artist":"Madvillain","q":"Madvillain Accordion"},"busybee":{"artist":"Busy Bee","q":"Busy Bee Suicide"},"tooshort":{"q":"Too Short Blow the Whistle"},"deathrow":{"artist":"Dr. Dre","q":"Dr. Dre Nuthin but a G Thang"},"badboy":{"artist":"The Notorious B.I.G.","q":"Notorious B.I.G. Hypnotize"},"cashmoney":{"artist":"Lil Wayne","q":"Lil Wayne A Milli"},"tde":{"artist":"Kendrick Lamar","q":"Kendrick Lamar HUMBLE"}},
   sym:["peer","collaborated","rivals","beef","crew","group","duo","co-founded","frequent collaborators"],
-  eras,nodes,edges,lib,critics,resources,films,deepcuts,wiki,
+  eras,nodes,edges,lib,critics,resources,archives,films,deepcuts,wiki,
 };
 })();

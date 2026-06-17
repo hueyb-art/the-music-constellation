@@ -82,6 +82,9 @@ for (const [key, g] of Object.entries(genres)) {
   for (const r of g.resources)
     if (!Array.isArray(r) || r.length !== 3 || !/^https:\/\//.test(r[2])) p(`resource ${JSON.stringify(r && r[0])} must be [title, note, https-url]`);
 
+  for (const r of g.archives || [])
+    if (!Array.isArray(r) || r.length !== 3 || !/^https:\/\//.test(r[2])) p(`archive ${JSON.stringify(r && r[0])} must be [title, note, https-url]`);
+
   for (const f of g.films || []) {
     if (!f || typeof f.title !== "string" || typeof f.note !== "string") p(`film ${JSON.stringify(f && f.title)} must have a title and note`);
     else if (f.url && !/^https:\/\//.test(f.url)) p(`film "${f.title}" url must be an https url`);

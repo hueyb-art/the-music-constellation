@@ -39,7 +39,8 @@ e("idA","idB","relationship"),
 The **Rooms** button opens one page with three tabs, each backed by a per-genre array:
 
 - `critics` — Reading tab: `[{name, note, books:[[title, year], …]}, …]`
-- `resources` — Reading tab footer: `[[title, note, https-url], …]`
+- `resources` — Reading tab "Periodicals & community": `[[title, note, https-url], …]`
+- `archives` — Reading tab "Archives & primary sources" (optional): `[[title, note, https-url], …]`. For serious institutional collections (Library of Congress, Smithsonian, university archives). Same shape as `resources`, rendered in its own section above the periodicals.
 - `films` — Films & docs tab: `[{title, year, director, note, url?}, …]`. `url` is optional; without it the app shows YouTube + "where to watch" search links built from the title.
 - `deepcuts` — Deep Cuts tab: `[{title, artist, year, kind, note, id?}, …]`. `kind` is a free label ("Album", "Track", "Project"). `id` is optional — set it to a node id and the artist name becomes a link that opens that artist's page; listen links (Spotify/Apple/YouTube) are generated automatically from `artist + title`. The validator checks that any `id` references a real node.
 

@@ -447,6 +447,13 @@ const resources=[
   ["Discogs — Reggae","Detailed release and label data","https://www.discogs.com/genre/reggae"],
 ];
 
+/* Archives & primary sources: [title, note, https-url] */
+const archives=[
+  ["Reggae Studies Unit, UWI Mona","The University of the West Indies' research home for reggae and Jamaican popular culture; hosts the Global Reggae Conference","https://www.mona.uwi.edu/humed/ics/reggae-studies-unit"],
+  ["Jamaica Music Museum (Institute of Jamaica)","JaMM: the national archive, research facility and exhibition space for Jamaica's music, in downtown Kingston","https://instituteofjamaica.org.jm/"],
+  ["Roots Knotty Roots","The definitive discography of Jamaican singles — 130,000+ listings (1953–1999) with riddims and studio notes","https://www.reggaefever.ch/rkr/"],
+];
+
 /* Wikipedia page-title overrides for photo lookups */
 const wiki={
   "skatalites":"The Skatalites",
@@ -586,6 +593,10 @@ const films=[
   {title:"Word, Sound and Power",year:"1980",director:"Jeremy Marre",note:"A portrait of the Soul Syndicate session band — the players behind countless roots hits."},
   {title:"Made in Jamaica",year:"2006",director:"Jérôme Laperrousaz",note:"A widescreen survey linking roots reggae and modern dancehall, filmed across the island."},
   {title:"Countryman",year:"1982",director:"Dickie Jobson",note:"A mystical island adventure with an all-star Island Records soundtrack — pure early-80s atmosphere."},
+  {title:"Bob Marley: Time Will Tell",year:"1992",director:"Declan Lowney",note:"An early, archive-rich Marley portrait assembled largely from his own words and performances."},
+  {title:"Dub Echoes",year:"2009",director:"Bruno Natal",note:"How dub — born at King Tubby's and Lee Perry's mixing boards — rippled out into hip-hop and electronic music."},
+  {title:"Lee Scratch Perry's Vision of Paradise",year:"2015",director:"Volker Schaner",note:"Thirteen years filming the Upsetter — a dreamlike immersion in his myth and his mountain Ark."},
+  {title:"Inna de Yard: The Soul of Jamaica",year:"2019",director:"Peter Webber",note:"Roots veterans reunite to cut acoustic versions in the hills above Kingston — a living link to the golden age."},
 ];
 
 /* Deep cuts: {title, artist, year, kind, note, id?} */
@@ -622,6 +633,6 @@ mbid:{"bunnylee":"16ad0626-7c09-455c-8841-0cc4b157c22b","wailingsouls":"f28a0e2e
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"tootshibbert":{"artist":"Toots and the Maytals","q":"Toots and the Maytals"},"bobmarley":{"did":719},"charliechaplin":{"q":"Charlie Chaplin Tribute to Reggae","only":true},"scientist":{"q":"Scientist Vampires Dub"},"koffee":{"q":"Koffee Toast"},"coxsone":{"artist":"The Skatalites","q":"The Skatalites Guns of Navarone"},"bunnylee":{"artist":"Johnny Clarke","q":"Johnny Clarke None Shall Escape the Judgement"},"winstonriley":{"artist":"Tenor Saw","q":"Tenor Saw Ring the Alarm"},"carltonbarrett":{"did":719},"bobbydigital":{"artist":"Sizzla","q":"Sizzla Black Woman and Child"}},
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
-  eras,nodes,edges,lib,critics,resources,films,deepcuts,wiki,
+  eras,nodes,edges,lib,critics,resources,archives,films,deepcuts,wiki,
 };
 })();

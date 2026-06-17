@@ -23,7 +23,7 @@ Two view modes in engine.js, both genre-themed and routed via the hash:
 
 ## The Rooms
 
-The **Rooms** button (`rrBtn`, was "Reading room") opens `openRooms()` — one full-screen page (reusing `pageInner`/`pageEl`) with three tabs held in `roomTab`: **Reading** (`critics` + `resources`), **Films & docs** (`films`), **Deep cuts** (`deepcuts`). Each tab has its own `room*HTML()` builder. Deep-cut entries with an `id` matching a node render the artist as a link that calls `openPage(nd)`; listen links come from the shared `svc()`. Data shapes and how to add entries are in docs/DATA-FORMAT.md. `films`/`deepcuts` are optional per genre (engine reads `G.films||[]`).
+The **Rooms** button (`rrBtn`, was "Reading room") opens `openRooms()` — one full-screen page (reusing `pageInner`/`pageEl`) with three tabs held in `roomTab`: **Reading** (`critics`, then `archives` under "Archives & primary sources", then `resources` under "Periodicals & community"), **Films & docs** (`films`), **Deep cuts** (`deepcuts`). Each tab has its own `room*HTML()` builder. Deep-cut entries with an `id` matching a node render the artist as a link that calls `openPage(nd)`; listen links come from the shared `svc()`. Data shapes and how to add entries are in docs/DATA-FORMAT.md. `films`/`deepcuts` are optional per genre (engine reads `G.films||[]`).
 
 ## Instrument tag
 

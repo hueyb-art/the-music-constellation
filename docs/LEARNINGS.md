@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — deepening the Rooms: institutional archives + more films
+
+- The seed rooms read "introductory" mainly because they had no primary-source institutions. Added an optional per-genre `archives` array (same `[title, note, https-url]` shape as `resources`) rendered as a dedicated **"Archives & primary sources"** section in the Reading tab, above the renamed **"Periodicals & community."** Researched and verified real URLs via WebSearch rather than guessing: jazz → Smithsonian Jazz, LoC Jazz Research Guide, Rutgers Institute of Jazz Studies; hip-hop → Cornell Hip Hop Collection, Harvard Hiphop Archive (Hutchins Center), Smithsonian Anthology of Hip-Hop & Rap (Folkways), The Hip Hop Museum; reggae → UWI Reggae Studies Unit, Jamaica Music Museum (Institute of Jamaica), Roots Knotty Roots.
+- Dropped an NMAAHC "Musical Crossroads" entry whose exact URL I couldn't verify — accuracy over count. The Smithsonian Jazz page 403s automated fetchers (so WebFetch can't read it) but the URL is valid for linking. Steered clear of the British Library Sound Archive link given its post-2023-cyberattack outage.
+- Also deepened films (+5 jazz, +4 reggae, +4 hip-hop) and added two canonical jazz books that were missing (Robin D. G. Kelley's Monk biography, Berliner's *Thinking in Jazz*). Validator now checks `archives` shape like `resources`.
+
 ## 2026-06-15 — Reading Room became "the Rooms" (Reading / Films / Deep Cuts)
 
 - Expanded the single Reading Room into one tabbed page (`openRooms`, `roomTab`) rather than three topbar buttons — the topbar already wraps to 3 rows on mobile, and tabs scale. Reused the existing `pageInner`/`pageEl` full-screen page; each tab is a `room*HTML()` builder. The "Reading room" button became simply "Rooms".

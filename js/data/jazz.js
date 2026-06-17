@@ -898,6 +898,8 @@ const critics=[
   {"name":"Geoffrey C. Ward & Ken Burns","note":"The sweeping popular history","books":[["Jazz: A History of America's Music","2000"]]},
   {"name":"Mezz Mezzrow & Bernard Wolfe","note":"A wild memoir of the jazz life","books":[["Really the Blues","1946"]]},
   {"name":"Hampton Hawes & Don Asher","note":"A pianist's unflinching memoir","books":[["Raise Up Off Me","1974"]]},
+  {"name":"Robin D. G. Kelley","note":"Historian; the definitive Monk biography","books":[["Thelonious Monk: The Life and Times of an American Original","2009"]]},
+  {"name":"Paul F. Berliner","note":"Ethnomusicologist on the craft of improvising","books":[["Thinking in Jazz: The Infinite Art of Improvisation","1994"]]},
 ];
 
 /* Reading room: external resources [title, note, url] */
@@ -906,6 +908,13 @@ const resources=[
   ["DownBeat on the Internet Archive","Decades of back issues, free to read","https://archive.org/details/pub_down-beat"],
   ["organissimo jazz forums","A long-running community of listeners","https://www.organissimo.org/forum/"],
   ["Flipster","Digital magazines through your library, including DownBeat","https://www.flipster.com"],
+];
+
+/* Archives & primary sources: [title, note, https-url] */
+const archives=[
+  ["Smithsonian Jazz — Collections & Archives","The Duke Ellington Collection, oral-history programs and the National Museum of American History's jazz holdings","https://americanhistory.si.edu/explore/projects/smithsonian-jazz/collections-and-archives"],
+  ["Library of Congress — Jazz Research Guide","The nation's largest sound collection: Jelly Roll Morton, manuscripts, scores and photographs","https://guides.loc.gov/jazz-research"],
+  ["Institute of Jazz Studies, Rutgers","The world's largest jazz archive — 100,000+ recordings and 300+ collections (Miles, Billie, Ella, Lester Young)","https://www.libraries.rutgers.edu/newark/visit-study/institute-jazz-studies"],
 ];
 
 /* Wikipedia page-title overrides for photo lookups */
@@ -960,6 +969,11 @@ const films=[
   {title:"Bird",year:"1988",director:"Clint Eastwood",note:"Forest Whitaker as Charlie Parker in a dark, devoted biopic."},
   {title:"Keep On Keepin' On",year:"2014",director:"Alan Hicks",note:"Ailing trumpet elder Clark Terry mentors a young blind pianist — one of the warmest films jazz has."},
   {title:"Ornette: Made in America",year:"1985",director:"Shirley Clarke",note:"A kaleidoscopic, time-skipping portrait of Ornette Coleman by an avant-garde filmmaker."},
+  {title:"The Girls in the Band",year:"2011",director:"Judy Chaikin",note:"The overlooked women instrumentalists of jazz, from the swing big bands onward — restoring names the histories left out."},
+  {title:"Blue Note Records: Beyond the Notes",year:"2018",director:"Sophie Huber",note:"The story of the label that defined modern jazz's look and sound, with Herbie Hancock and Wayne Shorter."},
+  {title:"The Jazz Loft According to W. Eugene Smith",year:"2015",director:"Sara Fishko",note:"The photographer who wired a downtown loft for sound and caught Monk, Rollins and dozens more rehearsing through the night."},
+  {title:"Mingus: Charlie Mingus 1968",year:"1968",director:"Thomas Reichman",note:"Raw vérité of Mingus facing eviction from his New York loft — the man unguarded and overwhelming."},
+  {title:"Anita O'Day: The Life of a Jazz Singer",year:"2007",director:"Robbie Cavolina & Ian McCrudden",note:"The great, hard-living song stylist tells her own story without flinching."},
 ];
 
 /* Deep cuts: {title, artist, year, kind, note, id?} — id links to a node when the artist is in the constellation */
@@ -998,6 +1012,6 @@ mbid:{"hiromi":"8472f0ce-c57d-46f2-93db-d4a6f6e6473a","jojones":"ceda2457-e16f-4
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{},
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
-  eras,nodes,edges,lib,critics,resources,films,deepcuts,wiki,
+  eras,nodes,edges,lib,critics,resources,archives,films,deepcuts,wiki,
 };
 })();
