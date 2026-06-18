@@ -771,6 +771,38 @@ function playClip(nd){
 /* frame the voyage: recentre the tunnel (toStart=true snaps back to the genre's beginnings) */
 function fitView(){if(viewMode==="chord"){frameChord();return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
 const fitBtn=document.getElementById("fitBtn");if(fitBtn)fitBtn.onclick=fitView;
+/* ----------  HIGH-RES POSTER EXPORT (prints)  ----------
+   Renders the current view to a large square at print resolution and downloads
+   a PNG. Works by scaling the main canvas up, drawing once, exporting, and
+   restoring — all synchronous, so the screen never repaints the big frame. */
+function exportPoster(){
+  const S=4000, L=1400, SC=S/L;
+  const bg=(getComputedStyle(document.documentElement).getPropertyValue("--bg").trim())||"#0c0a0d";
+  const sv={W,H,viewX,viewY,tviewX,tviewY,zoom,tzoom,cw:canvas.width,ch:canvas.height,csw:canvas.style.width,csh:canvas.style.height};
+  try{
+    canvas.width=S;canvas.height=S;ctx.setTransform(SC,0,0,SC,0,0);
+    W=L;H=L;viewX=0;viewY=0;tviewX=0;tviewY=0;
+    if(viewMode==="chord")zoom=tzoom=(L*0.84)/(CHORD_R*2);
+    else{let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}zoom=tzoom=Math.max(0.3,Math.min(2.6,(L*0.42)/R));}
+    ctx.fillStyle=bg;ctx.fillRect(0,0,L,L);
+    draw();
+    ctx.save();ctx.textAlign="center";ctx.textBaseline="alphabetic";ctx.shadowColor="rgba(0,0,0,0.95)";ctx.shadowBlur=10;
+    ctx.fillStyle="rgba(243,236,224,0.96)";ctx.font="600 26px Helvetica Neue, Arial";
+    ctx.fillText(SINGLE?BRAND:G.name,L/2,L-46);
+    const sub=CFG.attribution||TAGLINE||"";
+    if(sub){ctx.fillStyle="rgba(224,177,90,0.88)";ctx.font="14px Helvetica Neue, Arial";ctx.fillText(sub,L/2,L-24);}
+    ctx.restore();
+    const a=document.createElement("a");
+    a.download=(((SINGLE?BRAND:G.name)||"constellation").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase()||"constellation")+".png";
+    a.href=canvas.toDataURL("image/png");
+    document.body.appendChild(a);a.click();a.remove();
+  }finally{
+    W=sv.W;H=sv.H;viewX=sv.viewX;viewY=sv.viewY;tviewX=sv.tviewX;tviewY=sv.tviewY;zoom=sv.zoom;tzoom=sv.tzoom;
+    canvas.width=sv.cw;canvas.height=sv.ch;canvas.style.width=sv.csw;canvas.style.height=sv.csh;
+    ctx.setTransform(DPR,0,0,DPR,0,0);draw();
+  }
+}
+const posterBtn=document.getElementById("posterBtn");if(posterBtn)posterBtn.onclick=exportPoster;
 let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(ev,()=>{userFramed=true;}));
 
 /* ----------  GLOBE ⇄ CHORD-WEB TOGGLE  ---------- */

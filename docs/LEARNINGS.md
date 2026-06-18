@@ -2,6 +2,11 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — productization: white-label config + high-res poster export
+
+- **White-label layer.** `window.MC_CONFIG` (in index.html, defaults = the public site) drives brand/tagline/genres/showTabs/accent/attribution/kiosk, and every key is overridable from the URL query string — so any branded or institutional deployment is a config change (or a demo link), not a fork. "Single-brand mode" (one dataset / tabs off) promotes the brand to the headline. All brand text is rendered via `textContent` (a `brand` URL param can't inject markup — verified). See docs/WHITE-LABEL.md.
+- **Poster export (prints).** `exportPoster()` renders the current view to a 4000px square PNG and downloads it. `ctx` is `const` so it can't be swapped to an offscreen canvas; instead it temporarily resizes the *main* canvas, sets a logical `W=H=1400` with `ctx.setTransform(S/1400,…)` so fixed-px label fonts scale up proportionally (a naive zoom-only approach leaves the labels microscopic), draws once, `toDataURL`s, then restores in a `finally` and redraws. It's all synchronous, so the browser never paints the giant intermediate frame — no flash. The poster auto-carries the brand/tagline/attribution as a footer, so a white-label deployment's posters are branded for free. Cleanest art print = the full era ring (no anchor); an anchored star gives a "named web" variant.
+
 ## 2026-06-15 — Rooms: radio stations/shows + a reference shelf
 
 - Added two more optional per-genre fields: `radio` (`[name, note, https-url]`, rendered "Radio & airwaves" in the Reading tab) and `refs` (`{title, author, year, note}`, rendered "Reference shelf" under the Deep Cuts records — reusing the `.film` row styles, no new CSS). Radio URLs were verified via WebSearch: jazz → WBGO, Jazz24, Worldwide FM; reggae → IRIE FM, David Rodigan, NTS; hip-hop → Shade 45, The Breakfast Club, the Hip-Hop Radio Archive. The reference shelf is deliberately distinct from the Reading critics: guides/encyclopedias/lists (Penguin Guide to Jazz Recordings, Reggae Routes, ego trip's Book of Rap Lists), not biographies — and chosen to avoid duplicating books already credited to a critic (e.g. skipped the Rough Guide to Reggae since Barrow & Dalton are already a critic entry).
