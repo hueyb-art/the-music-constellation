@@ -4,7 +4,11 @@
 
 /* ----------  GENRE REGISTRY & ACTIVE STATE  ---------- */
 const GENRES=window.GENRE_DATA||{};
-const GENRE_ORDER=["jazz","hiphop","reggae"].filter(k=>GENRES[k]);
+const CFG=window.MC_CONFIG||{};
+const BRAND=CFG.brand||"The Music Constellation", TAGLINE=CFG.tagline||"who shaped whom";
+const GENRE_ORDER=((CFG.genres&&CFG.genres.length)?CFG.genres:["jazz","hiphop","reggae"]).filter(k=>GENRES[k]);
+/* single-brand mode: one dataset / tabs off → the brand becomes the headline */
+const SINGLE=(CFG.showTabs===false)||GENRE_ORDER.length<=1;
 let G=null;
 let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],ARCHIVES=[],RADIO=[],FILMS=[],DEEPCUTS=[],REFS=[],WIKI={},SYM=[];
 let byId={},adj={};
@@ -799,6 +803,14 @@ GENRE_ORDER.forEach(k=>{
   b.onclick=()=>switchGenre(k);
   gtabs.appendChild(b);
 });
+/* ---- white-label branding (defaults reproduce the public site) ---- */
+(function brand(){
+  const tagEl=document.querySelector(".tag");
+  if(tagEl){if(SINGLE){tagEl.textContent=TAGLINE;}else{tagEl.textContent=BRAND;if(TAGLINE){const x=document.createElement("span");x.className="tagx";x.textContent=" · "+TAGLINE;tagEl.appendChild(x);}}}
+  if(CFG.showTabs===false||GENRE_ORDER.length<=1)gtabs.style.display="none";
+  if(CFG.accent)document.documentElement.style.setProperty("--gold",CFG.accent);
+  if(CFG.attribution){const a=document.createElement("div");a.className="attribution";a.textContent=CFG.attribution;const br=document.querySelector(".brand");if(br)br.appendChild(a);}
+})();
 function loadGenre(key){
   G=GENRES[key];
   ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;ARCHIVES=G.archives||[];RADIO=G.radio||[];FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];REFS=G.refs||[];WIKI=G.wiki;SYM=G.sym;
@@ -833,8 +845,9 @@ function loadGenre(key){
   rs.setProperty("--deep",G.theme.deep);rs.setProperty("--panel",G.theme.panel);
   /* identity: umbrella brand stays in the tab title so no genre route
      can be mistaken for one of the legacy single-genre sites */
-  document.title=G.shortName+" · The Music Constellation — who shaped whom";
-  document.getElementById("gname").innerHTML=`${G.name} <span class="ver">${window.MC_BUILD||""}</span>`;
+  document.title=G.shortName+" · "+BRAND+" — "+TAGLINE;
+  const gn=document.getElementById("gname");gn.textContent=(SINGLE?BRAND:G.name)+" ";  /* textContent: brand may come from a URL param */
+  const vsp=document.createElement("span");vsp.className="ver";vsp.textContent=window.MC_BUILD||"";gn.appendChild(vsp);
   gtabs.querySelectorAll(".gtab").forEach(b=>b.classList.toggle("on",b.dataset.g===key));
   /* legend: eras + connection-line key */
   const kinds=[...new Set(EDGES.map(ed=>ed.kind))];
