@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — `lab/holo.html`: real-3D (Three.js) prototype for hologram/museum
+
+- The main app fakes 3D (2D canvas projecting x/y/z); holographic displays (Pepper's-ghost holobox, Looking Glass, dome projection, AR) need a *real* 3D scene a camera can render. Built `lab/holo.html` as a standalone WebGL proof using Three.js (ESM via unpkg import-map). It **reuses the exact curated data** (`<script src="../js/data/jazz.js">` → `window.GENRE_DATA`), runs a compact 3D force-settle (a port of the engine's repulsion + link springs + collision), and renders era-coloured glowing spheres + additive halos, an additive edge web, a volumetric sun (sprite glow), a starfield, OrbitControls (drag/zoom) with slow `autoRotate` drift, and raycast hover→name+instrument.
+- Kept it in `lab/` and deliberately **outside the app's no-build/zero-dependency rule** — Three from a CDN is fine for a prototype; a real install would vendor it for offline. It doesn't touch index.html/MC_BUILD, and the validator is unaffected (it only checks the data files + index.html). Reachable live on the same Pages site at `/lab/holo.html`.
+- Significance: this is the reusable foundation for any holographic output — the same 3D scene later feeds a Looking Glass quilt, a multi-camera Pepper's-ghost box, or a fisheye dome render.
+
 ## 2026-06-15 — productization: white-label config + high-res poster export
 
 - **White-label layer.** `window.MC_CONFIG` (in index.html, defaults = the public site) drives brand/tagline/genres/showTabs/accent/attribution/kiosk, and every key is overridable from the URL query string — so any branded or institutional deployment is a config change (or a demo link), not a fork. "Single-brand mode" (one dataset / tabs off) promotes the brand to the headline. All brand text is rendered via `textContent` (a `brand` URL param can't inject markup — verified). See docs/WHITE-LABEL.md.

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Jazz Constellation — 3D prototype</title>
+<style>
+  :root{--gold:#e0b15a;--ink:#f3ece0;--muted:#9a9088}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#05040a;overflow:hidden;font-family:"Helvetica Neue",Arial,sans-serif;color:var(--ink)}
+  #c{display:block;width:100vw;height:100vh;touch-action:none}
+  .ui{position:fixed;pointer-events:none;z-index:5}
+  .title{top:22px;left:24px}
+  .title h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.01em}
+  .title .sub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-top:4px}
+  .title .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .hint{bottom:18px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
+  .hint b{color:var(--ink);font-weight:600}
+  #hover{position:fixed;z-index:6;pointer-events:none;padding:7px 12px;border-radius:10px;background:rgba(12,10,16,.82);
+    border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px);font-size:13px;opacity:0;transition:opacity .12s;transform:translate(-50%,-140%)}
+  #hover .nm{font-weight:600}
+  #hover .rl{font-size:11px;color:var(--gold);margin-top:1px}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase;z-index:9}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="loading">Assembling the constellation…</div>
+<div class="ui title"><h1 id="t-name">The Jazz Constellation</h1><div class="sub">who shaped whom</div><div class="lab">3D hologram prototype</div></div>
+<div class="ui hint"><b>Drag</b> to orbit &middot; <b>Scroll / pinch</b> to zoom &middot; <b>hover</b> a star for its name</div>
+<div id="hover"><div class="nm"></div><div class="rl"></div></div>
+
+<!-- reuse the exact curated data from the main app (registers window.GENRE_DATA) -->
+<script src="../js/data/jazz.js"></script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const G = (window.GENRE_DATA && window.GENRE_DATA.jazz) || null;
+if(!G){ document.getElementById('loading').textContent = 'Data failed to load.'; throw new Error('no data'); }
+
+/* ---------- lay the graph out in real 3D (a compact force settle) ---------- */
+const nodes = G.nodes.map(n => ({ id:n.id, name:n.name, role:n.role, era:n.era, deg:0,
+  x:(Math.random()-.5)*160, y:(Math.random()-.5)*160, z:(Math.random()-.5)*160, vx:0, vy:0, vz:0 }));
+const byId = {}; nodes.forEach(n => byId[n.id]=n);
+const edges = G.edges.filter(e => byId[e.a] && byId[e.b]).map(e => ({ s:byId[e.a], t:byId[e.b] }));
+edges.forEach(e => { e.s.deg++; e.t.deg++; });
+
+(function settle(){
+  const N = nodes.length, rep = 2600, link = 15, minD = 7;
+  let alpha = 1;
+  for(let it=0; it<360; it++){
+    for(const a of nodes){ a.vx -= a.x*0.0016*alpha; a.vy -= a.y*0.0016*alpha; a.vz -= a.z*0.0016*alpha; }
+    for(let i=0;i<N;i++){ const a=nodes[i];
+      for(let j=i+1;j<N;j++){ const b=nodes[j];
+        let dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z, d2=dx*dx+dy*dy+dz*dz||0.01, d=Math.sqrt(d2);
+        let f=rep/d2; if(d<minD) f += (minD-d)*0.5/d;
+        const fx=dx/d*f, fy=dy/d*f, fz=dz/d*f;
+        a.vx+=fx; a.vy+=fy; a.vz+=fz; b.vx-=fx; b.vy-=fy; b.vz-=fz; } }
+    for(const e of edges){ let dx=e.t.x-e.s.x, dy=e.t.y-e.s.y, dz=e.t.z-e.s.z, d=Math.sqrt(dx*dx+dy*dy+dz*dz)||0.01;
+      const f=(d-link)*0.012, fx=dx/d*f, fy=dy/d*f, fz=dz/d*f;
+      e.s.vx+=fx; e.s.vy+=fy; e.s.vz+=fz; e.t.vx-=fx; e.t.vy-=fy; e.t.vz-=fz; }
+    for(const a of nodes){ a.vx*=0.85; a.vy*=0.85; a.vz*=0.85; a.x+=a.vx; a.y+=a.vy; a.z+=a.vz; }
+    alpha *= 0.99;
+  }
+})();
+
+/* ---------- three.js scene ---------- */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05040a);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 4000);
+camera.position.set(0, 30, 320);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.45;   /* the slow drift */
+controls.minDistance = 80; controls.maxDistance = 900;
+
+/* soft round glow texture for additive halos */
+function glowTexture(){
+  const s=128, cv=document.createElement('canvas'); cv.width=cv.height=s;
+  const g=cv.getContext('2d').createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.25,'rgba(255,255,255,0.55)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  const ctx=cv.getContext('2d'); ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+  return new THREE.CanvasTexture(cv);
+}
+const GLOW = glowTexture();
+
+/* starfield */
+(function stars(){
+  const N=2200, pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){ const r=900+Math.random()*1800, u=Math.random(), v=Math.random(),
+    th=Math.acos(2*u-1), ph=2*Math.PI*v;
+    pos[i*3]=r*Math.sin(th)*Math.cos(ph); pos[i*3+1]=r*Math.sin(th)*Math.sin(ph); pos[i*3+2]=r*Math.cos(th); }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color:0xbfb9c9, size:2.2, sizeAttenuation:false, transparent:true, opacity:0.7 })));
+})();
+
+/* the sun at the heart of the constellation */
+(function sun(){
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(7,24,24), new THREE.MeshBasicMaterial({ color:0xffd9a0 })));
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffb04a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.9 }));
+  sp.scale.set(140,140,1); scene.add(sp);
+  const sp2=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xff8a2a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.45 }));
+  sp2.scale.set(320,320,1); scene.add(sp2);
+})();
+
+/* edges — one additive line set */
+(function lines(){
+  const pos=new Float32Array(edges.length*6);
+  edges.forEach((e,i)=>{ pos[i*6]=e.s.x; pos[i*6+1]=e.s.y; pos[i*6+2]=e.s.z; pos[i*6+3]=e.t.x; pos[i*6+4]=e.t.y; pos[i*6+5]=e.t.z; });
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color:0xe0b15a, transparent:true, opacity:0.12, blending:THREE.AdditiveBlending })));
+})();
+
+/* nodes — a coloured core + an additive glow halo, sized by degree */
+const meshes=[];
+const eraColor = k => new THREE.Color((G.eras[k] && G.eras[k].color) || '#e0b15a');
+nodes.forEach(n=>{
+  const col = eraColor(n.era), r = 1.4 + Math.sqrt(n.deg)*0.7;
+  const core = new THREE.Mesh(new THREE.SphereGeometry(r,16,16), new THREE.MeshBasicMaterial({ color:col }));
+  core.position.set(n.x,n.y,n.z); core.userData = n; core.userData.baseR = r; scene.add(core); meshes.push(core);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:col, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.5 }));
+  halo.position.copy(core.position); halo.scale.set(r*7, r*7, 1); scene.add(halo);
+});
+
+/* hover: raycast to name a star */
+const ray=new THREE.Raycaster(); ray.params.Points = {threshold:3};
+const pointer=new THREE.Vector2(); let hovered=null;
+const hoverEl=document.getElementById('hover');
+function onMove(ev){
+  const t = ev.touches ? ev.touches[0] : ev; if(!t) return;
+  pointer.x=(t.clientX/innerWidth)*2-1; pointer.y=-(t.clientY/innerHeight)*2+1;
+  ray.setFromCamera(pointer, camera);
+  const hit = ray.intersectObjects(meshes, false)[0];
+  const m = hit ? hit.object : null;
+  if(m!==hovered){
+    if(hovered) hovered.scale.setScalar(1);
+    hovered=m;
+    if(hovered){ hovered.scale.setScalar(1.8);
+      hoverEl.querySelector('.nm').textContent = hovered.userData.name;
+      hoverEl.querySelector('.rl').textContent = (hovered.userData.role||'').split('·')[0].trim();
+      hoverEl.style.opacity=1;
+    } else hoverEl.style.opacity=0;
+  }
+  if(hovered){ hoverEl.style.left=t.clientX+'px'; hoverEl.style.top=t.clientY+'px'; }
+}
+canvas.addEventListener('pointermove', onMove);
+canvas.addEventListener('pointerdown', ()=>{ controls.autoRotate=false; });   /* pause drift while exploring */
+
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+document.getElementById('loading').style.display='none';
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+</script>
+</body>
+</html>
