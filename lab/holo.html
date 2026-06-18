@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>The Jazz Constellation — 3D prototype</title>
 <style>
   :root{--gold:#e0b15a;--ink:#f3ece0;--muted:#9a9088}
@@ -27,7 +27,7 @@
 <canvas id="c"></canvas>
 <div id="loading">Assembling the constellation…</div>
 <div class="ui title"><h1 id="t-name">The Jazz Constellation</h1><div class="sub">who shaped whom</div><div class="lab">3D hologram prototype</div></div>
-<div class="ui hint"><b>Drag</b> to orbit &middot; <b>Scroll / pinch</b> to zoom &middot; <b>hover</b> a star for its name</div>
+<div class="ui hint"><b>Drag</b> to orbit &middot; <b>Scroll / pinch</b> to zoom &middot; <b>tap / hover</b> a star to light its ties</div>
 <div id="hover"><div class="nm"></div><div class="rl"></div></div>
 
 <!-- reuse the exact curated data from the main app (registers window.GENRE_DATA) -->
@@ -74,63 +74,70 @@ edges.forEach((e,i) => { adj[e.s.id].add(e.t.id); adj[e.t.id].add(e.s.id); nodeE
     for(const a of nodes){ a.vx*=0.85; a.vy*=0.85; a.vz*=0.85; a.x+=a.vx; a.y+=a.vy; a.z+=a.vz; }
     alpha *= 0.99;
   }
+  /* freeze the settled position as a base, give each star a gentle drift */
+  for(const n of nodes){ n.bx=n.x; n.by=n.y; n.bz=n.z; n.phase=Math.random()*6.283;
+    const u=Math.random(), v=Math.random(), th=Math.acos(2*u-1), ph=2*Math.PI*v;
+    n.dx=Math.sin(th)*Math.cos(ph); n.dy=Math.sin(th)*Math.sin(ph); n.dz=Math.cos(th); }
 })();
 
 /* ---------- three.js scene ---------- */
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x05040a);
 const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 4000);
-camera.position.set(0, 30, 320);
+camera.position.set(0, 26, 300);
+
 const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true; controls.dampingFactor = 0.06;
-controls.autoRotate = true; controls.autoRotateSpeed = 0.45;   /* the slow drift */
-controls.minDistance = 80; controls.maxDistance = 900;
+controls.enableDamping = true; controls.dampingFactor = 0.09;
+controls.rotateSpeed = 0.65; controls.zoomSpeed = 1.35;
+controls.enablePan = false;                       /* two fingers = clean pinch-zoom, no pan */
+controls.autoRotate = true; controls.autoRotateSpeed = 0.6;   /* the slow living drift */
+controls.minDistance = 70; controls.maxDistance = 1100;
+if(THREE.TOUCH) controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+/* pause the drift only while actively interacting; resume shortly after */
+let dragging = false, idleTimer = null;
+controls.addEventListener('start', ()=>{ dragging=true; controls.autoRotate=false; clearTimeout(idleTimer); clearHover(); });
+controls.addEventListener('end',   ()=>{ dragging=false; clearTimeout(idleTimer); idleTimer=setTimeout(()=>{ controls.autoRotate=true; }, 1600); });
 
 /* soft round glow texture for additive halos */
 function glowTexture(){
   const s=128, cv=document.createElement('canvas'); cv.width=cv.height=s;
-  const g=cv.getContext('2d').createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
-  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.25,'rgba(255,255,255,0.55)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
-  const ctx=cv.getContext('2d'); ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
-  return new THREE.CanvasTexture(cv);
+  const ctx=cv.getContext('2d'), g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.25,'rgba(255,255,255,0.55)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s); return new THREE.CanvasTexture(cv);
 }
 const GLOW = glowTexture();
 
 /* starfield */
 (function stars(){
   const N=2200, pos=new Float32Array(N*3);
-  for(let i=0;i<N;i++){ const r=900+Math.random()*1800, u=Math.random(), v=Math.random(),
-    th=Math.acos(2*u-1), ph=2*Math.PI*v;
+  for(let i=0;i<N;i++){ const r=900+Math.random()*1800, u=Math.random(), v=Math.random(), th=Math.acos(2*u-1), ph=2*Math.PI*v;
     pos[i*3]=r*Math.sin(th)*Math.cos(ph); pos[i*3+1]=r*Math.sin(th)*Math.sin(ph); pos[i*3+2]=r*Math.cos(th); }
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
   scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color:0xbfb9c9, size:2.2, sizeAttenuation:false, transparent:true, opacity:0.7 })));
 })();
 
-/* the sun at the heart of the constellation */
+/* the sun at the heart of the constellation (pulses gently) */
+const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffb04a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.9 }));
+const sunHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xff8a2a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.42 }));
 (function sun(){
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(7,24,24), new THREE.MeshBasicMaterial({ color:0xffd9a0 })));
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffb04a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.9 }));
-  sp.scale.set(140,140,1); scene.add(sp);
-  const sp2=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xff8a2a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.45 }));
-  sp2.scale.set(320,320,1); scene.add(sp2);
+  sunGlow.scale.set(140,140,1); scene.add(sunGlow);
+  sunHalo.scale.set(320,320,1); scene.add(sunHalo);
 })();
 
-/* edges — additive line set with per-vertex colour, so hovering a star can
-   light up its own gold ties while the rest stay faint */
+/* edges — additive lines with per-vertex colour so a star's ties can light up */
 const EDGE_FAINT=[0.30,0.235,0.11], EDGE_BRIGHT=[1.0,0.80,0.42];
-const edgeCol=new Float32Array(edges.length*6);
-let edgeColAttr;
+const edgePos=new Float32Array(edges.length*6), edgeCol=new Float32Array(edges.length*6);
+let edgePosAttr, edgeColAttr;
 (function lines(){
-  const pos=new Float32Array(edges.length*6);
-  edges.forEach((e,i)=>{ pos[i*6]=e.s.x; pos[i*6+1]=e.s.y; pos[i*6+2]=e.s.z; pos[i*6+3]=e.t.x; pos[i*6+4]=e.t.y; pos[i*6+5]=e.t.z;
-    for(let k=0;k<2;k++){ edgeCol[i*6+k*3]=EDGE_FAINT[0]; edgeCol[i*6+k*3+1]=EDGE_FAINT[1]; edgeCol[i*6+k*3+2]=EDGE_FAINT[2]; } });
+  edges.forEach((e,i)=>{ for(let k=0;k<2;k++){ edgeCol[i*6+k*3]=EDGE_FAINT[0]; edgeCol[i*6+k*3+1]=EDGE_FAINT[1]; edgeCol[i*6+k*3+2]=EDGE_FAINT[2]; } });
   const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  edgePosAttr=new THREE.BufferAttribute(edgePos,3); edgePosAttr.setUsage(THREE.DynamicDrawUsage); geo.setAttribute('position', edgePosAttr);
   edgeColAttr=new THREE.BufferAttribute(edgeCol,3); geo.setAttribute('color', edgeColAttr);
   scene.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending })));
 })();
@@ -141,52 +148,82 @@ const eraColor = k => new THREE.Color((G.eras[k] && G.eras[k].color) || '#e0b15a
 nodes.forEach(n=>{
   const col = eraColor(n.era), r = 1.4 + Math.sqrt(n.deg)*0.7;
   const core = new THREE.Mesh(new THREE.SphereGeometry(r,16,16), new THREE.MeshBasicMaterial({ color:col }));
-  core.position.set(n.x,n.y,n.z); core.userData = n; core.userData.baseR = r; scene.add(core); meshes.push(core); coreById[n.id]=core;
+  core.userData = n; core.userData.baseR = r; scene.add(core); meshes.push(core); coreById[n.id]=core;
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:col, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.5 }));
-  halo.position.copy(core.position); halo.scale.set(r*7, r*7, 1); scene.add(halo);
+  halo.scale.set(r*7, r*7, 1); scene.add(halo); n.halo = halo;
 });
-/* hover highlight — light a star's gold ties and pop its neighbours */
+
+/* hover / select highlight — light a star's gold ties and pop its neighbours */
 function setEdge(i,c){ const o=i*6; for(let k=0;k<2;k++){ edgeCol[o+k*3]=c[0]; edgeCol[o+k*3+1]=c[1]; edgeCol[o+k*3+2]=c[2]; } }
 function highlight(core){
   for(let i=0;i<edges.length;i++) setEdge(i, EDGE_FAINT);
   meshes.forEach(m=> m.scale.setScalar(1));
-  if(core){
-    const id=core.userData.id;
+  if(core){ const id=core.userData.id;
     (nodeEdges[id]||[]).forEach(i=> setEdge(i, EDGE_BRIGHT));
     core.scale.setScalar(2.0);
-    (adj[id]?[...adj[id]]:[]).forEach(nid=>{ const m=coreById[nid]; if(m) m.scale.setScalar(1.55); });
+    [...(adj[id]||[])].forEach(nid=>{ const m=coreById[nid]; if(m) m.scale.setScalar(1.55); });
   }
   edgeColAttr.needsUpdate=true;
 }
-
-/* hover: raycast to name a star */
-const ray=new THREE.Raycaster(); ray.params.Points = {threshold:3};
-const pointer=new THREE.Vector2(); let hovered=null;
 const hoverEl=document.getElementById('hover');
-function onMove(ev){
-  const t = ev.touches ? ev.touches[0] : ev; if(!t) return;
-  pointer.x=(t.clientX/innerWidth)*2-1; pointer.y=-(t.clientY/innerHeight)*2+1;
+let selected=null;
+function showLabel(core, sx, sy){
+  hoverEl.querySelector('.nm').textContent = core.userData.name;
+  hoverEl.querySelector('.rl').textContent = (core.userData.role||'').split('·')[0].trim();
+  hoverEl.style.left=sx+'px'; hoverEl.style.top=sy+'px'; hoverEl.style.opacity=1;
+}
+function clearHover(){ selected=null; highlight(null); hoverEl.style.opacity=0; }
+
+const ray=new THREE.Raycaster(); const pointer=new THREE.Vector2();
+function pick(cx, cy){
+  pointer.x=(cx/innerWidth)*2-1; pointer.y=-(cy/innerHeight)*2+1;
   ray.setFromCamera(pointer, camera);
   const hit = ray.intersectObjects(meshes, false)[0];
-  const m = hit ? hit.object : null;
-  if(m!==hovered){
-    hovered=m; highlight(hovered);
-    if(hovered){
-      hoverEl.querySelector('.nm').textContent = hovered.userData.name;
-      hoverEl.querySelector('.rl').textContent = (hovered.userData.role||'').split('·')[0].trim();
-      hoverEl.style.opacity=1;
-    } else hoverEl.style.opacity=0;
-  }
-  if(hovered){ hoverEl.style.left=t.clientX+'px'; hoverEl.style.top=t.clientY+'px'; }
+  return hit ? hit.object : null;
 }
-canvas.addEventListener('pointermove', onMove);
-canvas.addEventListener('pointerdown', ()=>{ controls.autoRotate=false; });   /* pause drift while exploring */
+
+/* desktop: hover to light ties (throttled, and never while dragging) */
+let lastRay=0;
+canvas.addEventListener('pointermove', ev=>{
+  if(dragging || ev.pointerType==='touch') return;
+  const now=performance.now(); if(now-lastRay<55) return; lastRay=now;
+  const m=pick(ev.clientX, ev.clientY);
+  if(m!==selected){ selected=m; highlight(m); }
+  if(m) showLabel(m, ev.clientX, ev.clientY); else hoverEl.style.opacity=0;
+});
+
+/* touch / click: a tap (not a drag) toggles a star's ties */
+let downX=0, downY=0, downT=0;
+canvas.addEventListener('pointerdown', ev=>{ downX=ev.clientX; downY=ev.clientY; downT=performance.now(); });
+canvas.addEventListener('pointerup', ev=>{
+  const moved=Math.hypot(ev.clientX-downX, ev.clientY-downY), quick=performance.now()-downT<320;
+  if(moved>9 || !quick) return;                 /* it was a drag, not a tap */
+  const m=pick(ev.clientX, ev.clientY);
+  if(m && m!==selected){ selected=m; highlight(m); showLabel(m, ev.clientX, ev.clientY); }
+  else { clearHover(); }
+});
 
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
 document.getElementById('loading').style.display='none';
 window.__holo={ highlight, coreById, edgeCol, nodeEdges, EDGE_BRIGHT, camera, controls };  /* debug hook */
-(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+
+/* ---------- render loop: gentle living drift + sun pulse ---------- */
+const AMP=2.4;
+function loop(){
+  requestAnimationFrame(loop);
+  const t=performance.now()*0.00085;
+  for(const core of meshes){ const n=core.userData, o=Math.sin(t+n.phase)*AMP;
+    n.x=n.bx+n.dx*o; n.y=n.by+n.dy*o; n.z=n.bz+n.dz*o;
+    core.position.set(n.x,n.y,n.z); n.halo.position.set(n.x,n.y,n.z); }
+  for(let i=0;i<edges.length;i++){ const e=edges[i], o=i*6;
+    edgePos[o]=e.s.x; edgePos[o+1]=e.s.y; edgePos[o+2]=e.s.z; edgePos[o+3]=e.t.x; edgePos[o+4]=e.t.y; edgePos[o+5]=e.t.z; }
+  edgePosAttr.needsUpdate=true;
+  const p=0.5+0.5*Math.sin(t*1.4); sunGlow.material.opacity=0.78+0.18*p; sunGlow.scale.setScalar(140*(1+0.05*p));
+  controls.update();
+  renderer.render(scene, camera);
+}
+loop();
 </script>
 </body>
 </html>
