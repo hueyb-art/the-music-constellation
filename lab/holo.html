@@ -95,7 +95,9 @@ camera.position.set(0, 26, 300);
 
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.09;
-controls.rotateSpeed = 0.65; controls.zoomSpeed = 1.35;
+controls.rotateSpeed = 0.65;
+controls.zoomSpeed = 2.6;          /* trackpad / mouse-wheel zoom (touch pinch is separate) */
+controls.zoomToCursor = true;      /* zoom toward the pointer — feels far less clunky */
 controls.enablePan = false;
 controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
 controls.minDistance = 70; controls.maxDistance = 1100;
