@@ -53,6 +53,9 @@ const nodes = G.nodes.map(n => ({ id:n.id, name:n.name, role:n.role, era:n.era, 
 const byId = {}; nodes.forEach(n => byId[n.id]=n);
 const edges = G.edges.filter(e => byId[e.a] && byId[e.b]).map(e => ({ s:byId[e.a], t:byId[e.b] }));
 edges.forEach(e => { e.s.deg++; e.t.deg++; });
+const adj = {}, nodeEdges = {};
+nodes.forEach(n => { adj[n.id]=new Set(); nodeEdges[n.id]=[]; });
+edges.forEach((e,i) => { adj[e.s.id].add(e.t.id); adj[e.t.id].add(e.s.id); nodeEdges[e.s.id].push(i); nodeEdges[e.t.id].push(i); });
 
 (function settle(){
   const N = nodes.length, rep = 2600, link = 15, minD = 7;
@@ -117,24 +120,44 @@ const GLOW = glowTexture();
   sp2.scale.set(320,320,1); scene.add(sp2);
 })();
 
-/* edges — one additive line set */
+/* edges — additive line set with per-vertex colour, so hovering a star can
+   light up its own gold ties while the rest stay faint */
+const EDGE_FAINT=[0.30,0.235,0.11], EDGE_BRIGHT=[1.0,0.80,0.42];
+const edgeCol=new Float32Array(edges.length*6);
+let edgeColAttr;
 (function lines(){
   const pos=new Float32Array(edges.length*6);
-  edges.forEach((e,i)=>{ pos[i*6]=e.s.x; pos[i*6+1]=e.s.y; pos[i*6+2]=e.s.z; pos[i*6+3]=e.t.x; pos[i*6+4]=e.t.y; pos[i*6+5]=e.t.z; });
-  const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-  scene.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color:0xe0b15a, transparent:true, opacity:0.12, blending:THREE.AdditiveBlending })));
+  edges.forEach((e,i)=>{ pos[i*6]=e.s.x; pos[i*6+1]=e.s.y; pos[i*6+2]=e.s.z; pos[i*6+3]=e.t.x; pos[i*6+4]=e.t.y; pos[i*6+5]=e.t.z;
+    for(let k=0;k<2;k++){ edgeCol[i*6+k*3]=EDGE_FAINT[0]; edgeCol[i*6+k*3+1]=EDGE_FAINT[1]; edgeCol[i*6+k*3+2]=EDGE_FAINT[2]; } });
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  edgeColAttr=new THREE.BufferAttribute(edgeCol,3); geo.setAttribute('color', edgeColAttr);
+  scene.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending })));
 })();
 
 /* nodes — a coloured core + an additive glow halo, sized by degree */
-const meshes=[];
+const meshes=[], coreById={};
 const eraColor = k => new THREE.Color((G.eras[k] && G.eras[k].color) || '#e0b15a');
 nodes.forEach(n=>{
   const col = eraColor(n.era), r = 1.4 + Math.sqrt(n.deg)*0.7;
   const core = new THREE.Mesh(new THREE.SphereGeometry(r,16,16), new THREE.MeshBasicMaterial({ color:col }));
-  core.position.set(n.x,n.y,n.z); core.userData = n; core.userData.baseR = r; scene.add(core); meshes.push(core);
+  core.position.set(n.x,n.y,n.z); core.userData = n; core.userData.baseR = r; scene.add(core); meshes.push(core); coreById[n.id]=core;
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:col, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.5 }));
   halo.position.copy(core.position); halo.scale.set(r*7, r*7, 1); scene.add(halo);
 });
+/* hover highlight — light a star's gold ties and pop its neighbours */
+function setEdge(i,c){ const o=i*6; for(let k=0;k<2;k++){ edgeCol[o+k*3]=c[0]; edgeCol[o+k*3+1]=c[1]; edgeCol[o+k*3+2]=c[2]; } }
+function highlight(core){
+  for(let i=0;i<edges.length;i++) setEdge(i, EDGE_FAINT);
+  meshes.forEach(m=> m.scale.setScalar(1));
+  if(core){
+    const id=core.userData.id;
+    (nodeEdges[id]||[]).forEach(i=> setEdge(i, EDGE_BRIGHT));
+    core.scale.setScalar(2.0);
+    (adj[id]?[...adj[id]]:[]).forEach(nid=>{ const m=coreById[nid]; if(m) m.scale.setScalar(1.55); });
+  }
+  edgeColAttr.needsUpdate=true;
+}
 
 /* hover: raycast to name a star */
 const ray=new THREE.Raycaster(); ray.params.Points = {threshold:3};
@@ -147,9 +170,8 @@ function onMove(ev){
   const hit = ray.intersectObjects(meshes, false)[0];
   const m = hit ? hit.object : null;
   if(m!==hovered){
-    if(hovered) hovered.scale.setScalar(1);
-    hovered=m;
-    if(hovered){ hovered.scale.setScalar(1.8);
+    hovered=m; highlight(hovered);
+    if(hovered){
       hoverEl.querySelector('.nm').textContent = hovered.userData.name;
       hoverEl.querySelector('.rl').textContent = (hovered.userData.role||'').split('·')[0].trim();
       hoverEl.style.opacity=1;
@@ -163,6 +185,7 @@ canvas.addEventListener('pointerdown', ()=>{ controls.autoRotate=false; });   /*
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
 document.getElementById('loading').style.display='none';
+window.__holo={ highlight, coreById, edgeCol, nodeEdges, EDGE_BRIGHT, camera, controls };  /* debug hook */
 (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
 </script>
 </body>
