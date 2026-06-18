@@ -16,10 +16,11 @@
   .title .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:8px}
   .hint{bottom:18px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
   .hint b{color:var(--ink);font-weight:600}
-  #hover{position:fixed;z-index:6;pointer-events:none;padding:7px 12px;border-radius:10px;background:rgba(12,10,16,.82);
-    border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px);font-size:13px;opacity:0;transition:opacity .12s;transform:translate(-50%,-140%)}
-  #hover .nm{font-weight:600}
-  #hover .rl{font-size:11px;color:var(--gold);margin-top:1px}
+  #labels{position:fixed;inset:0;pointer-events:none;z-index:6}
+  .lbl{position:absolute;transform:translate(-50%,-150%);white-space:nowrap;opacity:0}
+  .lbl .nm{font-size:12px;color:#f3ece0;text-shadow:0 1px 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.9)}
+  .lbl .ins{font-size:9.5px;color:var(--gold);text-shadow:0 1px 5px rgba(0,0,0,.95)}
+  .lbl.sel .nm{font-size:15px;font-weight:600}
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase;z-index:9}
 </style>
 </head>
@@ -27,8 +28,8 @@
 <canvas id="c"></canvas>
 <div id="loading">Assembling the constellation…</div>
 <div class="ui title"><h1 id="t-name">The Jazz Constellation</h1><div class="sub">who shaped whom</div><div class="lab">3D hologram prototype</div></div>
-<div class="ui hint"><b>Drag</b> to orbit &middot; <b>Scroll / pinch</b> to zoom &middot; <b>tap / hover</b> a star to light its ties</div>
-<div id="hover"><div class="nm"></div><div class="rl"></div></div>
+<div class="ui hint"><b>Drag</b> to orbit &middot; <b>Scroll / pinch</b> to zoom &middot; <b>tap / hover</b> a star to light its circle</div>
+<div id="labels"></div>
 
 <!-- reuse the exact curated data from the main app (registers window.GENRE_DATA) -->
 <script src="../js/data/jazz.js"></script>
@@ -74,7 +75,6 @@ edges.forEach((e,i) => { adj[e.s.id].add(e.t.id); adj[e.t.id].add(e.s.id); nodeE
     for(const a of nodes){ a.vx*=0.85; a.vy*=0.85; a.vz*=0.85; a.x+=a.vx; a.y+=a.vy; a.z+=a.vz; }
     alpha *= 0.99;
   }
-  /* freeze the settled position as a base, give each star a gentle drift */
   for(const n of nodes){ n.bx=n.x; n.by=n.y; n.bz=n.z; n.phase=Math.random()*6.283;
     const u=Math.random(), v=Math.random(), th=Math.acos(2*u-1), ph=2*Math.PI*v;
     n.dx=Math.sin(th)*Math.cos(ph); n.dy=Math.sin(th)*Math.sin(ph); n.dz=Math.cos(th); }
@@ -93,17 +93,15 @@ camera.position.set(0, 26, 300);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.09;
 controls.rotateSpeed = 0.65; controls.zoomSpeed = 1.35;
-controls.enablePan = false;                       /* two fingers = clean pinch-zoom, no pan */
-controls.autoRotate = true; controls.autoRotateSpeed = 0.6;   /* the slow living drift */
+controls.enablePan = false;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
 controls.minDistance = 70; controls.maxDistance = 1100;
 if(THREE.TOUCH) controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 
-/* pause the drift only while actively interacting; resume shortly after */
 let dragging = false, idleTimer = null;
-controls.addEventListener('start', ()=>{ dragging=true; controls.autoRotate=false; clearTimeout(idleTimer); clearHover(); });
+controls.addEventListener('start', ()=>{ dragging=true; controls.autoRotate=false; clearTimeout(idleTimer); }); /* selection persists through a drag */
 controls.addEventListener('end',   ()=>{ dragging=false; clearTimeout(idleTimer); idleTimer=setTimeout(()=>{ controls.autoRotate=true; }, 1600); });
 
-/* soft round glow texture for additive halos */
 function glowTexture(){
   const s=128, cv=document.createElement('canvas'); cv.width=cv.height=s;
   const ctx=cv.getContext('2d'), g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
@@ -112,26 +110,16 @@ function glowTexture(){
 }
 const GLOW = glowTexture();
 
-/* starfield */
 (function stars(){
   const N=2200, pos=new Float32Array(N*3);
   for(let i=0;i<N;i++){ const r=900+Math.random()*1800, u=Math.random(), v=Math.random(), th=Math.acos(2*u-1), ph=2*Math.PI*v;
     pos[i*3]=r*Math.sin(th)*Math.cos(ph); pos[i*3+1]=r*Math.sin(th)*Math.sin(ph); pos[i*3+2]=r*Math.cos(th); }
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-  scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color:0xbfb9c9, size:2.2, sizeAttenuation:false, transparent:true, opacity:0.7 })));
-})();
-
-/* the sun at the heart of the constellation (pulses gently) */
-const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xffb04a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.9 }));
-const sunHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xff8a2a, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.42 }));
-(function sun(){
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(7,24,24), new THREE.MeshBasicMaterial({ color:0xffd9a0 })));
-  sunGlow.scale.set(140,140,1); scene.add(sunGlow);
-  sunHalo.scale.set(320,320,1); scene.add(sunHalo);
+  scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color:0xbfb9c9, size:2.2, sizeAttenuation:false, transparent:true, opacity:0.65 })));
 })();
 
 /* edges — additive lines with per-vertex colour so a star's ties can light up */
-const EDGE_FAINT=[0.30,0.235,0.11], EDGE_BRIGHT=[1.0,0.80,0.42];
+const EDGE_FAINT=[0.26,0.205,0.10], EDGE_BRIGHT=[1.0,0.80,0.42];
 const edgePos=new Float32Array(edges.length*6), edgeCol=new Float32Array(edges.length*6);
 let edgePosAttr, edgeColAttr;
 (function lines(){
@@ -142,7 +130,7 @@ let edgePosAttr, edgeColAttr;
   scene.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending })));
 })();
 
-/* nodes — a coloured core + an additive glow halo, sized by degree */
+/* nodes — coloured core + glow halo, sized by degree */
 const meshes=[], coreById={};
 const eraColor = k => new THREE.Color((G.eras[k] && G.eras[k].color) || '#e0b15a');
 nodes.forEach(n=>{
@@ -153,63 +141,60 @@ nodes.forEach(n=>{
   halo.scale.set(r*7, r*7, 1); scene.add(halo); n.halo = halo;
 });
 
-/* hover / select highlight — light a star's gold ties and pop its neighbours */
+/* ---------- focus: light a star's ties, pop its circle, and NAME them ---------- */
+const labelsBox=document.getElementById('labels');
+let selected=null, focusLabels=[];
 function setEdge(i,c){ const o=i*6; for(let k=0;k<2;k++){ edgeCol[o+k*3]=c[0]; edgeCol[o+k*3+1]=c[1]; edgeCol[o+k*3+2]=c[2]; } }
-function highlight(core){
+function mkLabel(core, isSel){
+  const n=core.userData, el=document.createElement('div'); el.className='lbl'+(isSel?' sel':'');
+  const nm=document.createElement('div'); nm.className='nm'; nm.textContent=n.name;
+  const ins=document.createElement('div'); ins.className='ins'; ins.textContent=(n.role||'').split('·')[0].trim();
+  el.appendChild(nm); el.appendChild(ins); labelsBox.appendChild(el);
+  return { core, el, sel:isSel };
+}
+function setFocus(core){
   for(let i=0;i<edges.length;i++) setEdge(i, EDGE_FAINT);
   meshes.forEach(m=> m.scale.setScalar(1));
-  if(core){ const id=core.userData.id;
+  focusLabels.forEach(o=> o.el.remove()); focusLabels=[];
+  selected = core;
+  if(core){
+    const id=core.userData.id;
     (nodeEdges[id]||[]).forEach(i=> setEdge(i, EDGE_BRIGHT));
-    core.scale.setScalar(2.0);
-    [...(adj[id]||[])].forEach(nid=>{ const m=coreById[nid]; if(m) m.scale.setScalar(1.55); });
+    core.scale.setScalar(2.1);
+    focusLabels.push(mkLabel(core, true));
+    [...(adj[id]||[])].forEach(nid=>{ const m=coreById[nid]; if(m){ m.scale.setScalar(1.6); focusLabels.push(mkLabel(m, false)); } });
   }
   edgeColAttr.needsUpdate=true;
 }
-const hoverEl=document.getElementById('hover');
-let selected=null;
-function showLabel(core, sx, sy){
-  hoverEl.querySelector('.nm').textContent = core.userData.name;
-  hoverEl.querySelector('.rl').textContent = (core.userData.role||'').split('·')[0].trim();
-  hoverEl.style.left=sx+'px'; hoverEl.style.top=sy+'px'; hoverEl.style.opacity=1;
-}
-function clearHover(){ selected=null; highlight(null); hoverEl.style.opacity=0; }
 
 const ray=new THREE.Raycaster(); const pointer=new THREE.Vector2();
-function pick(cx, cy){
-  pointer.x=(cx/innerWidth)*2-1; pointer.y=-(cy/innerHeight)*2+1;
-  ray.setFromCamera(pointer, camera);
-  const hit = ray.intersectObjects(meshes, false)[0];
-  return hit ? hit.object : null;
-}
+function pick(cx, cy){ pointer.x=(cx/innerWidth)*2-1; pointer.y=-(cy/innerHeight)*2+1;
+  ray.setFromCamera(pointer, camera); const hit=ray.intersectObjects(meshes,false)[0]; return hit?hit.object:null; }
 
-/* desktop: hover to light ties (throttled, and never while dragging) */
+/* desktop hover (throttled, skipped while dragging); touch uses tap below */
 let lastRay=0;
 canvas.addEventListener('pointermove', ev=>{
   if(dragging || ev.pointerType==='touch') return;
   const now=performance.now(); if(now-lastRay<55) return; lastRay=now;
   const m=pick(ev.clientX, ev.clientY);
-  if(m!==selected){ selected=m; highlight(m); }
-  if(m) showLabel(m, ev.clientX, ev.clientY); else hoverEl.style.opacity=0;
+  if(m!==selected) setFocus(m);
 });
-
-/* touch / click: a tap (not a drag) toggles a star's ties */
+/* a tap (not a drag) toggles a star's circle — selection persists while you orbit */
 let downX=0, downY=0, downT=0;
 canvas.addEventListener('pointerdown', ev=>{ downX=ev.clientX; downY=ev.clientY; downT=performance.now(); });
 canvas.addEventListener('pointerup', ev=>{
-  const moved=Math.hypot(ev.clientX-downX, ev.clientY-downY), quick=performance.now()-downT<320;
-  if(moved>9 || !quick) return;                 /* it was a drag, not a tap */
+  if(Math.hypot(ev.clientX-downX, ev.clientY-downY)>9 || performance.now()-downT>320) return;
   const m=pick(ev.clientX, ev.clientY);
-  if(m && m!==selected){ selected=m; highlight(m); showLabel(m, ev.clientX, ev.clientY); }
-  else { clearHover(); }
+  setFocus(m && m!==selected ? m : null);
 });
 
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
 document.getElementById('loading').style.display='none';
-window.__holo={ highlight, coreById, edgeCol, nodeEdges, EDGE_BRIGHT, camera, controls };  /* debug hook */
+window.__holo={ setFocus, coreById, edgeCol, nodeEdges, EDGE_BRIGHT, camera, controls, get focusLabels(){return focusLabels;} };
 
-/* ---------- render loop: gentle living drift + sun pulse ---------- */
-const AMP=2.4;
+/* ---------- render loop: living drift + projected focus labels ---------- */
+const AMP=2.4, projV=new THREE.Vector3();
 function loop(){
   requestAnimationFrame(loop);
   const t=performance.now()*0.00085;
@@ -219,7 +204,12 @@ function loop(){
   for(let i=0;i<edges.length;i++){ const e=edges[i], o=i*6;
     edgePos[o]=e.s.x; edgePos[o+1]=e.s.y; edgePos[o+2]=e.s.z; edgePos[o+3]=e.t.x; edgePos[o+4]=e.t.y; edgePos[o+5]=e.t.z; }
   edgePosAttr.needsUpdate=true;
-  const p=0.5+0.5*Math.sin(t*1.4); sunGlow.material.opacity=0.78+0.18*p; sunGlow.scale.setScalar(140*(1+0.05*p));
+  for(const o of focusLabels){ projV.copy(o.core.position).project(camera);
+    if(projV.z>1){ o.el.style.opacity=0; continue; }
+    o.el.style.left=((projV.x*0.5+0.5)*innerWidth)+'px';
+    o.el.style.top=((-projV.y*0.5+0.5)*innerHeight)+'px';
+    o.el.style.opacity = o.sel?1:0.82;
+  }
   controls.update();
   renderer.render(scene, camera);
 }
