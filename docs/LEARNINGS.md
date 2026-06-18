@@ -2,6 +2,11 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — Rooms: radio stations/shows + a reference shelf
+
+- Added two more optional per-genre fields: `radio` (`[name, note, https-url]`, rendered "Radio & airwaves" in the Reading tab) and `refs` (`{title, author, year, note}`, rendered "Reference shelf" under the Deep Cuts records — reusing the `.film` row styles, no new CSS). Radio URLs were verified via WebSearch: jazz → WBGO, Jazz24, Worldwide FM; reggae → IRIE FM, David Rodigan, NTS; hip-hop → Shade 45, The Breakfast Club, the Hip-Hop Radio Archive. The reference shelf is deliberately distinct from the Reading critics: guides/encyclopedias/lists (Penguin Guide to Jazz Recordings, Reggae Routes, ego trip's Book of Rap Lists), not biographies — and chosen to avoid duplicating books already credited to a critic (e.g. skipped the Rough Guide to Reggae since Barrow & Dalton are already a critic entry).
+- Podcasts intentionally deferred (Huey's call). The room data model is now: critics, archives, radio, resources (Reading); films (Films); deepcuts, refs (Deep Cuts) — all but critics/resources optional, all validated.
+
 ## 2026-06-15 — deepening the Rooms: institutional archives + more films
 
 - The seed rooms read "introductory" mainly because they had no primary-source institutions. Added an optional per-genre `archives` array (same `[title, note, https-url]` shape as `resources`) rendered as a dedicated **"Archives & primary sources"** section in the Reading tab, above the renamed **"Periodicals & community."** Researched and verified real URLs via WebSearch rather than guessing: jazz → Smithsonian Jazz, LoC Jazz Research Guide, Rutgers Institute of Jazz Studies; hip-hop → Cornell Hip Hop Collection, Harvard Hiphop Archive (Hutchins Center), Smithsonian Anthology of Hip-Hop & Rap (Folkways), The Hip Hop Museum; reggae → UWI Reggae Studies Unit, Jamaica Music Museum (Institute of Jamaica), Roots Knotty Roots.

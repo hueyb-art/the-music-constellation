@@ -917,6 +917,13 @@ const archives=[
   ["Institute of Jazz Studies, Rutgers","The world's largest jazz archive — 100,000+ recordings and 300+ collections (Miles, Billie, Ella, Lester Young)","https://www.libraries.rutgers.edu/newark/visit-study/institute-jazz-studies"],
 ];
 
+/* Radio & airwaves: [name, note, https-url] */
+const radio=[
+  ["WBGO","Newark's NPR jazz station — the world's premier jazz broadcaster, streaming worldwide","https://www.wbgo.org/"],
+  ["Jazz24","A free, round-the-clock jazz stream out of KNKX in Seattle","https://www.jazz24.org/"],
+  ["Worldwide FM","Gilles Peterson's global station — jazz at the centre, reaching out to everything around it","https://worldwidefm.net/"],
+];
+
 /* Wikipedia page-title overrides for photo lookups */
 const wiki={
   "hiromi":"Hiromi (musician)",
@@ -994,6 +1001,13 @@ const deepcuts=[
   {title:"The Moontrane",artist:"Woody Shaw",year:"1974",kind:"Album",id:"woodyshaw",note:"The last great trumpet stylist's breakout as a leader — modern, muscular post-bop pointing a way forward in a fusion age."},
 ];
 
+/* Reference shelf: {title, author, year, note} — guides, encyclopedias, listening references */
+const refs=[
+  {title:"The Penguin Guide to Jazz Recordings",author:"Richard Cook & Brian Morton",year:"2010",note:"The definitive album-by-album buyer's guide — thousands of records rated and described, the standard for building a collection."},
+  {title:"The New Grove Dictionary of Jazz",author:"ed. Barry Kernfeld",year:"2002",note:"The scholarly encyclopedia: thousands of entries on players, terms, instruments and styles."},
+  {title:"The Rough Guide to Jazz",author:"Carr, Fairweather & Priestley",year:"2004",note:"A readable A–Z of the musicians, warm and opinionated where Grove is neutral."},
+];
+
 window.GENRE_DATA=window.GENRE_DATA||{};
 window.GENRE_DATA["jazz"]={
   key:"jazz",
@@ -1012,6 +1026,6 @@ mbid:{"hiromi":"8472f0ce-c57d-46f2-93db-d4a6f6e6473a","jojones":"ceda2457-e16f-4
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{},
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
-  eras,nodes,edges,lib,critics,resources,archives,films,deepcuts,wiki,
+  eras,nodes,edges,lib,critics,resources,archives,radio,films,deepcuts,refs,wiki,
 };
 })();

@@ -454,6 +454,13 @@ const archives=[
   ["Roots Knotty Roots","The definitive discography of Jamaican singles — 130,000+ listings (1953–1999) with riddims and studio notes","https://www.reggaefever.ch/rkr/"],
 ];
 
+/* Radio & airwaves: [name, note, https-url] */
+const radio=[
+  ["IRIE FM","Jamaica's first all-reggae station — “reggae in the morning, reggae in the evening, reggae at night”","https://iriefm.net/"],
+  ["David Rodigan","The original reggae selector and soundclash champion; his BBC shows are a global institution","https://www.rodigan.com/"],
+  ["NTS Radio","The London online station with some of the deepest reggae, dub and dancehall shows on air","https://www.nts.live/"],
+];
+
 /* Wikipedia page-title overrides for photo lookups */
 const wiki={
   "skatalites":"The Skatalites",
@@ -615,6 +622,13 @@ const deepcuts=[
   {title:"African Dub All-Mighty, Chapter 3",artist:"Joe Gibbs & The Professionals",year:"1978",kind:"Album",id:"joegibbs",note:"The dub series with the sound effects — ringing phones, sirens, thunder — playful, populist and hugely influential."},
 ];
 
+/* Reference shelf: {title, author, year, note} */
+const refs=[
+  {title:"Reggae Routes: The Story of Jamaican Music",author:"Kevin O'Brien Chang & Wayne Chen",year:"1998",note:"An insider history from Kingston — the genres, the producers and the sound systems, told from the island out."},
+  {title:"Reggae & Caribbean Music",author:"Dave Thompson",year:"2002",note:"An album-and-artist reference guide spanning ska, rocksteady, roots, dub and dancehall."},
+  {title:"Young, Gifted and Black: The Story of Trojan Records",author:"de Koningh & Cane-Honeysett",year:"2003",note:"The label that brought Jamaican music to Britain — the history through its catalogue."},
+];
+
 window.GENRE_DATA=window.GENRE_DATA||{};
 window.GENRE_DATA["reggae"]={
   key:"reggae",
@@ -633,6 +647,6 @@ mbid:{"bunnylee":"16ad0626-7c09-455c-8841-0cc4b157c22b","wailingsouls":"f28a0e2e
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"tootshibbert":{"artist":"Toots and the Maytals","q":"Toots and the Maytals"},"bobmarley":{"did":719},"charliechaplin":{"q":"Charlie Chaplin Tribute to Reggae","only":true},"scientist":{"q":"Scientist Vampires Dub"},"koffee":{"q":"Koffee Toast"},"coxsone":{"artist":"The Skatalites","q":"The Skatalites Guns of Navarone"},"bunnylee":{"artist":"Johnny Clarke","q":"Johnny Clarke None Shall Escape the Judgement"},"winstonriley":{"artist":"Tenor Saw","q":"Tenor Saw Ring the Alarm"},"carltonbarrett":{"did":719},"bobbydigital":{"artist":"Sizzla","q":"Sizzla Black Woman and Child"}},
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
-  eras,nodes,edges,lib,critics,resources,archives,films,deepcuts,wiki,
+  eras,nodes,edges,lib,critics,resources,archives,radio,films,deepcuts,refs,wiki,
 };
 })();

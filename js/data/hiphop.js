@@ -675,6 +675,13 @@ const archives=[
   ["The Hip Hop Museum (Bronx)","Hip-hop's forthcoming forever home, rising on the Harlem River in the South Bronx","https://thhm.org/"],
 ];
 
+/* Radio & airwaves: [name, note, https-url] */
+const radio=[
+  ["Shade 45 (SiriusXM)","Eminem's uncensored hip-hop channel — home of Sway in the Morning and Rosenberg's Real Late","https://www.siriusxm.com/channels/shade-45"],
+  ["The Breakfast Club","Power 105.1's morning show — the most-watched interview seat in hip-hop, syndicated nationwide","https://power1051.iheart.com/featured/breakfast-club/"],
+  ["Hip-Hop Radio Archive","Thousands of hours of classic NYC radio preserved — Stretch & Bobbito, the Wake Up Show and more","https://hiphopradioarchive.org/"],
+];
+
 /* Wikipedia page-title overrides for photo lookups */
 const wiki={
   "koolherc":"DJ Kool Herc",
@@ -832,6 +839,13 @@ const deepcuts=[
   {title:"Madvillainy",artist:"Madvillain",year:"2004",kind:"Album",note:"MF DOOM and Madlib's masterpiece of mumbled menace and micro-beats — beloved by heads, invisible on radio."},
 ];
 
+/* Reference shelf: {title, author, year, note} */
+const refs=[
+  {title:"ego trip's Book of Rap Lists",author:"Sacha Jenkins, Elliott Wilson et al.",year:"1999",note:"The gleefully obsessive bible of hip-hop trivia — hundreds of lists that double as an oral history."},
+  {title:"The Anthology of Rap",author:"ed. Adam Bradley & Andrew DuBois",year:"2010",note:"Three decades of lyrics on the page, treated as poetry — a Yale University Press doorstop."},
+  {title:"How to Rap: The Art & Science of the Hip-Hop MC",author:"Paul Edwards",year:"2009",note:"The craft itself, broken down with dozens of MCs explaining flow, content and delivery."},
+];
+
 window.GENRE_DATA=window.GENRE_DATA||{};
 window.GENRE_DATA["hiphop"]={
   key:"hiphop",
@@ -850,6 +864,6 @@ mbid:{"funky4":"50498fa1-b339-4ac8-9327-d5db0e98a1f8","busybee":"bc7f8533-0ec6-4
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"crazylegs":{"artist":"Rock Steady Crew","q":"Rock Steady Crew Hey You"},"theneptunes":{"artist":"Clipse","q":"Clipse Grindin"},"jammasterjay":{"did":79236},"scottlarock":{"did":8618},"souljaboy":{"did":352219},"puffdaddy":{"did":173581},"keithcowboy":{"artist":"Grandmaster Flash & The Furious Five","q":"Grandmaster Flash The Message"},"juicecrew":{"artist":"Marley Marl","q":"Marley Marl The Symphony"},"chuckd":{"artist":"Public Enemy","q":"Public Enemy Fight the Power"},"questlove":{"artist":"The Roots","q":"The Roots You Got Me"},"rickrubin":{"artist":"Beastie Boys","q":"Beastie Boys Fight for Your Right"},"madlib":{"artist":"Madvillain","q":"Madvillain Accordion"},"busybee":{"artist":"Busy Bee","q":"Busy Bee Suicide"},"tooshort":{"q":"Too Short Blow the Whistle"},"deathrow":{"artist":"Dr. Dre","q":"Dr. Dre Nuthin but a G Thang"},"badboy":{"artist":"The Notorious B.I.G.","q":"Notorious B.I.G. Hypnotize"},"cashmoney":{"artist":"Lil Wayne","q":"Lil Wayne A Milli"},"tde":{"artist":"Kendrick Lamar","q":"Kendrick Lamar HUMBLE"}},
   sym:["peer","collaborated","rivals","beef","crew","group","duo","co-founded","frequent collaborators"],
-  eras,nodes,edges,lib,critics,resources,archives,films,deepcuts,wiki,
+  eras,nodes,edges,lib,critics,resources,archives,radio,films,deepcuts,refs,wiki,
 };
 })();

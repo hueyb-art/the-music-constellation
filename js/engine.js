@@ -6,7 +6,7 @@
 const GENRES=window.GENRE_DATA||{};
 const GENRE_ORDER=["jazz","hiphop","reggae"].filter(k=>GENRES[k]);
 let G=null;
-let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],ARCHIVES=[],FILMS=[],DEEPCUTS=[],WIKI={},SYM=[];
+let ERAS={},NODES=[],EDGES=[],LIB={},CRITICS=[],RESOURCES=[],ARCHIVES=[],RADIO=[],FILMS=[],DEEPCUTS=[],REFS=[],WIKI={},SYM=[];
 let byId={},adj={};
 const lsKey=s=>"tmc_"+G.key+"_"+s;
 
@@ -568,7 +568,9 @@ function roomReadingHTML(){
     ${ARCHIVES.length?`<h3 style="margin-top:40px">Archives &amp; primary sources</h3>
     <div class="reslist">${ARCHIVES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`:""}
     <h3 style="margin-top:40px">Periodicals &amp; community</h3>
-    <div class="reslist">${RESOURCES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`;
+    <div class="reslist">${RESOURCES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>
+    ${RADIO.length?`<h3 style="margin-top:40px">Radio &amp; airwaves</h3>
+    <div class="reslist">${RADIO.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`:""}`;
 }
 function roomFilmsHTML(){
   if(!FILMS.length)return `<p class="lead">Film picks for this constellation are on the way.</p>`;
@@ -580,7 +582,9 @@ function roomCutsHTML(){
   if(!DEEPCUTS.length)return `<p class="lead">Deep cuts for this constellation are on the way.</p>`;
   return `<p class="lead">Deep cuts — essential but under-the-radar records and tracks, the ones aficionados press into your hands. Tap a service to listen; tap a name in the constellation to open their page.</p>
     ${DEEPCUTS.map(d=>{const artist=(d.id&&byId[d.id])?`<a class="dcartist" data-id="${d.id}">${esc(d.artist)}</a>`:esc(d.artist);
-      return `<div class="dc"><div class="dcrow"><span class="dctitle">${esc(d.title)}</span> <span class="dcby">${artist}</span> <span class="dcmeta">${[d.year,d.kind].filter(Boolean).map(esc).join(" · ")}</span></div><div class="dcnote">${esc(d.note)}</div><div class="dclinks">${svc(d.artist+" "+d.title)}</div></div>`;}).join("")}`;
+      return `<div class="dc"><div class="dcrow"><span class="dctitle">${esc(d.title)}</span> <span class="dcby">${artist}</span> <span class="dcmeta">${[d.year,d.kind].filter(Boolean).map(esc).join(" · ")}</span></div><div class="dcnote">${esc(d.note)}</div><div class="dclinks">${svc(d.artist+" "+d.title)}</div></div>`;}).join("")}
+    ${REFS.length?`<h3 style="margin-top:40px">Reference shelf</h3>
+    ${REFS.map(r=>`<div class="film"><div class="frow"><span class="ftitle">${esc(r.title)}</span><span class="fmeta">${[r.author,r.year].filter(Boolean).map(esc).join(" · ")}</span></div><div class="fnote">${esc(r.note)}</div></div>`).join("")}`:""}`;
 }
 function openRooms(tab){
   if(tab)roomTab=tab;
@@ -797,7 +801,7 @@ GENRE_ORDER.forEach(k=>{
 });
 function loadGenre(key){
   G=GENRES[key];
-  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;ARCHIVES=G.archives||[];FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];WIKI=G.wiki;SYM=G.sym;
+  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;ARCHIVES=G.archives||[];RADIO=G.radio||[];FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];REFS=G.refs||[];WIKI=G.wiki;SYM=G.sym;
   /* reset interaction state */
   hoverNode=null;selNode=null;chordAnchor=null;focusSet=null;curId=null;
   panel.classList.remove("open");closePage();if(clip)clip.pause();clipNote("");

@@ -41,10 +41,13 @@ The **Rooms** button opens one page with three tabs, each backed by a per-genre 
 - `critics` — Reading tab: `[{name, note, books:[[title, year], …]}, …]`
 - `resources` — Reading tab "Periodicals & community": `[[title, note, https-url], …]`
 - `archives` — Reading tab "Archives & primary sources" (optional): `[[title, note, https-url], …]`. For serious institutional collections (Library of Congress, Smithsonian, university archives). Same shape as `resources`, rendered in its own section above the periodicals.
+- `radio` — Reading tab "Radio & airwaves" (optional): `[[name, note, https-url], …]`. Stations and shows; same shape as `resources`.
 - `films` — Films & docs tab: `[{title, year, director, note, url?}, …]`. `url` is optional; without it the app shows YouTube + "where to watch" search links built from the title.
 - `deepcuts` — Deep Cuts tab: `[{title, artist, year, kind, note, id?}, …]`. `kind` is a free label ("Album", "Track", "Project"). `id` is optional — set it to a node id and the artist name becomes a link that opens that artist's page; listen links (Spotify/Apple/YouTube) are generated automatically from `artist + title`. The validator checks that any `id` references a real node.
 
-`films` and `deepcuts` are optional (a genre without them just shows a "coming soon" line). Remember to list every new const in the `window.GENRE_DATA[...]` object literal at the bottom of the file.
+- `refs` — Deep Cuts tab "Reference shelf" (optional): `[{title, author, year, note}, …]`. Guides, encyclopedias and listening references (distinct from the Reading tab's biographer/critic shelf). Rendered as a list under the deep-cut records.
+
+`films`, `deepcuts`, `archives`, `radio` and `refs` are optional (a genre without films/deepcuts shows a "coming soon" line; the others just omit their section). Remember to list every new const in the `window.GENRE_DATA[...]` object literal at the bottom of the file.
 
 ## Adding a genre
 
