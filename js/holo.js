@@ -132,7 +132,7 @@
       const now=performance.now(); if(now-lastRay<55) return; lastRay=now;
       const m=pickRay(ev.clientX, ev.clientY); if(m && m!==selected) setFocus(m);
     });
-    canvas.addEventListener('pointerdown', ev=>{ downX=ev.clientX; downY=ev.clientY; downT=performance.now(); });
+    canvas.addEventListener('pointerdown', ev=>{ if(window.MCH&&window.MCH.unlock)window.MCH.unlock(); /* bless audio so previews can play in 3D */ downX=ev.clientX; downY=ev.clientY; downT=performance.now(); });
     canvas.addEventListener('pointerup', ev=>{
       if(Math.hypot(ev.clientX-downX, ev.clientY-downY)>9 || performance.now()-downT>320) return;  /* a drag, not a tap */
       const m=pickNearest(ev.clientX, ev.clientY);
