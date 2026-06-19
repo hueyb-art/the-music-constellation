@@ -10,6 +10,7 @@
 - [ ] Cross-genre bridge edges: the data model already supports them in principle (genre-scoped ids); the engine currently renders one genre at a time. First candidates: Kool Herc's Jamaican sound-system roots (reggae→hiphop), The Roots/Robert Glasper (hiphop↔jazz), sampling lineages.
 - [ ] Per-artist deep links (e.g. `#/jazz/miles`) so search results and pages are shareable.
 - [ ] Pin MusicBrainz artist ids (`mbid` field is already honored by `resolveAndFetch`) for artists whose name lookup is ambiguous.
+- [ ] **Stereo / Looking Glass output for the 3D view** (museum/installation). The in-app WebGL `holo` view (`js/holo.js`, shipped 2026-06-15) is the foundation; driving a true light-field/hologram display (e.g. a Looking Glass) additionally needs quilt / multi-view rendering and the actual hardware to calibrate against. Parked until there's a venue or device to test on. (Discussed 2026-06-19.)
 
 ## Considered and not planned
 
