@@ -728,6 +728,37 @@ let audioUnlocked=false;
 function unlockAudio(){if(!clip||audioUnlocked)return;audioUnlocked=true;try{clip.src=SILENT;const p=clip.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
 function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;clearTimeout(clipNote._t);if(!msg){el.classList.remove("show");return;}el.textContent=msg;el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
 function playPreview(url,name){if(!clip)return;if(!url||url==="none"){clipNote("No preview found for "+name);return;}clip.src=url;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>{clipNote("Tap again to hear "+name);});clipNote("♪  "+name,32000);}
+/* ----  SELF-CORRECTING PREVIEW PLAYBACK  ----
+   A resolved URL is only proof the *catalogue* has a clip — not that THIS device
+   can play it. Deezer's preview CDN is on tracker blocklists and its URLs are
+   signed and expire within weeks, so a perfectly good Deezer URL can resolve and
+   then fail to load on a given desktop (and stay broken once cached). So: cache a
+   main-player URL only once it actually *plays* (the `playing` event), and if it
+   errors, drop it and re-resolve from the OTHER provider (Apple ⇄ Deezer). That
+   makes playback heal itself across blocked CDNs and expired links — no user
+   action, nothing poisoned. `mainPlay` tracks the current main-player attempt;
+   the handlers no-op for collab clips (different `clipFor` tag). */
+let mainPlay=null;
+const provOf=u=>/itunes\.apple\.com/i.test(u||"")?"it":"dz";
+if(clip){
+  clip.addEventListener("playing",()=>{
+    if(mainPlay&&clipFor===mainPlay.id&&mainPlay.url){try{localStorage.setItem(lsKey("clip_"+mainPlay.id),mainPlay.url);}catch(e){}}
+  });
+  clip.addEventListener("error",()=>{
+    if(!mainPlay||clipFor!==mainPlay.id||mainPlay.alt)return;
+    if(mainPlay.url&&clip.src&&clip.src!==mainPlay.url)return; /* error from a since-replaced src */
+    mainPlay.alt=true;try{localStorage.removeItem(lsKey("clip_"+mainPlay.id));}catch(e){}
+    const id=mainPlay.id,nm=mainPlay.name,want=mainPlay.want,ov=mainPlay.ov||{};
+    clipNote("♪  finding "+nm+"…",6500);
+    const play2=(u,prov)=>{if(clipFor!==id)return;if(!u){clipNote("No preview found for "+nm);return;}mainPlay.url=u;mainPlay.prov=prov;clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);};
+    if(mainPlay.prov==="it"){ /* Apple failed → try Deezer */
+      const viaSearch=()=>dzSearch(nm,arr=>{const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));play2(t&&t.preview,"dz");});
+      if(ov.did)dzArtistTop(ov.did,u=>u?play2(u,"dz"):viaSearch());else viaSearch();
+    }else{ /* Deezer (or unknown) failed → try Apple */
+      itSearch(nm,want,u=>play2(u,"it"));
+    }
+  });
+}
 function jsonpLookup(term,cb){
   if(typeof document==="undefined"||!document.body){cb(null);return;}
   const id="itcb"+(Math.random()*1e9|0);let done=false;
@@ -752,18 +783,19 @@ function itSearch(term,want,cb){let done=false;const fin=v=>{if(done)return;done
 function playClip(nd){
   if(!clip)return;
   clipFor=nd.id;
+  const ov=(G.preview||{})[nd.id]||{}, want=ov.artist||nd.name;
   let cached=null;try{cached=localStorage.getItem(lsKey("clip_"+nd.id));}catch(e){}
   /* Only a real URL short-circuits. A past "none" (a transient lookup miss — a
      dropped request, an offline moment, the old pre-unlock audio bug) must NOT
      silence an artist forever, so we ignore it and re-resolve. We cache hits
-     only (see done()), never misses. This self-heals anyone stuck on "none". */
-  if(cached&&cached!=="none"){playPreview(cached,nd.name);return;}
+     only (on the `playing` event), never misses; a cached URL that no longer
+     plays is dropped and re-resolved from the other provider. */
+  if(cached&&cached!=="none"){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:cached,prov:provOf(cached),alt:false};playPreview(cached,nd.name);return;}
   clipNote("♪  finding "+nd.name+"…",6500);
-  const ov=(G.preview||{})[nd.id]||{}, want=ov.artist||nd.name;
   const seed=(nd.disco&&nd.disco[0]&&nd.disco[0][1])||"";
   const q1=ov.q||(seed&&!/^with /i.test(seed)?nd.name+" "+seed:nd.name);
   const q2=nd.name;
-  const done=url=>{if(clipFor!==nd.id)return;if(url){try{localStorage.setItem(lsKey("clip_"+nd.id),url);}catch(e){}playPreview(url,nd.name);}else clipNote("No verified preview for "+nd.name);};
+  const done=url=>{if(clipFor!==nd.id)return;if(url){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:url,prov:provOf(url),alt:false};playPreview(url,nd.name);}else clipNote("No verified preview for "+nd.name);};
   const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done(t.preview);else next();});
   const itun=()=>itSearch(q2,want,url=>{if(clipFor!==nd.id)return;done(url);});
   /* ov.only = trust ONLY the specific query (skip plain-name + iTunes), for names a
