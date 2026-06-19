@@ -2,6 +2,15 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-19 — an artist stuck silent on one device: two compounding bugs
+
+- Report: "Nas plays on my iPhone but not desktop." It was never a Nas bug — his preview resolves fine fresh. Two separate, compounding causes:
+  1. **The 3D canvas never unlocked audio.** Browsers require a user gesture to bless the `<audio>` element, and previews play *after* an async lookup — so a deferred `play()` is blocked unless audio was unlocked first. The 2D `canvas` calls `unlockAudio()` on first click/touch; the new `holoc` canvas didn't. iPhone worked only because the 2D view had been touched earlier that session (unlock persists per session). Fix: expose `unlockAudio` on `window.MCH` and call it on the holo canvas's first `pointerdown`.
+  2. **`playClip` cached misses permanently.** On a failed lookup it wrote `clip_<id>="none"`, and on read a `"none"` made it give up forever — so any *transient* miss (a dropped request, an offline moment, or bug #1's blocked play after a successful resolve) silenced that artist on that device permanently, even after the cause was gone. Fix: cache **hits only**; ignore a stored `"none"` and always re-resolve. Self-heals every stuck artist on next click. (The collab-clip player already worked this way; the main player didn't — same lesson, applied late.)
+- **General rule: never let a transient failure write a permanent negative cache.** Cache successes; re-attempt misses. A poisoned "none" is invisible (no error, just silence) and survives every reload until the key is cleared.
+- Belt-and-suspenders for a high-value, short-named artist: pinned Nas to Deezer artist id **73** (`preview:{nas:{did:73}}`), which resolves via `dzArtistTop` (pure JSONP, no CORS proxy, no search ambiguity) — bulletproof against a future search returning the wrong "Nas".
+- Verified the way the user would hit it: poisoned `tmc_hiphop_clip_nas="none"` in the preview, called `playClip(byId.nas)`, and confirmed it ignored the poison, recached a real `dzcdn` URL, and played.
+
 ## 2026-06-15 — 3D folded into the main app as a real view mode (`holo`)
 
 - The standalone `lab/holo.html` proved the look; to get all 3 genres + playback + Rooms in 3D, the right move was integration, not duplication. Added `js/holo.js` as a third view mode (`holo`, route `#/<genre>/holo`, a "3D" topbar button). The lucky part: the globe already simulates `x/y/z` every frame, so the WebGL view reads those **live positions** and a tap calls the engine's `select(node)` — so the card, audio playback, genre switcher, Rooms and white-label all come for free (it IS the same app, just a different renderer for the globe).

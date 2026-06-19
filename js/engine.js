@@ -753,13 +753,17 @@ function playClip(nd){
   if(!clip)return;
   clipFor=nd.id;
   let cached=null;try{cached=localStorage.getItem(lsKey("clip_"+nd.id));}catch(e){}
-  if(cached){if(cached!=="none")playPreview(cached,nd.name);else clipNote("No verified preview for "+nd.name);return;}
+  /* Only a real URL short-circuits. A past "none" (a transient lookup miss — a
+     dropped request, an offline moment, the old pre-unlock audio bug) must NOT
+     silence an artist forever, so we ignore it and re-resolve. We cache hits
+     only (see done()), never misses. This self-heals anyone stuck on "none". */
+  if(cached&&cached!=="none"){playPreview(cached,nd.name);return;}
   clipNote("♪  finding "+nd.name+"…",6500);
   const ov=(G.preview||{})[nd.id]||{}, want=ov.artist||nd.name;
   const seed=(nd.disco&&nd.disco[0]&&nd.disco[0][1])||"";
   const q1=ov.q||(seed&&!/^with /i.test(seed)?nd.name+" "+seed:nd.name);
   const q2=nd.name;
-  const done=url=>{if(clipFor!==nd.id)return;try{localStorage.setItem(lsKey("clip_"+nd.id),url||"none");}catch(e){}if(url)playPreview(url,nd.name);else clipNote("No verified preview for "+nd.name);};
+  const done=url=>{if(clipFor!==nd.id)return;if(url){try{localStorage.setItem(lsKey("clip_"+nd.id),url);}catch(e){}playPreview(url,nd.name);}else clipNote("No verified preview for "+nd.name);};
   const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done(t.preview);else next();});
   const itun=()=>itSearch(q2,want,url=>{if(clipFor!==nd.id)return;done(url);});
   /* ov.only = trust ONLY the specific query (skip plain-name + iTunes), for names a
