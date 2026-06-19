@@ -333,6 +333,7 @@ function loop(){
     if(trans.phase==="out"){fade=Math.max(0,fade-0.055);if(fade<=0){loadGenre(trans.to);trans.phase="in";}}
     else{fade=Math.min(1,fade+0.04);if(fade>=1)trans=null;}
   }
+  if(viewMode==="holo"){ if(!pageOpen)step(); if(window.HOLO)window.HOLO.frame(); requestAnimationFrame(loop); return; }
   if(viewMode==="chord"){
     zoom+=(tzoom-zoom)*0.12;viewX+=(tviewX-viewX)*0.12;viewY+=(tviewY-viewY)*0.12;
     const lim=CHORD_R*zoom+220;
@@ -807,23 +808,35 @@ let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(e
 
 /* ----------  GLOBE ⇄ CHORD-WEB TOGGLE  ---------- */
 const chordBtn=document.getElementById("chordBtn");
+const holoBtn=document.getElementById("holoBtn");
+const stageEl=document.getElementById("stage"),spreadBox=document.querySelector(".spread");
 const hintEl=document.querySelector(".hint");
 const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
 const HINT_CHORD=MOBILE
   ? '<b>Tap a star</b> to anchor it &amp; light its ties &middot; <b>then tap a name</b> to reveal the records they made together<br><b>Drag</b> to pan &middot; <b>pinch</b> to zoom &middot; it drifts slowly until you touch it'
   : '<b>Click a star</b> to anchor it &amp; light its ties (in silence) &middot; <b>then click a tie</b> to reveal records they made together<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
+const HINT_HOLO='<b>Drag</b> to orbit &middot; <b>scroll / pinch</b> to zoom &middot; <b>tap a name</b> to open an artist';
 function frameChord(){tviewX=0;tviewY=0;tzoom=Math.max(0.32,Math.min(2,(Math.min(W,H)-150)/(CHORD_R*2)));}
 function setView(mode){
   if(viewMode===mode)return;
-  viewMode=mode;
+  const prev=viewMode; viewMode=mode;
   if(chordBtn)chordBtn.classList.toggle("on",mode==="chord");
-  if(hintEl)hintEl.innerHTML=mode==="chord"?HINT_CHORD:HINT_GLOBE;
+  if(holoBtn)holoBtn.classList.toggle("on",mode==="holo");
+  if(hintEl)hintEl.innerHTML=mode==="chord"?HINT_CHORD:mode==="holo"?HINT_HOLO:HINT_GLOBE;
   alpha=1;userFramed=false;
   updateHashView();
+  if(mode==="holo"){
+    deselect();
+    if(stageEl)stageEl.style.display="none"; if(spreadBox)spreadBox.style.display="none";
+    if(window.HOLO)window.HOLO.enter();
+    return;
+  }
+  if(prev==="holo"){ if(window.HOLO)window.HOLO.exit(); if(stageEl)stageEl.style.display=""; if(spreadBox)spreadBox.style.display=""; }
   if(mode==="chord"){chordSpin=0;chordIdle=0;deselect();yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameChord();}
   else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);}
 }
 if(chordBtn)chordBtn.onclick=()=>setView(viewMode==="chord"?"globe":"chord");
+if(holoBtn)holoBtn.onclick=()=>setView(viewMode==="holo"?"globe":"holo");
 
 /* ----------  GENRE LOADING, THEME & ROUTING  ---------- */
 const legend=document.getElementById("legend");let legendCollapsed=MOBILE;
@@ -871,6 +884,9 @@ function loadGenre(key){
   ekeys.forEach(k=>{NODES.forEach(nd=>{if(nd.era===k){nd._cang=ci/NODES.length*6.2832-1.5708;ci++;}});});
   chordSpin=0;chordIdle=0;
   viewX=0;tviewX=0;viewY=0;tviewY=0;
+  /* hand the live data + positions to the lazy-loaded 3D view; rebuild on a genre swap */
+  window.MCH={key,nodes:NODES,edges:EDGES,adj,byId,ERAS,select};
+  if(viewMode==="holo"&&window.HOLO)window.HOLO.rebuild();
   /* theme — @property-registered vars cross-fade in CSS */
   const rs=document.documentElement.style;
   rs.setProperty("--bg",G.theme.bg);rs.setProperty("--glow",G.theme.glow);
@@ -904,7 +920,7 @@ function loadGenre(key){
 }
 instrEl.onchange=()=>{instrFilter=instrEl.value||null;alpha=Math.max(alpha,0.8);userFramed=true;setTimeout(fitView,650);};
 
-function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:v==="chord"?"chord":"globe"};}
+function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:v==="chord"?"chord":v==="holo"?"holo":"globe"};}
 function updateHashView(){if(!G)return;const h="#/"+G.key+(viewMode==="globe"?"":"/"+viewMode);if(location.hash!==h)try{history.replaceState(null,"",h);}catch(e){}}
 addEventListener("hashchange",()=>{const p=parseHash();if(p.genre&&!trans&&G&&G.key!==p.genre)switchGenre(p.genre);if(p.view!==viewMode&&!trans)setView(p.view);});
 

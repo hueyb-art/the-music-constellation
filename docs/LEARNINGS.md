@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-15 — 3D folded into the main app as a real view mode (`holo`)
+
+- The standalone `lab/holo.html` proved the look; to get all 3 genres + playback + Rooms in 3D, the right move was integration, not duplication. Added `js/holo.js` as a third view mode (`holo`, route `#/<genre>/holo`, a "3D" topbar button). The lucky part: the globe already simulates `x/y/z` every frame, so the WebGL view reads those **live positions** and a tap calls the engine's `select(node)` — so the card, audio playback, genre switcher, Rooms and white-label all come for free (it IS the same app, just a different renderer for the globe).
+- **Coupling without bloating engine.js:** engine publishes `window.MCH = {key,nodes,edges,adj,byId,ERAS,select}` each `loadGenre` and calls `window.HOLO.enter/exit/rebuild/frame`; holo.js owns all the three.js. **Load order bug:** holo.js must load *before* engine.js in the loader — the engine's startup honours a `/holo` route synchronously, and if `window.HOLO` isn't defined yet that entry silently no-ops (the button worked, the deep-link didn't, until reordered).
+- **three.js stays out of the 2D path:** an import map in index.html resolves `three`/`three/addons/`, but nothing loads until holo.js does a dynamic `import()` on first 3D entry. So the flagship 2D site keeps its zero-dependency, instant load. (Dynamic import in a classic script needs the page import map for the bare `three` specifier OrbitControls imports internally.)
+- Single rAF loop, branched: the holo branch runs `step()` (keeps the live drift) then `HOLO.frame()`; verified globe + chord still render and all three transitions are clean.
+
 ## 2026-06-15 — `lab/holo.html`: real-3D (Three.js) prototype for hologram/museum
 
 - The main app fakes 3D (2D canvas projecting x/y/z); holographic displays (Pepper's-ghost holobox, Looking Glass, dome projection, AR) need a *real* 3D scene a camera can render. Built `lab/holo.html` as a standalone WebGL proof using Three.js (ESM via unpkg import-map). It **reuses the exact curated data** (`<script src="../js/data/jazz.js">` → `window.GENRE_DATA`), runs a compact 3D force-settle (a port of the engine's repulsion + link springs + collision), and renders era-coloured glowing spheres + additive halos, an additive edge web, a volumetric sun (sprite glow), a starfield, OrbitControls (drag/zoom) with slow `autoRotate` drift, and raycast hover→name+instrument.
