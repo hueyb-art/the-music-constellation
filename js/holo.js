@@ -68,6 +68,7 @@
   function build(){
     const M=window.MCH; if(!M||!M.nodes) return;
     disposeScene();
+    if(M.theme&&M.theme.bg){ scene.background=new THREE.Color(M.theme.bg); canvas.style.background=M.theme.bg; }   /* keep each genre's colour in 3D */
     const nodes=M.nodes;
     edges=M.edges.filter(e=>e.s&&e.t);
     nodes.forEach(n=> nodeEdges[n.id]=[]);

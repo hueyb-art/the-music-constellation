@@ -885,7 +885,7 @@ function loadGenre(key){
   chordSpin=0;chordIdle=0;
   viewX=0;tviewX=0;viewY=0;tviewY=0;
   /* hand the live data + positions to the lazy-loaded 3D view; rebuild on a genre swap */
-  window.MCH={key,nodes:NODES,edges:EDGES,adj,byId,ERAS,select};
+  window.MCH={key,nodes:NODES,edges:EDGES,adj,byId,ERAS,theme:G.theme,select};
   if(viewMode==="holo"&&window.HOLO)window.HOLO.rebuild();
   /* theme — @property-registered vars cross-fade in CSS */
   const rs=document.documentElement.style;
