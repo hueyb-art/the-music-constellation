@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — selection that follows you across views (one local, no new state)
+
+- Goal: clicking an artist then switching globe ⇄ chord ⇄ 3D used to drop the selection; it should persist so you can keep digging. The win was realising **`selNode` is already the unified "who's selected" in all three views** — globe `select()`, chord `chordPick()`, and a 3D tap (`MCH.select()` → engine `select()`) all set it. So no new persistent field is required.
+- `setView()` clears selection on *entry* to chord/holo (`deselect()`), and the globe-entry path never restored anything — that's the whole bug. Fix: capture `const carry=selNode` at the **top** of `setView` (before the per-mode `deselect()` fires), then re-apply on the way in. A plain **local** suffices — no module global, no `loadGenre` edit — because a genre swap doesn't route through `setView` and already nulls `selNode`, so a selection can't leak across genre-scoped ids.
+- Re-apply is per-view and **silent** (no clip replay — Huey's call): globe & holo `select(carry,true)` (added a `quiet` arg that skips `playClip`); holo additionally `HOLO.enter(carry)` (taught `enter` to take an optional node and `setFocus(coreById[id])` after `build()`); chord `chordPick(carry)` (re-anchors in its native card-less state so you can click a tie next). Card auto-opens in globe & 3D, anchor-only in chord.
+- Verifying the 3D side needs care: `HOLO.enter` is async (first entry lazy-loads three.js) and `layoutLabels` only runs inside `frame()`, which the **preview pauses when the tab is hidden** — so the eval polled `HOLO.ready()` then pumped `HOLO.frame()` a few times before asserting the carried node's label had the `.sel` class. All six transition directions + silence + the no-selection case pass.
+
 ## 2026-06-19 — an artist stuck silent on one device: two compounding bugs
 
 - Report: "Nas plays on my iPhone but not desktop." It was never a Nas bug — his preview resolves fine fresh. Two separate, compounding causes:

@@ -420,7 +420,7 @@ canvas.addEventListener("touchend",ev=>{
 
 /* quick card panel */
 const panel=document.getElementById("panel"),panelBody=document.getElementById("panelBody");
-function select(nd){selNode=nd;computeFocus(nd);renderPanel(nd);panel.classList.add("open");if(MOBILE){tviewY=-H*0.24;centerOn(nd);}playClip(nd);}
+function select(nd,quiet){selNode=nd;computeFocus(nd);renderPanel(nd);panel.classList.add("open");if(MOBILE){tviewY=-H*0.24;centerOn(nd);}if(!quiet)playClip(nd);}
 function deselect(){selNode=null;chordAnchor=null;if(!hoverNode)focusSet=null;panel.classList.remove("open");tviewY=0;if(clip)clip.pause();clipNote("");}
 /* In chord view, closing the breakout card returns to the anchored-and-silent
    state (the star stays lit) rather than clearing the whole selection. */
@@ -855,6 +855,12 @@ const HINT_HOLO='<b>Drag</b> to orbit &middot; <b>scroll / pinch</b> to zoom &mi
 function frameChord(){tviewX=0;tviewY=0;tzoom=Math.max(0.32,Math.min(2,(Math.min(W,H)-150)/(CHORD_R*2)));}
 function setView(mode){
   if(viewMode===mode)return;
+  /* The selected artist follows you across views so you can keep digging. selNode
+     is the unified "who's selected" in all three views (globe select / chord
+     chordPick / a 3D tap's MCH.select all set it). Capture it before the per-mode
+     deselect() clears it, then re-apply on the way in — silently (no clip replay):
+     globe & 3D re-open the card, chord re-anchors (its native card-less state). */
+  const carry=(selNode&&byId[selNode.id])?selNode:null;
   const prev=viewMode; viewMode=mode;
   if(chordBtn)chordBtn.classList.toggle("on",mode==="chord");
   if(holoBtn)holoBtn.classList.toggle("on",mode==="holo");
@@ -864,12 +870,13 @@ function setView(mode){
   if(mode==="holo"){
     deselect();
     if(stageEl)stageEl.style.display="none"; if(spreadBox)spreadBox.style.display="none";
-    if(window.HOLO)window.HOLO.enter();
+    if(window.HOLO)window.HOLO.enter(carry);
+    if(carry)select(carry,true);
     return;
   }
   if(prev==="holo"){ if(window.HOLO)window.HOLO.exit(); if(stageEl)stageEl.style.display=""; if(spreadBox)spreadBox.style.display=""; }
-  if(mode==="chord"){chordSpin=0;chordIdle=0;deselect();yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameChord();}
-  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);}
+  if(mode==="chord"){chordSpin=0;chordIdle=0;deselect();yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameChord();if(carry)chordPick(carry);}
+  else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);if(carry)select(carry,true);}
 }
 if(chordBtn)chordBtn.onclick=()=>setView(viewMode==="chord"?"globe":"chord");
 if(holoBtn)holoBtn.onclick=()=>setView(viewMode==="holo"?"globe":"holo");

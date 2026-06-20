@@ -176,11 +176,13 @@
 
   window.HOLO = {
     ready: ()=>ready,
-    async enter(){
+    async enter(focusNode){
       canvas.style.display='block'; labelsBox.style.display='block';
       if(!THREE){ try{ await load(); }catch(e){ console.error('holo: three.js failed to load', e); return false; } }
       build();
       camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+      /* carry a selection in from another view: light its ties + neighbours in 3D */
+      if(focusNode&&coreById[focusNode.id]) setFocus(coreById[focusNode.id]);
       return true;
     },
     exit(){ canvas.style.display='none'; labelsBox.style.display='none'; },
