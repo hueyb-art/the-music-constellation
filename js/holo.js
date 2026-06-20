@@ -46,7 +46,7 @@
     camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 8000);
     camera.position.set(0, 40, 480);
     controls = new oc.OrbitControls(camera, canvas);
-    controls.enableDamping=true; controls.dampingFactor=0.09; controls.rotateSpeed=0.65;
+    controls.enableDamping=true; controls.dampingFactor=0.05; controls.rotateSpeed=0.9;
     controls.zoomSpeed=2.6; controls.zoomToCursor=true; controls.enablePan=false;
     controls.autoRotate=true; controls.autoRotateSpeed=0.6; controls.minDistance=60; controls.maxDistance=3000;
     if(THREE.TOUCH) controls.touches={ ONE:THREE.TOUCH.ROTATE, TWO:THREE.TOUCH.DOLLY_PAN };
