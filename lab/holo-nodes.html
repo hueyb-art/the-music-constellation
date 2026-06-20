@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3D node-style comparison — The Music Constellation</title>
+<style>
+  :root{ color-scheme:dark; }
+  html,body{ margin:0; height:100%; background:#070611; color:#e9e4d8; font-family:"Helvetica Neue",Arial,sans-serif; }
+  header{ padding:10px 16px; border-bottom:1px solid #1c1a2a; }
+  header h1{ font-size:15px; margin:0 0 2px; font-weight:600; letter-spacing:.2px; }
+  header p{ font-size:12px; margin:0; color:#9b95ab; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:1px; background:#1c1a2a;
+         height:calc(100vh - 52px); }
+  .cell{ position:relative; background:#0a0a12; overflow:hidden; }
+  .cell canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  .cap{ position:absolute; left:10px; top:8px; z-index:2; pointer-events:none;
+        background:rgba(7,6,17,.55); border:1px solid #2a2740; border-radius:7px; padding:5px 9px; backdrop-filter:blur(3px); }
+  .cap .n{ font-size:12.5px; font-weight:700; color:#f3ece0; }
+  .cap .n b{ color:#e0b15a; margin-right:6px; }
+  .cap .b{ font-size:11px; color:#a9a3b8; margin-top:1px; max-width:46ch; }
+  .cap .err{ color:#ff8a8a; font-size:11px; }
+  .hint{ position:absolute; right:10px; bottom:8px; z-index:2; font-size:10.5px; color:#6f6a80; pointer-events:none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header>
+  <h1>3D node-style comparison &mdash; same star cluster, four treatments</h1>
+  <p>Each panel renders the identical nodes &amp; ties. Drag to orbit any panel; they also rotate on their own. Pick the one you like by number.</p>
+</header>
+<div class="grid" id="grid"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const addons = { OrbitControls, EffectComposer, RenderPass, UnrealBloomPass, OutputPass };
+
+/* ---- shared sample cluster (same in every panel) ---- */
+const SAMPLE = [
+  { p:[  0,  0,  0], c:'#e0b15a', r:7.0 },
+  { p:[ 28, 10, -6], c:'#d98c4a', r:4.0 },
+  { p:[-24, 14,  8], c:'#c75b6a', r:3.6 },
+  { p:[ 10,-26, 12], c:'#7c6bb0', r:4.6 },
+  { p:[-18,-16,-18], c:'#4a90b8', r:3.0 },
+  { p:[ 22, -8, 22], c:'#5bb1a0', r:3.6 },
+  { p:[-30, -4,-10], c:'#d98c4a', r:2.6 },
+  { p:[  6, 30,-14], c:'#e0b15a', r:3.0 },
+  { p:[ 34, 18, 10], c:'#c75b6a', r:2.6 },
+  { p:[ -8, 22, 26], c:'#5bb1a0', r:3.0 },
+  { p:[ 16,  4,-32], c:'#4a90b8', r:2.6 },
+];
+const EDGES = [[0,1],[0,2],[0,3],[0,4],[0,5],[1,8],[2,6],[3,5],[4,6],[5,9],[7,0],[7,9],[10,0],[3,10]];
+
+/* =======================  VARIANT 1 — LIT SHADED ORB  ======================= */
+const V1 = {
+  name:"Lit shaded orb",
+  blurb:"Real lit sphere (PBR) with a moving specular hotspot + soft era-colour emissive.",
+  setup(THREE, addons, ctx){
+    const { scene, renderer } = ctx;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const k=new THREE.DirectionalLight(0xfff2e0,2.4); k.position.set(4,6,5); scene.add(k);
+    const rim=new THREE.DirectionalLight(0x6fb4ff,1.6); rim.position.set(-5,2,-6); scene.add(rim);
+    scene.add(new THREE.HemisphereLight(0x8090c0,0x101018,0.45));
+    scene.add(new THREE.AmbientLight(0x202028,0.6));
+  },
+  makeNode(THREE,color,r){
+    if(!this._geo) this._geo=new THREE.SphereGeometry(1,32,24);
+    const mat=new THREE.MeshStandardMaterial({ color, roughness:0.32, metalness:0.0,
+      emissive:color.clone(), emissiveIntensity:0.55 });
+    const m=new THREE.Mesh(this._geo,mat); m.scale.setScalar(r); return m;
+  },
+  animate(THREE,t,nodes){ for(let i=0;i<nodes.length;i++){ const m=nodes[i].material; if(m) m.emissiveIntensity=0.5+0.12*Math.sin(t*1.5+i*0.7); } }
+};
+
+/* =======================  VARIANT 2 — EMISSIVE CORE + BLOOM  ================ */
+const V2 = {
+  name:"Emissive core + bloom",
+  blurb:"Bright cores haloed by real screen-space UnrealBloom — view-independent glow.",
+  setup(THREE,addons,ctx){
+    const { scene, renderer, camera } = ctx;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
+    const size=renderer.getSize(new THREE.Vector2());
+    const composer=new addons.EffectComposer(renderer);
+    composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(size.x,size.y);
+    composer.addPass(new addons.RenderPass(scene,camera));
+    composer.addPass(new addons.UnrealBloomPass(new THREE.Vector2(size.x,size.y),0.62,0.38,1.05));
+    composer.addPass(new addons.OutputPass());
+    return { composer };
+  },
+  makeNode(THREE,color,r){
+    const geo=new THREE.SphereGeometry(r,20,16);
+    const intensity=1.15+r*0.32;
+    const mat=new THREE.MeshStandardMaterial({ color:0x000000, emissive:color.clone(),
+      emissiveIntensity:intensity, roughness:1.0, metalness:0.0 });
+    const m=new THREE.Mesh(geo,mat); m.userData.baseIntensity=intensity; return m;
+  },
+  animate(THREE,t,nodes){ for(let i=0;i<nodes.length;i++){ const n=nodes[i],b=n.userData.baseIntensity; if(b==null)continue; n.material.emissiveIntensity=b*(1+0.06*Math.sin(t*1.5+i*0.7)); } }
+};
+
+/* =======================  VARIANT 3 — FRESNEL RIM ORB  ===================== */
+const V3 = {
+  name:"Fresnel rim orb",
+  blurb:"Self-lit core inside an additive fresnel atmosphere — silhouette glows, real geometry.",
+  setup(THREE){
+    const coreVert=`varying vec3 vWorldNormal; varying vec3 vWorldPos;
+      void main(){ vWorldNormal=normalize(mat3(modelMatrix)*normal);
+        vec4 wp=modelMatrix*vec4(position,1.0); vWorldPos=wp.xyz;
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+    const coreFrag=`precision highp float; uniform vec3 uColor; uniform float uRimPower; uniform float uCorePulse;
+      varying vec3 vWorldNormal; varying vec3 vWorldPos;
+      void main(){ vec3 N=normalize(vWorldNormal); vec3 V=normalize(cameraPosition-vWorldPos);
+        float ndv=max(dot(N,V),0.0); float fres=pow(1.0-ndv,uRimPower);
+        vec3 center=mix(uColor,vec3(1.0),0.55); vec3 limb=uColor*0.35;
+        vec3 col=mix(center,limb,smoothstep(0.0,1.0,fres)); col*=uCorePulse; col+=uColor*fres*0.25;
+        gl_FragColor=vec4(col,1.0); }`;
+    const shellFrag=`precision highp float; uniform vec3 uColor; uniform float uRimPower; uniform float uGlowStrength; uniform float uCorePulse;
+      varying vec3 vWorldNormal; varying vec3 vWorldPos;
+      void main(){ vec3 N=normalize(-vWorldNormal); vec3 V=normalize(cameraPosition-vWorldPos);
+        float ndv=max(dot(N,V),0.0); float fres=pow(1.0-ndv,uRimPower);
+        float alpha=fres*uGlowStrength*uCorePulse; gl_FragColor=vec4(uColor*alpha,alpha); }`;
+    this._coreGeo=new THREE.SphereGeometry(1,32,24); this._shellGeo=new THREE.SphereGeometry(1,32,24);
+    this._coreMat=new THREE.ShaderMaterial({ vertexShader:coreVert, fragmentShader:coreFrag,
+      uniforms:{ uColor:{value:new THREE.Color(0xffffff)}, uRimPower:{value:2.2}, uCorePulse:{value:1.0} },
+      transparent:false, depthWrite:true });
+    this._shellMat=new THREE.ShaderMaterial({ vertexShader:coreVert, fragmentShader:shellFrag,
+      uniforms:{ uColor:{value:new THREE.Color(0xffffff)}, uRimPower:{value:3.0}, uGlowStrength:{value:1.15}, uCorePulse:{value:1.0} },
+      transparent:true, blending:THREE.AdditiveBlending, side:THREE.BackSide, depthWrite:false, depthTest:true });
+  },
+  makeNode(THREE,color,r){
+    const g=new THREE.Group();
+    const coreMat=this._coreMat.clone(); coreMat.uniforms.uColor.value=color.clone();
+    const shellMat=this._shellMat.clone(); shellMat.uniforms.uColor.value=color.clone();
+    const lum=0.2126*color.r+0.7152*color.g+0.0722*color.b;
+    shellMat.uniforms.uGlowStrength.value=0.9+(1.0-lum)*0.6; shellMat.uniforms.uRimPower.value=2.6;
+    const core=new THREE.Mesh(this._coreGeo,coreMat); core.scale.setScalar(r);
+    const shell=new THREE.Mesh(this._shellGeo,shellMat); shell.scale.setScalar(r*1.6); shell.renderOrder=1;
+    g.add(core); g.add(shell);
+    g.userData={ coreMat, shellMat, phase:Math.random()*Math.PI*2 }; return g;
+  },
+  animate(THREE,t,nodes){ for(let i=0;i<nodes.length;i++){ const ud=nodes[i].userData; if(!ud||!ud.coreMat)continue;
+    const pulse=1.0+0.12*Math.sin(t*1.5+ud.phase); ud.coreMat.uniforms.uCorePulse.value=pulse; ud.shellMat.uniforms.uCorePulse.value=pulse; } }
+};
+
+/* =======================  VARIANT 4 — FACETED GEM  ========================= */
+const V4 = {
+  name:"Faceted gem",
+  blurb:"Low-poly crystal that glints facet-by-facet as it turns under a key/rim rig.",
+  setup(THREE,addons,ctx){
+    const { scene, renderer } = ctx;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.15; renderer.outputColorSpace=THREE.SRGBColorSpace;
+    scene.add(new THREE.HemisphereLight(0x556699,0x141018,0.55));
+    const k=new THREE.DirectionalLight(0xfff2e0,2.2); k.position.set(5,6,4); scene.add(k);
+    const rim=new THREE.DirectionalLight(0x88aaff,1.4); rim.position.set(-4,2,-6); scene.add(rim);
+    scene.add(new THREE.AmbientLight(0xffffff,0.12));
+    this._geo=new THREE.IcosahedronGeometry(1,0).toNonIndexed(); this._geo.computeVertexNormals();
+  },
+  makeNode(THREE,color,r){
+    const mat=new THREE.MeshPhysicalMaterial({ color, flatShading:true, metalness:0.35, roughness:0.18,
+      clearcoat:1.0, clearcoatRoughness:0.08, reflectivity:0.6, emissive:color.clone(), emissiveIntensity:0.18, envMapIntensity:1.0 });
+    const m=new THREE.Mesh(this._geo,mat); m.scale.setScalar(r);
+    m.rotation.set(Math.random()*6.28,Math.random()*6.28,Math.random()*6.28);
+    m.userData.spinAxis=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize();
+    m.userData.spinRate=0.15+Math.random()*0.25; return m;
+  },
+  animate(THREE,t,nodes){ for(let i=0;i<nodes.length;i++){ const ud=nodes[i].userData; if(ud&&ud.spinAxis) nodes[i].rotateOnAxis(ud.spinAxis, ud.spinRate*0.016); } }
+};
+
+const VARIANTS=[V1,V2,V3,V4];
+
+/* ---- per-panel harness ---- */
+const grid=document.getElementById('grid');
+const cells=[];
+let clusterR=1; for(const s of SAMPLE) clusterR=Math.max(clusterR, Math.hypot(...s.p)+s.r);
+
+VARIANTS.forEach((variant,idx)=>{
+  const cell=document.createElement('div'); cell.className='cell';
+  const cap=document.createElement('div'); cap.className='cap';
+  cap.innerHTML=`<div class="n"><b>${idx+1}</b>${variant.name}</div><div class="b">${variant.blurb}</div>`;
+  const canvas=document.createElement('canvas');
+  cell.appendChild(canvas); cell.appendChild(cap);
+  const hint=document.createElement('div'); hint.className='hint'; hint.textContent='drag to orbit'; cell.appendChild(hint);
+  grid.appendChild(cell);
+
+  try{
+    const renderer=new THREE.WebGLRenderer({ canvas, antialias:true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    const w=cell.clientWidth||640, h=cell.clientHeight||360;
+    renderer.setSize(w,h,false);
+    const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0a12);
+    const camera=new THREE.PerspectiveCamera(50, w/h, 0.5, 5000);
+    const dist=clusterR*2.6; camera.position.set(0, clusterR*0.35, dist);
+    const controls=new OrbitControls(camera, canvas);
+    controls.enableDamping=true; controls.dampingFactor=0.06; controls.enablePan=false;
+    controls.autoRotate=true; controls.autoRotateSpeed=0.9; controls.target.set(0,0,0);
+    controls.minDistance=clusterR*0.6; controls.maxDistance=clusterR*6;
+
+    const ret=variant.setup&&variant.setup(THREE, addons, { scene, renderer, camera });
+    const composer=ret&&ret.composer||null;
+
+    // nodes
+    const nodes=[];
+    SAMPLE.forEach(s=>{ const obj=variant.makeNode(THREE, new THREE.Color(s.c), s.r);
+      obj.position.set(s.p[0],s.p[1],s.p[2]); scene.add(obj); nodes.push(obj); });
+    // edges (faint additive gold, like the real view)
+    const epos=new Float32Array(EDGES.length*6);
+    EDGES.forEach((e,i)=>{ const a=SAMPLE[e[0]].p,b=SAMPLE[e[1]].p;
+      epos[i*6]=a[0];epos[i*6+1]=a[1];epos[i*6+2]=a[2]; epos[i*6+3]=b[0];epos[i*6+4]=b[1];epos[i*6+5]=b[2]; });
+    const egeo=new THREE.BufferGeometry(); egeo.setAttribute('position',new THREE.BufferAttribute(epos,3));
+    scene.add(new THREE.LineSegments(egeo, new THREE.LineBasicMaterial({ color:0xe0b15a, transparent:true, opacity:0.18, blending:THREE.AdditiveBlending })));
+
+    cells.push({ variant, renderer, scene, camera, controls, composer, nodes, cell });
+  }catch(err){
+    cap.innerHTML+=`<div class="err">⚠ ${String(err&&err.message||err)}</div>`;
+    console.error('variant '+(idx+1)+' ('+variant.name+') failed:', err);
+  }
+});
+
+addEventListener('resize',()=>{ for(const c of cells){ const w=c.cell.clientWidth,h=c.cell.clientHeight;
+  c.camera.aspect=w/h; c.camera.updateProjectionMatrix(); c.renderer.setSize(w,h,false);
+  if(c.composer) c.composer.setSize(w,h); } });
+
+const clock=new THREE.Clock();
+function loop(){ const t=clock.getElapsedTime();
+  for(const c of cells){ c.controls.update(); if(c.variant.animate) c.variant.animate(THREE,t,c.nodes);
+    if(c.composer) c.composer.render(); else c.renderer.render(c.scene,c.camera); }
+  requestAnimationFrame(loop); }
+loop();
+
+window.__cells=cells; // debug hook
+</script>
+</body>
+</html>
