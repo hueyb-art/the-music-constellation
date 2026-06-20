@@ -851,7 +851,9 @@ const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
 const HINT_CHORD=MOBILE
   ? '<b>Tap a star</b> to anchor it &amp; light its ties &middot; <b>then tap a name</b> to reveal the records they made together<br><b>Drag</b> to pan &middot; <b>pinch</b> to zoom &middot; it drifts slowly until you touch it'
   : '<b>Click a star</b> to anchor it &amp; light its ties (in silence) &middot; <b>then click a tie</b> to reveal records they made together<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
-const HINT_HOLO='<b>Drag</b> to orbit &middot; <b>scroll / pinch</b> to zoom &middot; <b>tap a name</b> to open an artist';
+const HINT_HOLO=MOBILE
+  ? '<b>Drag</b> to orbit &middot; <b>pinch</b> to zoom &middot; <b>tap a name</b> to open an artist'
+  : '<b>Drag</b> to orbit &middot; <b>two fingers up/down</b> to zoom &middot; <b>click a name</b> to open an artist';
 function frameChord(){tviewX=0;tviewY=0;tzoom=Math.max(0.32,Math.min(2,(Math.min(W,H)-150)/(CHORD_R*2)));}
 function setView(mode){
   if(viewMode===mode)return;
