@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — Films room: same shelf, posters from Wikipedia
+
+- The Films & docs room is now the same lit shelf as Reading — film "cases" with real **movie/doc posters** on the spines, click → the poster + year/director + note + YouTube/JustWatch links. Generalised the reading shelf into `buildShelf(caseId, items, coverFn, onClick)` so both rooms share it (one regression risk: did it carefully and re-verified Reading still renders 44 books).
+- **Posters: iTunes movie search is nearly useless for documentaries** (these are mostly docs, not on the US movie store — 0/12). The right source is **Wikipedia** `pageimages`, but two non-obvious params matter: (1) `generator=search&gsrsearch="<title> <year> <director> film"` to land on the right article (include the director — without it "Jazz" matched *All That Jazz*); (2) **`pilicense=any`** — `pageimages` defaults to *free* images only, and movie posters are non-free, so the default returns nothing. With both: ~16/17 jazz films resolve a proper portrait poster (~260×384). Cached under `tmc_poster_*`; gilded film-reel case as fallback.
+- Same fair-use posture as the book covers (both are copyrighted third-party art shown as small thumbnails in a curated, attributed context) — consistent with the user's earlier sign-off on book covers.
+
 ## 2026-06-21 — the Reading room became a lit bookshelf (real covers)
 
 - The Reading tab is now a browsable bookshelf instead of a text list: each curated book (`critics[].books`) is a cloth-spine with its title + author gold-stamped, real **cover art** fetched and used as the spine background, two overhead picture lights raking warm light down, and a click → detail card with the full cover. Prototyped end-to-end in `lab/reading-bookshelf.html` (and the look chosen via `lab/rooms-backgrounds.html`) before porting into `openRooms()`.
