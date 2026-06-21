@@ -767,10 +767,10 @@ function waveTick(ts){ if(!_wrun||!_wctx)return; const t=(ts-_wt0)/1000, w=_wW, 
   /* amplitude: REAL loudness from the decoded envelope at the live position; else
      a gentle idle breath while there's no envelope (Deezer / still loading). */
   let target;
-  if(_env&&clip&&!clip.paused){ let i=(clip.currentTime*_envBps)|0; if(i<0)i=0; if(i>=_env.length)i=_env.length-1; target=0.12+0.95*_env[i]; }
+  if(_env&&clip&&!clip.paused){ let i=(clip.currentTime*_envBps)|0; if(i<0)i=0; if(i>=_env.length)i=_env.length-1; target=0.1+1.0*Math.pow(_env[i],1.3); }  /* gamma>1 = more contrast → beats pop harder */
   else target=0.5+0.18*Math.sin(t*2.1);
-  _wamp += (target>_wamp?0.5:0.16)*(target-_wamp);   /* fast attack, slow decay → beat punch */
-  _wctx.clearRect(0,0,w,h); _wctx.lineWidth=1.4; _wctx.lineJoin="round";
+  _wamp += (target>_wamp?0.62:0.2)*(target-_wamp);   /* snappier attack + quicker drop → punchier */
+  _wctx.clearRect(0,0,w,h); _wctx.lineWidth=1.9; _wctx.lineJoin="round";
   _wctx.strokeStyle="#e8c074"; _wctx.shadowColor="rgba(224,177,90,.55)"; _wctx.shadowBlur=3;
   _wctx.beginPath();
   for(let x=0;x<=w;x++){ const nx=x/w, env=Math.sin(nx*Math.PI),
