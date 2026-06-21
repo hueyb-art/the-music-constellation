@@ -19,20 +19,19 @@
   .case{position:relative;z-index:1}
   /* overhead lamp + raking light for relief */
   .wash{position:absolute;inset:-40px -10px 0;pointer-events:none;z-index:3;mix-blend-mode:screen;
-    background:radial-gradient(1100px 1000px at 78% -6%, rgba(255,226,170,.16), transparent 56%)}
+    background:radial-gradient(1200px 780px at 93% 2%, rgba(255,228,172,.18), transparent 56%)}
   .shade{position:absolute;inset:0;pointer-events:none;z-index:3;
-    background:linear-gradient(101deg, rgba(0,0,0,.44), rgba(0,0,0,.12) 28%, transparent 46%)}
-  .lamp{position:absolute;top:-128px;right:16%;width:120px;height:0;pointer-events:none;z-index:4}
-  .lamp .beam{position:absolute;left:50%;top:150px;transform:translateX(-50%);width:560px;height:620px;
-    clip-path:polygon(47% 0,53% 0,100% 100%,0 100%);mix-blend-mode:screen;
-    background:linear-gradient(180deg,rgba(255,233,182,.6),rgba(255,217,143,.07) 68%,transparent)}
-  .lamp .cord{position:absolute;left:50%;top:0;width:3px;height:96px;transform:translateX(-50%);background:linear-gradient(#3a2c1a,#241a10)}
-  .lamp .lshade{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:94px;height:46px;
-    background:linear-gradient(180deg,#2c1f12,#150e07);clip-path:polygon(20% 0,80% 0,100% 100%,0 100%);
-    box-shadow:0 8px 16px rgba(0,0,0,.55)}
-  .lamp .lshade::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#caa85e}
-  .lamp .bulb{position:absolute;left:50%;top:138px;width:30px;height:11px;transform:translateX(-50%);border-radius:50%;
-    background:radial-gradient(closest-side,#fff1c6,#e9be6e);box-shadow:0 0 36px 15px rgba(255,224,150,.6)}
+    background:linear-gradient(96deg, rgba(0,0,0,.5), rgba(0,0,0,.15) 32%, transparent 50%)}
+  /* right-side picture light, mounted above the shelf, beam raking down-left */
+  .lamp{position:absolute;top:-46px;right:3%;width:120px;height:0;pointer-events:none;z-index:4}
+  .lamp .beam{position:absolute;top:42px;right:8px;width:280px;height:760px;transform-origin:top right;transform:rotate(26deg);
+    background:linear-gradient(180deg,rgba(255,233,182,.5),rgba(255,219,146,.07) 52%,transparent 78%);
+    mix-blend-mode:screen;filter:blur(7px);border-radius:46% 46% 0 0/60px}
+  .lamp .arm{position:absolute;right:36px;top:0;width:3px;height:44px;background:linear-gradient(#3a2c1a,#241a10)}
+  .lamp .head{position:absolute;right:0;top:42px;width:106px;height:22px;border-radius:12px/10px;transform:rotate(-9deg);
+    background:linear-gradient(180deg,#3a2c1a,#180f08);box-shadow:0 7px 15px rgba(0,0,0,.5),inset 0 1px 0 rgba(202,168,94,.5)}
+  .lamp .head::after{content:"";position:absolute;left:10%;right:10%;bottom:2px;height:5px;border-radius:4px;
+    background:#ffe6a8;box-shadow:0 0 30px 12px rgba(255,224,150,.6)}
 
   .shelf{position:relative;margin-bottom:6px}
   .books{display:flex;align-items:flex-end;gap:5px;padding:0 14px;min-height:212px}
@@ -91,7 +90,7 @@
     <p>Every book in the reading list as a spine — drawn from the book's <b>real cover</b> where one exists. Hover to lift one out; click to see the full cover and who wrote it. (Live jazz data + Open Library covers.)</p>
   </header>
   <div class="bookcase">
-    <div class="lamp"><div class="beam"></div><div class="cord"></div><div class="lshade"></div><div class="bulb"></div></div>
+    <div class="lamp"><div class="beam"></div><div class="arm"></div><div class="head"></div></div>
     <div class="case" id="case"></div>
     <div class="wash"></div>
     <div class="shade"></div>
