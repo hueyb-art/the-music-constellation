@@ -31,7 +31,7 @@ e("idA","idB","relationship"),
 
 - `lib` — books for an artist's page: `{bios:[[author,title,year],…], reads:[…]}`
 - `wiki` — Wikipedia page-title override when the artist's name is ambiguous (drives photos)
-- `preview` — audio preview overrides: `{did:<deezer artist id>}` pins the artist; `{artist, q}` plays a signature track; `only:true` skips fallback searches for famous-namesake collisions
+- `preview` — audio preview overrides. Apple/iTunes is resolved first (by `artist` + `q`); these mainly tune the **Deezer fallback**: `{did:<deezer artist id>}` pins the Deezer artist; `{artist, q}` matches `artist` and searches the `q` query (used by both Apple and Deezer); `only:true` keeps a famous-namesake artist to the specific `q` on Deezer only (skips name-based and Apple searches)
 - `discoAs` — pull another act's discography (sidemen with thin solo catalogues)
 
 ## The rooms (Reading / Films / Deep Cuts)
