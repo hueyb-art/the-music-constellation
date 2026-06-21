@@ -19,16 +19,21 @@
   .case{position:relative;z-index:1}
   /* overhead lamp + raking light for relief */
   /* warm fill confined to the shelf (inset:0 → never lights the area above the lamp) */
-  /* light pool falls ONTO the shelf from the upper-right; inset:0 confines it to the books so nothing glows above the lamp */
+  /* two light pools fall ONTO the shelf from the upper corners; inset:0 confines them to the books (nothing glows above the lamps) */
   .wash{position:absolute;inset:0;pointer-events:none;z-index:3;mix-blend-mode:screen;
-    background:radial-gradient(860px 1180px at 82% -6%, rgba(255,228,172,.26), rgba(255,222,160,.06) 40%, transparent 62%)}
+    background:
+      radial-gradient(760px 1120px at 17% -6%, rgba(255,228,172,.22), rgba(255,222,160,.05) 38%, transparent 60%),
+      radial-gradient(760px 1120px at 83% -6%, rgba(255,228,172,.22), rgba(255,222,160,.05) 38%, transparent 60%)}
   .shade{position:absolute;inset:0;pointer-events:none;z-index:3;
-    background:linear-gradient(96deg, rgba(0,0,0,.52), rgba(0,0,0,.16) 32%, transparent 50%)}
-  /* right-side picture light, mounted HIGH above the shelf */
-  .lamp{position:absolute;top:-86px;right:3%;width:120px;height:0;pointer-events:none;z-index:4}
-  .lamp .arm{position:absolute;right:36px;top:-6px;width:3px;height:56px;background:linear-gradient(#3a2c1a,#241a10)}
-  .lamp .head{position:absolute;right:0;top:50px;width:106px;height:22px;border-radius:12px/10px;transform:rotate(-9deg);
+    background:radial-gradient(150% 90% at 50% 128%, rgba(0,0,0,.42), transparent 52%)}
+  /* a picture light mounted HIGH above the shelf — one on each side */
+  .lamp{position:absolute;top:-86px;width:120px;height:0;pointer-events:none;z-index:4}
+  .lamp.r{right:3%} .lamp.l{left:3%}
+  .lamp .arm{position:absolute;top:-6px;width:3px;height:56px;background:linear-gradient(#3a2c1a,#241a10)}
+  .lamp.r .arm{right:36px} .lamp.l .arm{left:36px}
+  .lamp .head{position:absolute;top:50px;width:106px;height:22px;border-radius:12px/10px;
     background:linear-gradient(180deg,#3a2c1a,#180f08);box-shadow:0 7px 15px rgba(0,0,0,.5),inset 0 1px 0 rgba(202,168,94,.5)}
+  .lamp.r .head{right:0;transform:rotate(-9deg)} .lamp.l .head{left:0;transform:rotate(9deg)}
   .lamp .head::after{content:"";position:absolute;left:10%;right:10%;bottom:2px;height:5px;border-radius:4px;
     background:#ffe6a8;box-shadow:0 13px 20px 1px rgba(255,224,150,.5)}
 
@@ -89,7 +94,8 @@
     <p>Every book in the reading list as a spine — drawn from the book's <b>real cover</b> where one exists. Hover to lift one out; click to see the full cover and who wrote it. (Live jazz data + Open Library covers.)</p>
   </header>
   <div class="bookcase">
-    <div class="lamp"><div class="arm"></div><div class="head"></div></div>
+    <div class="lamp l"><div class="arm"></div><div class="head"></div></div>
+    <div class="lamp r"><div class="arm"></div><div class="head"></div></div>
     <div class="case" id="case"></div>
     <div class="wash"></div>
     <div class="shade"></div>
