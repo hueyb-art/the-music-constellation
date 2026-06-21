@@ -15,7 +15,24 @@
   header h1{font-size:18px;font-weight:600;margin:0 0 4px}
   header p{font-size:13px;color:var(--muted);margin:0 0 4px;max-width:700px;line-height:1.5}
   .pill{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:4px 12px;border-radius:999px;background:rgba(224,177,90,.16);color:var(--gold);margin-bottom:14px}
-  .case{max-width:1100px;margin:18px auto 0}
+  .bookcase{position:relative;max-width:1100px;margin:18px auto 0}
+  .case{position:relative;z-index:1}
+  /* overhead lamp + raking light for relief */
+  .wash{position:absolute;inset:-40px -10px 0;pointer-events:none;z-index:3;mix-blend-mode:screen;
+    background:radial-gradient(1100px 1000px at 78% -6%, rgba(255,226,170,.16), transparent 56%)}
+  .shade{position:absolute;inset:0;pointer-events:none;z-index:3;
+    background:linear-gradient(101deg, rgba(0,0,0,.44), rgba(0,0,0,.12) 28%, transparent 46%)}
+  .lamp{position:absolute;top:-128px;right:16%;width:120px;height:0;pointer-events:none;z-index:4}
+  .lamp .beam{position:absolute;left:50%;top:150px;transform:translateX(-50%);width:560px;height:620px;
+    clip-path:polygon(47% 0,53% 0,100% 100%,0 100%);mix-blend-mode:screen;
+    background:linear-gradient(180deg,rgba(255,233,182,.6),rgba(255,217,143,.07) 68%,transparent)}
+  .lamp .cord{position:absolute;left:50%;top:0;width:3px;height:96px;transform:translateX(-50%);background:linear-gradient(#3a2c1a,#241a10)}
+  .lamp .lshade{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:94px;height:46px;
+    background:linear-gradient(180deg,#2c1f12,#150e07);clip-path:polygon(20% 0,80% 0,100% 100%,0 100%);
+    box-shadow:0 8px 16px rgba(0,0,0,.55)}
+  .lamp .lshade::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#caa85e}
+  .lamp .bulb{position:absolute;left:50%;top:138px;width:30px;height:11px;transform:translateX(-50%);border-radius:50%;
+    background:radial-gradient(closest-side,#fff1c6,#e9be6e);box-shadow:0 0 36px 15px rgba(255,224,150,.6)}
 
   .shelf{position:relative;margin-bottom:6px}
   .books{display:flex;align-items:flex-end;gap:5px;padding:0 14px;min-height:212px}
@@ -27,7 +44,7 @@
     box-shadow:inset 2px 0 0 rgba(255,255,255,.12), inset -3px 0 5px rgba(0,0,0,.45), 1px 6px 12px rgba(0,0,0,.4);
     transition:transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .16s, filter .16s;
     background:linear-gradient(90deg, rgba(255,255,255,.14), rgba(255,255,255,0) 16%, rgba(0,0,0,.25) 86%, rgba(0,0,0,.4)), var(--c)}
-  .book:hover{transform:translateY(-16px);filter:brightness(1.1);box-shadow:inset 2px 0 0 rgba(255,255,255,.16), inset -3px 0 5px rgba(0,0,0,.45), 0 18px 26px rgba(0,0,0,.55);z-index:3}
+  .book:hover{transform:translateY(-16px);filter:brightness(1.1);box-shadow:inset 2px 0 0 rgba(255,255,255,.16), inset -3px 0 5px rgba(0,0,0,.45), 0 18px 26px rgba(0,0,0,.55);z-index:8}
   .book .coverbg{position:absolute;inset:-8px;background-size:cover;background-position:center;filter:brightness(.6) saturate(1.05) blur(1px);z-index:0}
   .book .scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(18,11,4,.55),rgba(18,11,4,.12) 32%,rgba(0,0,0,.6))}
   .book .band,.book .title,.book .author,.book .foot{position:relative;z-index:2}
@@ -73,7 +90,12 @@
     <h1>The reading shelf</h1>
     <p>Every book in the reading list as a spine — drawn from the book's <b>real cover</b> where one exists. Hover to lift one out; click to see the full cover and who wrote it. (Live jazz data + Open Library covers.)</p>
   </header>
-  <div class="case" id="case"></div>
+  <div class="bookcase">
+    <div class="lamp"><div class="beam"></div><div class="cord"></div><div class="lshade"></div><div class="bulb"></div></div>
+    <div class="case" id="case"></div>
+    <div class="wash"></div>
+    <div class="shade"></div>
+  </div>
   <p class="hint" id="hint">loading covers…</p>
 </div>
 
