@@ -2,6 +2,16 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — relationship audit: two systematic directional bugs (5-agent fan-out)
+
+- Ran a 5-agent fan-out — 4 examiners (one per genre + a cross-genre correctness auditor) and 1 adversarial verifier — over all ~1150 edges. Result: **100 corrections + 39 additions applied, 7 rejected**, all validated.
+- Two SYSTEMATIC bugs dominated, both **directional-order errors the validator is blind to** (it only checks ids resolve + no duplicate pair+rel; edge *order* carries the meaning for words in `REL_DIR`):
+  1. **`member` edges written GROUP→person** (must be person→group): essentially every band — Wu-Tang, OutKast, The Roots, Gang Starr, UGK, Run the Jewels, Black Star, Clipse, Mobb Deep, The Neptunes; reggae Skatalites/Heptones/Upsetters. `relWord` renders `member` as "member of" / "includes" by direction, so these displayed backwards in the card.
+  2. **`produced` edges written ARTIST→producer** (must be producer→artist): the whole reggae roster (Coxsone, Lee Perry, King Jammy, Sly & Robbie, Bobby Digital, Gussie Clarke, Bunny Lee, Joe Gibbs).
+  Plus ~35 backwards `influenced` edges (the younger artist listed as influencing the elder — Kanye←J Dilla, Nas←Kool G Rap, Megan←Pimp C, Travis←Cudi…).
+- The adversarial pass earned its keep — it **rejected 7**, including a swap onto a NON-EXISTENT node id (`thelox`), additions using words not in a genre's vocabulary (reggae has no `founded`; uses `influenced by`, not `influenced`), a soft/contested influence (Geto Boys ↔ N.W.A were near-simultaneous), and a *backwards addition* (tatum→hines). It also de-duped ~15 items repeated across agents.
+- Applied programmatically: exact-string match on the one-per-line `e("a","b","rel")` edges, then `validate.mjs` confirmed no new duplicate pair+rel and all ids resolve. **Lesson:** directional correctness is a whole class of error the schema validator can't see; an adversarial fact-check pass (not just the validator) is the right tool for it.
+
 ## 2026-06-21 — waveform made real: Apple-preferred playback + offline envelope
 
 - Made the now-playing waveform pulse to the **actual music**. The unlock: **Apple's preview audio (`audio-ssl.itunes.apple.com`) is directly `fetch`-able with CORS** (verified — a full GET 200), whereas **Deezer's `dzcdn.net` previews 403 every `fetch`/proxy** (signed/IP-locked; only the `<audio>` element may play them). So real analysis is only possible on audio you can fetch = Apple.
