@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rooms — background treatments</title>
+<style>
+  :root{ color-scheme:dark; --gold:#e0b15a; --ink:#f3ece0; --soft:#ddd3c6; --muted:#9a9182; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#0a0a0e;color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif}
+  header{padding:14px 20px;border-bottom:1px solid #1d1b25}
+  header h1{margin:0 0 3px;font-size:16px;font-weight:600}
+  header p{margin:0;font-size:12.5px;color:var(--muted)}
+  .sec{padding:18px 20px 4px}
+  .sec h2{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 20px 24px}
+  .panel{border:1px solid #23202c;border-radius:12px;overflow:hidden;background:#000}
+  .cap{padding:8px 12px;font-size:13px;background:#14121b;border-bottom:1px solid #23202c}
+  .cap b{color:var(--gold);margin-right:8px}
+  .cap .d{color:var(--muted);font-size:11.5px}
+  .room{position:relative;height:460px;overflow:hidden}
+  .room .bg{position:absolute;inset:0}
+  .room .bg svg{width:100%;height:100%;display:block}
+  .room .scrim{position:absolute;inset:0;pointer-events:none}
+  .room .scroll{position:absolute;inset:0;overflow-y:auto;padding:22px}
+  /* content (mirrors the real rooms) */
+  .content{max-width:560px}
+  .pill{display:inline-block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:4px 11px;border-radius:999px;background:rgba(224,177,90,.18);color:var(--gold);margin-bottom:14px}
+  .lead{font-size:15px;line-height:1.6;color:var(--soft);margin:0 0 22px;max-width:520px}
+  .critic{margin-bottom:20px}
+  .critic h4{font-size:18px;font-weight:600;color:var(--ink);margin:0 0 2px}
+  .cnote{font-size:13px;color:var(--gold);margin-bottom:7px}
+  .brow{font-size:14px;margin-bottom:3px}
+  .btitle{color:var(--ink)} .bmeta{color:var(--muted)}
+  h3.sub{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:26px 0 12px;border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:9px}
+  .reslist{display:flex;flex-direction:column;gap:8px}
+  .reslink{display:flex;align-items:baseline;gap:10px;padding:9px 13px;border:1px solid rgba(255,255,255,.12);border-radius:9px;text-decoration:none}
+  .reslink .rt{color:var(--ink);font-size:14px;font-weight:600}.reslink .rn{color:var(--muted);font-size:12.5px;flex:1}.reslink .ra{color:var(--gold)}
+  .film{margin-bottom:18px}
+  .frow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .ftitle{font-size:17px;font-weight:600;color:var(--ink)} .fmeta{font-size:13px;color:var(--gold)}
+  .fnote{font-size:14px;color:var(--soft);line-height:1.5;margin:3px 0 6px}
+  .flinks{display:flex;gap:14px}.flinks a{color:var(--gold);font-size:13px;text-decoration:none;border-bottom:1px solid rgba(224,177,90,.4)}
+  /* content treatments */
+  .t-card .content{background:rgba(10,9,13,.72);backdrop-filter:blur(7px);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:22px 24px}
+  .t-panel .content{background:linear-gradient(180deg,rgba(20,15,8,.78),rgba(12,9,5,.82));border:1px solid rgba(224,177,90,.28);border-radius:14px;padding:22px 24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .t-immersive .content *{text-shadow:0 2px 14px rgba(0,0,0,.9)}
+  .t-clean .content *{text-shadow:0 1px 8px rgba(0,0,0,.7)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Rooms — background treatments (content unchanged; just the setting)</h1>
+  <p>Reading room: 4 bookshelf looks · Films room: 4 film-canister/film looks. Scroll each panel to check legibility. Pick by number.</p>
+</header>
+
+<div class="sec"><h2>Reading room — bookshelves</h2></div>
+<div class="grid" id="readGrid"></div>
+
+<div class="sec"><h2>Films &amp; docs room — film &amp; canisters</h2></div>
+<div class="grid" id="filmGrid"></div>
+
+<script>
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ---------------- BOOKSHELF GENERATOR ---------------- */
+function bookshelf(opt){
+  const W=620,H=900,g=opt.gap, s=[`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">`];
+  s.push(`<rect width="${W}" height="${H}" fill="${opt.back}"/>`);
+  for(let y=24;y<H;y+=g){
+    const bookH0=g-22; let x=12;
+    while(x<W-12){
+      const w=Math.floor(rnd(15,34)); if(x+w>W-12)break;
+      const bh=bookH0-Math.floor(rnd(0,26)); const col=pick(opt.spines); const by=y+(bookH0-bh);
+      s.push(`<rect x="${x}" y="${by}" width="${w}" height="${bh}" rx="1.5" fill="${col}"/>`);
+      s.push(`<rect x="${x}" y="${by}" width="1.6" height="${bh}" fill="rgba(255,255,255,.14)"/>`);
+      s.push(`<rect x="${x+w-1.6}" y="${by}" width="1.6" height="${bh}" fill="rgba(0,0,0,.30)"/>`);
+      if(w>18){ s.push(`<rect x="${x+3}" y="${(by+bh*0.2).toFixed(0)}" width="${w-6}" height="3" fill="${opt.title}"/>`);
+        s.push(`<rect x="${x+3}" y="${(by+bh*0.31).toFixed(0)}" width="${w-6}" height="2" fill="${opt.title2}"/>`); }
+      x+=w+2;
+    }
+    const py=y+bookH0;
+    s.push(`<rect x="0" y="${py}" width="${W}" height="15" fill="${opt.plank}"/>`);
+    s.push(`<rect x="0" y="${py}" width="${W}" height="3" fill="rgba(255,255,255,.07)"/>`);
+    s.push(`<rect x="0" y="${py+12}" width="${W}" height="3" fill="rgba(0,0,0,.4)"/>`);
+  }
+  s.push(`</svg>`); return s.join("");
+}
+const SHELVES={
+  warm:{back:'#3a2817',plank:'#6b4a2e',title:'rgba(255,255,255,.22)',title2:'rgba(255,255,255,.10)',gap:150,
+    spines:['#8c3b3b','#9c7b2e','#2f6b4f','#2e5277','#b5763a','#7a4a6b','#c9b48a','#8a8f5a','#a8512e','#3f5a6b']},
+  moody:{back:'#1a120c',plank:'#2e1f16',title:'rgba(224,177,90,.5)',title2:'rgba(224,177,90,.22)',gap:160,
+    spines:['#5a2230','#233a2a','#1f2a44','#4a2418','#3a2c1a','#52203a','#2a3a3a','#43122a','#1e3326']},
+  gilded:{back:'#19120a',plank:'#3a2c1a',title:'rgba(255,236,200,.45)',title2:'rgba(255,236,200,.2)',gap:150,
+    spines:['#e0b15a','#d98c4a','#8a6a3a','#c7a45e','#b5763a','#7a5a2e','#caa85e','#9c7b3a','#6b4f24','#e6c87e']},
+  modern:{back:'#15131a',plank:'#2a2730',title:'rgba(255,255,255,.18)',title2:'rgba(255,255,255,.08)',gap:158,
+    spines:['#5a6b7a','#7a6b5a','#6b5a6b','#5a7a6b','#8a7a6a','#6a6a7a','#9a8a7a','#7a8a8a','#8a6a6a']},
+};
+
+/* ---------------- FILM GENERATORS ---------------- */
+const frameCol=()=>pick(['#3a3530','#2e3138','#403228','#2a2e2a','#38302e']);
+function strip(x,y,len,ang,thick){
+  thick=thick||44; const o=[`<g transform="translate(${x},${y}) rotate(${ang})">`];
+  o.push(`<rect x="0" y="0" width="${len}" height="${thick}" rx="2" fill="#0c0c10"/>`);
+  o.push(`<rect x="0" y="9" width="${len}" height="${thick-18}" fill="#161318"/>`);
+  for(let hx=6;hx<len-8;hx+=15){ o.push(`<rect x="${hx}" y="3.5" width="8" height="5.5" rx="1.5" fill="#d8d2c6"/>`);
+    o.push(`<rect x="${hx}" y="${thick-9}" width="8" height="5.5" rx="1.5" fill="#d8d2c6"/>`); }
+  for(let fx=5;fx<len-26;fx+=27){ o.push(`<rect x="${fx}" y="12" width="23" height="${thick-24}" fill="${frameCol()}"/>`); }
+  o.push(`</g>`); return o.join("");
+}
+function reel(cx,cy,r,tint){
+  const o=[`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#16161c"/>`,
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${tint}" stroke-width="4"/>`,
+    `<circle cx="${cx}" cy="${cy}" r="${(r*0.62).toFixed(1)}" fill="none" stroke="${tint}" stroke-width="2" opacity=".55"/>`];
+  for(let a=0;a<360;a+=45){const rad=a*Math.PI/180,hx=cx+Math.cos(rad)*r*0.8,hy=cy+Math.sin(rad)*r*0.8;
+    o.push(`<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="${(r*0.15).toFixed(1)}" fill="#0a0a0d" stroke="${tint}" stroke-width="1.5"/>`);}
+  o.push(`<circle cx="${cx}" cy="${cy}" r="${(r*0.17).toFixed(1)}" fill="${tint}"/>`); return o.join("");
+}
+function canister(cx,cy,r,tint){
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#23252b"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${tint}" stroke-width="3.5"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="${(r*0.84).toFixed(1)}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="${(r*0.2).toFixed(1)}" fill="${tint}" opacity=".5"/>`;
+}
+function filmBg(variant){
+  const W=620,H=900,o=[`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">`];
+  if(variant==='cutting'){
+    o.push(`<rect width="${W}" height="${H}" fill="#0c0e12"/>`);
+    o.push(strip(-40,140,820,22,46)); o.push(strip(-60,520,840,-16,46)); o.push(strip(120,740,700,34,40));
+    o.push(reel(90,90,70,'#6f95b8')); o.push(reel(540,300,54,'#6f95b8'));
+  } else if(variant==='projector'){
+    o.push(`<rect width="${W}" height="${H}" fill="#0d0a08"/>`);
+    o.push(`<radialGradient id="pg" cx="62%" cy="26%" r="60%"><stop offset="0" stop-color="#5a3c18" stop-opacity=".55"/><stop offset="1" stop-color="#0d0a08" stop-opacity="0"/></radialGradient>`);
+    o.push(`<rect width="${W}" height="${H}" fill="url(#pg)"/>`);
+    o.push(reel(430,210,120,'#e0b15a'));
+    o.push(strip(430,300,520,68,44)); o.push(strip(300,210,360,150,40));
+  } else if(variant==='spill'){
+    o.push(`<rect width="${W}" height="${H}" fill="#100b07"/>`);
+    o.push(`<radialGradient id="sg" cx="50%" cy="92%" r="70%"><stop offset="0" stop-color="#4a3214" stop-opacity=".5"/><stop offset="1" stop-color="#100b07" stop-opacity="0"/></radialGradient>`);
+    o.push(`<rect width="${W}" height="${H}" fill="url(#sg)"/>`);
+    // film coiling up out of cans
+    o.push(strip(120,780,360,-70,38)); o.push(strip(150,770,280,-40,34)); o.push(strip(360,800,420,-104,38)); o.push(strip(420,790,300,-150,34));
+    o.push(canister(150,820,72,'#d98c4a')); o.push(canister(420,840,66,'#c79a52')); o.push(canister(540,800,40,'#b5763a'));
+  } else { /* minimal filmstrip edge */
+    o.push(`<rect width="${W}" height="${H}" fill="#0c0c10"/>`);
+    o.push(strip(58,-20,960,90,52)); // vertical strip down left
+    o.push(reel(80,820,52,'#7a756c'));
+  }
+  o.push(`</svg>`); return o.join("");
+}
+
+/* ---------------- SAMPLE CONTENT ---------------- */
+const READ=`<span class="pill">The rooms · Reading</span>
+<p class="lead">A shelf of the writers who shaped how we hear this music — the critics, historians, and memoirists worth seeking out beyond any single page.</p>
+<div class="critic"><h4>Stanley Crouch</h4><div class="cnote">Pugnacious essayist, fierce Ellington partisan.</div>
+  <div class="brow"><span class="btitle">Considering Genius</span> <span class="bmeta">— essays, 2006</span></div>
+  <div class="brow"><span class="btitle">Kansas City Lightning</span> <span class="bmeta">— Charlie Parker, 2013</span></div></div>
+<div class="critic"><h4>Gary Giddins</h4><div class="cnote">The critic's critic — vivid and generous.</div>
+  <div class="brow"><span class="btitle">Visions of Jazz</span> <span class="bmeta">— the first century, 1998</span></div>
+  <div class="brow"><span class="btitle">Bird</span> <span class="bmeta">— the legend of Charlie Parker, 1987</span></div></div>
+<h3 class="sub">Archives &amp; primary sources</h3>
+<div class="reslist"><a class="reslink"><span class="rt">Smithsonian Jazz</span><span class="rn">oral histories &amp; collections</span><span class="ra">&#8599;</span></a>
+<a class="reslink"><span class="rt">Library of Congress</span><span class="rn">National Jukebox</span><span class="ra">&#8599;</span></a></div>`;
+const FILM=`<span class="pill">The rooms · Films &amp; docs</span>
+<p class="lead">Documentaries and films that bring this music to life — portraits, concert films, and the histories worth watching.</p>
+<div class="film"><div class="frow"><span class="ftitle">Jazz</span><span class="fmeta">2001 · dir. Ken Burns</span></div><div class="fnote">The sprawling ten-part PBS history — the canonical starting point.</div><div class="flinks"><a>YouTube</a><a>Where to watch</a></div></div>
+<div class="film"><div class="frow"><span class="ftitle">A Great Day in Harlem</span><span class="fmeta">1994 · dir. Jean Bach</span></div><div class="fnote">The story behind the famous 1958 photograph of 57 musicians.</div><div class="flinks"><a>YouTube</a><a>Where to watch</a></div></div>
+<div class="film"><div class="frow"><span class="ftitle">Straight, No Chaser</span><span class="fmeta">1988 · dir. Charlotte Zwerin</span></div><div class="fnote">Thelonious Monk on tour — candid, close, unhurried.</div><div class="flinks"><a>YouTube</a><a>Where to watch</a></div></div>`;
+
+/* scrims per version (improve legibility) */
+const READING=[
+  {n:'Warm library',d:'oak shelves, vivid spines · floating reading card',t:'t-card',svg:()=>bookshelf(SHELVES.warm),scrim:'linear-gradient(90deg,rgba(8,6,4,.55),rgba(8,6,4,.15))'},
+  {n:'Reading nook',d:'moody walnut & leather · immersive, no card',t:'t-immersive',svg:()=>bookshelf(SHELVES.moody),scrim:'linear-gradient(90deg,rgba(6,4,3,.82) 36%,rgba(6,4,3,.25))'},
+  {n:'Gilded shelves',d:'on-brand gold/amber · gold-edged panel',t:'t-panel',svg:()=>bookshelf(SHELVES.gilded),scrim:'radial-gradient(700px 500px at 75% 0,rgba(224,177,90,.10),transparent)'},
+  {n:'Modern stacks',d:'muted flat spines · clean scrim',t:'t-clean',svg:()=>bookshelf(SHELVES.modern),scrim:'linear-gradient(90deg,rgba(10,10,14,.66),rgba(10,10,14,.1))'},
+];
+const FILMS=[
+  {n:'Cutting room',d:'film strips across the frame + reels · card',t:'t-card',svg:()=>filmBg('cutting'),scrim:'linear-gradient(90deg,rgba(6,7,10,.5),rgba(6,7,10,.12))'},
+  {n:'Projector glow',d:'big reel unspooling, warm light · immersive',t:'t-immersive',svg:()=>filmBg('projector'),scrim:'linear-gradient(90deg,rgba(8,6,4,.8) 34%,rgba(8,6,4,.2))'},
+  {n:'Spilled canisters',d:'film coiling out of open cans · panel',t:'t-panel',svg:()=>filmBg('spill'),scrim:'radial-gradient(600px 500px at 70% 10%,rgba(224,177,90,.08),transparent)'},
+  {n:'Filmstrip edge',d:'single clean strip down the side · clean',t:'t-clean',svg:()=>filmBg('minimal'),scrim:'linear-gradient(90deg,rgba(10,10,14,.4),transparent)'},
+];
+
+function build(grid, list, content, idx0){
+  list.forEach((v,i)=>{
+    const p=document.createElement('div'); p.className='panel';
+    p.innerHTML=`<div class="cap"><b>${idx0+i+1}</b>${v.n} <span class="d">— ${v.d}</span></div>
+      <div class="room ${v.t}"><div class="bg">${v.svg()}</div><div class="scrim" style="background:${v.scrim}"></div>
+      <div class="scroll"><div class="content">${content}</div></div></div>`;
+    grid.appendChild(p);
+  });
+}
+build(document.getElementById('readGrid'), READING, READ, 0);
+build(document.getElementById('filmGrid'), FILMS, FILM, 0);
+</script>
+</body>
+</html>
