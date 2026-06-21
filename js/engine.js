@@ -727,30 +727,58 @@ const SILENT="data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAAB
 let audioUnlocked=false;
 function unlockAudio(){if(!clip||audioUnlocked)return;audioUnlocked=true;try{clip.src=SILENT;const p=clip.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
 function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;const tx=document.getElementById("clipnotetext")||el;clearTimeout(clipNote._t);if(!msg){el.classList.remove("show");return;}tx.textContent=msg;/* sit just under the topbar, whatever height it wraps to at this width */const bar=document.querySelector(".topbar");if(bar)el.style.top=(Math.round(bar.getBoundingClientRect().bottom)+10)+"px";el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
-/* ----  NOW-PLAYING WAVEFORM (simulated oscilloscope)  ----
-   The preview audio is cross-origin, so a real Web-Audio AnalyserNode can't read
-   its samples (and forcing crossOrigin would break the playback we fixed). This
-   is a procedural gold oscilloscope that runs ONLY while clip is actually playing
-   a preview — it reads as "music is playing" without pretending to be the signal.
-   Driven by the <audio> element's own events, so it covers main + collab clips. */
-let _wcv,_wctx,_wraf=0,_wt0=0,_wrun=false; const _wW=56,_wH=18;
+/* ----  NOW-PLAYING WAVEFORM  ----
+   Pulses to the REAL music when the audio is analysable. Apple's previews are
+   CORS-readable, so we fetch + decodeAudioData the exact clip that's playing,
+   build a loudness envelope, and drive the line from it at the LIVE playback
+   position (clip.currentTime). Deezer's previews are signed/unreadable (403 on
+   fetch), so those gracefully fall back to a gentle simulated oscilloscope.
+   Runs only while audio plays; driven by the <audio> element's own events so it
+   covers main + collab clips. (Why not a live AnalyserNode? createMediaElement-
+   Source on a cross-origin element outputs silence and can't be undone — it
+   would break Deezer playback. Offline decode keeps playback untouched.) */
+let _wcv,_wctx,_wraf=0,_wt0=0,_wrun=false,_wamp=0.3; const _wW=56,_wH=18;
+let _actx, _env=null, _envKey=null; const _envBps=60, _envCache=new Map();
+function _getACtx(){ if(_actx===undefined){ try{_actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){_actx=null;} } return _actx; }
+function analyzeClip(url){
+  if(!url||url.indexOf("data:")===0) return;
+  if(_envKey===url) return;                       /* already analysing/have this clip */
+  _envKey=url; _env=null;                          /* new clip → simulated until ready */
+  if(_envCache.has(url)){ _env=_envCache.get(url); return; }
+  if(!/itunes\.apple\.com/i.test(url)) return;     /* Deezer etc. can't be fetched → stay simulated */
+  const ac=_getACtx(); if(!ac) return;
+  fetch(url,{mode:"cors"}).then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(buf=> ac.decodeAudioData(buf))
+    .then(audio=>{ if(_envKey!==url) return;       /* superseded by a newer clip */
+      const ch=audio.getChannelData(0), nb=Math.max(1,Math.ceil(audio.duration*_envBps)), per=Math.floor(ch.length/nb)||1, env=new Float32Array(nb); let peak=0;
+      for(let b=0;b<nb;b++){ let mx=0; const s=b*per,e=Math.min(ch.length,s+per); for(let i=s;i<e;i++){ const a=Math.abs(ch[i]); if(a>mx)mx=a; } env[b]=mx; if(mx>peak)peak=mx; }
+      if(peak>0) for(let i=0;i<nb;i++) env[i]/=peak;        /* normalise to 0..1 */
+      _envCache.set(url,env); if(_envKey===url) _env=env;
+    }).catch(()=>{ /* leave _env null → simulated fallback */ });
+}
 function waveStart(){ if(_wrun)return;
   if(!_wcv){ _wcv=document.getElementById("clipwave"); if(!_wcv)return; _wctx=_wcv.getContext("2d");
     const dpr=Math.min(devicePixelRatio||1,2); _wcv.width=_wW*dpr; _wcv.height=_wH*dpr; _wctx.scale(dpr,dpr); }
-  _wrun=true; const note=document.getElementById("clipnote"); if(note)note.classList.add("playing");
+  _wrun=true; _wamp=0.3; const note=document.getElementById("clipnote"); if(note)note.classList.add("playing");
   _wt0=performance.now(); _wraf=requestAnimationFrame(waveTick); }
 function waveStop(){ _wrun=false; if(_wraf)cancelAnimationFrame(_wraf); _wraf=0;
   const note=document.getElementById("clipnote"); if(note)note.classList.remove("playing"); }
 function waveTick(ts){ if(!_wrun||!_wctx)return; const t=(ts-_wt0)/1000, w=_wW, h=_wH, mid=h/2;
+  /* amplitude: REAL loudness from the decoded envelope at the live position; else
+     a gentle idle breath while there's no envelope (Deezer / still loading). */
+  let target;
+  if(_env&&clip&&!clip.paused){ let i=(clip.currentTime*_envBps)|0; if(i<0)i=0; if(i>=_env.length)i=_env.length-1; target=0.12+0.95*_env[i]; }
+  else target=0.5+0.18*Math.sin(t*2.1);
+  _wamp += (target>_wamp?0.5:0.16)*(target-_wamp);   /* fast attack, slow decay → beat punch */
   _wctx.clearRect(0,0,w,h); _wctx.lineWidth=1.4; _wctx.lineJoin="round";
   _wctx.strokeStyle="#e8c074"; _wctx.shadowColor="rgba(224,177,90,.55)"; _wctx.shadowBlur=3;
-  const amp=0.78+0.22*Math.sin(t*2.1); _wctx.beginPath();
+  _wctx.beginPath();
   for(let x=0;x<=w;x++){ const nx=x/w, env=Math.sin(nx*Math.PI),
-      y=mid+env*amp*((h*0.30)*Math.sin(nx*9+t*4.2)+(h*0.17)*Math.sin(nx*22-t*6.1+1.3)+(h*0.10)*Math.sin(nx*40+t*9.0));
+      y=mid+env*_wamp*((h*0.28)*Math.sin(nx*9+t*4.2)+(h*0.16)*Math.sin(nx*22-t*6.1+1.3)+(h*0.09)*Math.sin(nx*40+t*9.0));
     x===0?_wctx.moveTo(x,y):_wctx.lineTo(x,y); }
   _wctx.stroke(); _wraf=requestAnimationFrame(waveTick); }
 if(clip){
-  clip.addEventListener("playing",()=>{ if(clip.src&&clip.src.indexOf("data:")===0)return; waveStart(); }); /* skip the silent unlock blip */
+  clip.addEventListener("playing",()=>{ if(clip.src&&clip.src.indexOf("data:")===0)return; analyzeClip(clip.src); waveStart(); }); /* skip the silent unlock blip */
   clip.addEventListener("pause", waveStop);
   clip.addEventListener("ended", waveStop);
   clip.addEventListener("emptied", waveStop);
@@ -770,12 +798,12 @@ let mainPlay=null;
 const provOf=u=>/itunes\.apple\.com/i.test(u||"")?"it":"dz";
 if(clip){
   clip.addEventListener("playing",()=>{
-    if(mainPlay&&clipFor===mainPlay.id&&mainPlay.url){try{localStorage.setItem(lsKey("clip_"+mainPlay.id),mainPlay.url);}catch(e){}}
+    if(mainPlay&&clipFor===mainPlay.id&&mainPlay.url){try{localStorage.setItem(lsKey("clip2_"+mainPlay.id),mainPlay.url);}catch(e){}}
   });
   clip.addEventListener("error",()=>{
     if(!mainPlay||clipFor!==mainPlay.id||mainPlay.alt)return;
     if(mainPlay.url&&clip.src&&clip.src!==mainPlay.url)return; /* error from a since-replaced src */
-    mainPlay.alt=true;try{localStorage.removeItem(lsKey("clip_"+mainPlay.id));}catch(e){}
+    mainPlay.alt=true;try{localStorage.removeItem(lsKey("clip2_"+mainPlay.id));}catch(e){}
     const id=mainPlay.id,nm=mainPlay.name,want=mainPlay.want,ov=mainPlay.ov||{};
     clipNote("♪  finding "+nm+"…",6500);
     const play2=(u,prov)=>{if(clipFor!==id)return;if(!u){clipNote("No preview found for "+nm);return;}mainPlay.url=u;mainPlay.prov=prov;clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);};
@@ -812,7 +840,7 @@ function playClip(nd){
   if(!clip)return;
   clipFor=nd.id;
   const ov=(G.preview||{})[nd.id]||{}, want=ov.artist||nd.name;
-  let cached=null;try{cached=localStorage.getItem(lsKey("clip_"+nd.id));}catch(e){}
+  let cached=null;try{cached=localStorage.getItem(lsKey("clip2_"+nd.id));}catch(e){}  /* clip2_ = new namespace; old clip_ (Deezer-biased) caches are ignored so plays re-resolve Apple-first */
   /* Only a real URL short-circuits. A past "none" (a transient lookup miss — a
      dropped request, an offline moment, the old pre-unlock audio bug) must NOT
      silence an artist forever, so we ignore it and re-resolve. We cache hits
@@ -825,12 +853,17 @@ function playClip(nd){
   const q2=nd.name;
   const done=url=>{if(clipFor!==nd.id)return;if(url){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:url,prov:provOf(url),alt:false};playPreview(url,nd.name);}else clipNote("No verified preview for "+nd.name);};
   const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done(t.preview);else next();});
-  const itun=()=>itSearch(q2,want,url=>{if(clipFor!==nd.id)return;done(url);});
-  /* ov.only = trust ONLY the specific query (skip plain-name + iTunes), for names a
-     famous namesake dominates (e.g. Charlie Chaplin the film composer). */
-  const afterQ1=ov.only?(()=>done(null)):(()=>q1!==q2?search(q2,itun):itun());
-  if(ov.did){dzArtistTop(ov.did,u=>{if(clipFor!==nd.id)return;if(u)done(u);else search(q1,afterQ1);});}
-  else search(q1,afterQ1);
+  const apple=(q,next)=>itSearch(q,want,url=>{if(clipFor!==nd.id)return;if(url)done(url);else next();});
+  /* Apple is PREFERRED: its previews are CORS-readable so the now-playing waveform
+     can analyse the real audio, and its CDN is the robust one (not blocklisted,
+     links don't expire). Deezer stays the fallback, with all the self-correcting
+     logic. ov.only artists (famous-namesake collisions) keep the Deezer-only
+     specific-query path so we never grab the wrong namesake. */
+  const dzFallback=()=>{ const tail=()=>q1!==q2?search(q2,()=>done(null)):done(null);
+    if(ov.did){dzArtistTop(ov.did,u=>{if(clipFor!==nd.id)return;if(u)done(u);else search(q1,tail);});}
+    else search(q1,tail); };
+  if(ov.only) search(q1,()=>done(null));
+  else apple(ov.q||q2, dzFallback);
 }
 
 /* frame the voyage: recentre the tunnel (toStart=true snaps back to the genre's beginnings) */

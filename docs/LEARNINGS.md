@@ -2,6 +2,14 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — waveform made real: Apple-preferred playback + offline envelope
+
+- Made the now-playing waveform pulse to the **actual music**. The unlock: **Apple's preview audio (`audio-ssl.itunes.apple.com`) is directly `fetch`-able with CORS** (verified — a full GET 200), whereas **Deezer's `dzcdn.net` previews 403 every `fetch`/proxy** (signed/IP-locked; only the `<audio>` element may play them). So real analysis is only possible on audio you can fetch = Apple.
+- Therefore flipped playback to **Apple-preferred, Deezer fallback** (`apple(ov.q||q2, dzFallback)` in `playClip`; `ov.only` namesake artists stay Deezer-only). This also *de-risks* playback — Apple's CDN was already our robust fallback (not blocklisted, links don't expire). Coverage probe before committing: Apple resolved **19/20** famous artists across all three genres (only obscure "Vivian Garry" missed → Deezer fallback → simulated wave). Corrects an earlier mental model: Deezer was the better *finder*, but the worse *player*.
+- The waveform fetches the playing Apple clip, `decodeAudioData`, computes a peak-loudness envelope (60 buckets/s, normalised), caches it per URL, and drives the line amplitude from `env[(currentTime*60)|0]` with **fast-attack / slow-decay** smoothing → a real beat pulse. Deezer-played tracks (rare fallback) keep the gentle idle motion.
+- **Why offline decode, not a live `AnalyserNode`:** `createMediaElementSource` on the shared cross-origin `<audio>` outputs silence and is *irreversible* — it would break Deezer playback. Offline fetch+decode leaves the playback path untouched (confirmed by the dual network request: a `206` stream for playback + a `200` full GET for analysis).
+- Bumped the clip cache namespace `clip_`→`clip2_` so old Deezer-biased caches are ignored and every artist re-resolves Apple-first. Cost: one extra ~1 MB fetch per Apple clip, cached per session.
+
 ## 2026-06-21 — now-playing waveform (and why it's simulated)
 
 - A **real** Web-Audio waveform is not possible here: `createMediaElementSource(clip)` on a **cross-origin** `<audio>` (the Deezer/Apple previews, which don't send CORS) routes silence into the graph, **can't be undone** once created, and forcing `crossOrigin='anonymous'` would make those URLs fail to load — i.e. it would silence the playback we just fixed. So the waveform is a **procedural gold oscilloscope** (summed sines × an edge-taper envelope, animated by time), drawn **only while audio actually plays**.
