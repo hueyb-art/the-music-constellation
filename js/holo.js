@@ -10,20 +10,26 @@
    Three.js resolves via the import map in index.html. */
 (function(){
   let THREE=null, ready=false, loading=false;
-  let renderer, scene, camera, controls, GLOW, lineSeg;
+  let renderer, scene, camera, controls, lineSeg;
   let meshes=[], coreById={}, edges=[], nodeEdges={}, labelEl={}, labelOrder=[];
   let edgePos, edgeCol, edgePosAttr, edgeColAttr;
   let selected=null, dragging=false, idleTimer=null, raf=null;
   const EDGE_FAINT=[0.085,0.066,0.032], EDGE_BRIGHT=[1.0,0.80,0.42];
+  const BASE_EMIS=0.26, NEIGH_EMIS=0.5, FOCUS_EMIS=0.9;   /* node self-glow: resting / neighbour / focused */
   const CW=82, CH=21;
   const canvas=document.getElementById('holoc');
   const labelsBox=document.getElementById('holabels');
 
-  function glowTexture(){
-    const s=128, cv=document.createElement('canvas'); cv.width=cv.height=s;
-    const ctx=cv.getContext('2d'), g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
-    g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.25,'rgba(255,255,255,0.55)'); g.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=g; ctx.fillRect(0,0,s,s); return new THREE.CanvasTexture(cv);
+  /* Fake subsurface scattering: light wraps to the silhouette, added to the
+     emissive via a tiny shader injection — gives each orb a soft, lit-from-within,
+     non-plastic read (the "velvet sheen" treatment chosen in lab/holo-organic). */
+  function wrapSSS(mat, color, strength){
+    mat.onBeforeCompile=(sh)=>{ sh.uniforms.uWrap={value:color.clone()}; sh.uniforms.uWrapK={value:strength};
+      sh.fragmentShader='uniform vec3 uWrap;\nuniform float uWrapK;\n'+sh.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\n  float _ndv=clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0);\n  totalEmissiveRadiance += uWrap*pow(1.0-_ndv,2.3)*uWrapK;'
+      ); };
+    return mat;
   }
   function addStars(){
     const N=2200, pos=new Float32Array(N*3);
@@ -38,10 +44,10 @@
     loading=true;
     THREE = await import('three');
     const oc = await import('three/addons/controls/OrbitControls.js');
-    GLOW = glowTexture();
     renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setSize(innerWidth, innerHeight);
+    renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.15; renderer.outputColorSpace=THREE.SRGBColorSpace;
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x05040a);
     camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 1, 8000);
     camera.position.set(0, 40, 480);
@@ -52,14 +58,18 @@
     if(THREE.TOUCH) controls.touches={ ONE:THREE.TOUCH.ROTATE, TWO:THREE.TOUCH.DOLLY_PAN };
     controls.addEventListener('start', ()=>{ dragging=true; controls.autoRotate=false; clearTimeout(idleTimer); });
     controls.addEventListener('end',   ()=>{ dragging=false; clearTimeout(idleTimer); idleTimer=setTimeout(()=>{ controls.autoRotate=true; }, 1600); });
+    /* three-point lighting rig so the orbs show real shaded form (the holo scene had no lights before) */
+    const keyL=new THREE.DirectionalLight(0xfff2e0,2.4); keyL.position.set(4,6,5); scene.add(keyL);
+    const rimL=new THREE.DirectionalLight(0x6fb4ff,1.5); rimL.position.set(-5,2,-6); scene.add(rimL);
+    scene.add(new THREE.HemisphereLight(0x8090c0,0x101018,0.45));
+    scene.add(new THREE.AmbientLight(0x202028,0.6));
     addStars(); wirePointer();
     addEventListener('resize', ()=>{ if(!renderer) return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
     ready=true; loading=false;
   }
 
   function disposeScene(){
-    for(const m of meshes){ scene.remove(m); m.geometry.dispose(); m.material.dispose();
-      if(m.userData.halo){ scene.remove(m.userData.halo); m.userData.halo.material.dispose(); } }
+    for(const m of meshes){ scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
     if(lineSeg){ scene.remove(lineSeg); lineSeg.geometry.dispose(); lineSeg.material.dispose(); lineSeg=null; }
     for(const id in labelEl) labelEl[id].remove();
     meshes=[]; coreById={}; labelEl={}; nodeEdges={}; selected=null;
@@ -85,10 +95,12 @@
     /* nodes + labels */
     nodes.forEach(n=>{
       const col=new THREE.Color((M.ERAS[n.era]&&M.ERAS[n.era].color)||'#e0b15a'), r=1.4+Math.sqrt(n.deg||0)*0.7;
-      const core=new THREE.Mesh(new THREE.SphereGeometry(r,16,16), new THREE.MeshBasicMaterial({ color:col }));
+      const mat=new THREE.MeshPhysicalMaterial({ color:col, roughness:0.62, metalness:0,
+        emissive:col.clone(), emissiveIntensity:BASE_EMIS,
+        sheen:1.0, sheenColor:new THREE.Color(0xfff0e0), sheenRoughness:0.85 });
+      wrapSSS(mat, col, 0.5);
+      const core=new THREE.Mesh(new THREE.SphereGeometry(r,32,24), mat);
       core.userData={ node:n }; scene.add(core); meshes.push(core); coreById[n.id]=core;
-      const halo=new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:col, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.5 }));
-      halo.scale.set(r*7, r*7, 1); scene.add(halo); core.userData.halo=halo;
       const el=document.createElement('div'); el.className='hlbl';
       const nm=document.createElement('div'); nm.className='nm'; nm.textContent=n.name;
       const ins=document.createElement('div'); ins.className='ins'; ins.textContent=(n.role||'').split('·')[0].trim();
@@ -105,12 +117,12 @@
   function setFocus(core){
     if(!edgeColAttr) return;
     for(let i=0;i<edges.length;i++) setEdge(i, EDGE_FAINT);
-    meshes.forEach(m=> m.scale.setScalar(1));
+    meshes.forEach(m=>{ m.scale.setScalar(1); if(m.material) m.material.emissiveIntensity=BASE_EMIS; });
     selected = core;
     if(core){ const M=window.MCH, id=core.userData.node.id;
       (nodeEdges[id]||[]).forEach(i=> setEdge(i, EDGE_BRIGHT));
-      core.scale.setScalar(2.1);
-      [...(M.adj[id]||[])].forEach(nid=>{ const m=coreById[nid]; if(m) m.scale.setScalar(1.6); });
+      core.scale.setScalar(2.1); if(core.material) core.material.emissiveIntensity=FOCUS_EMIS;
+      [...(M.adj[id]||[])].forEach(nid=>{ const m=coreById[nid]; if(m){ m.scale.setScalar(1.6); if(m.material) m.material.emissiveIntensity=NEIGH_EMIS; } });
     }
     edgeColAttr.needsUpdate=true;
   }
@@ -165,7 +177,7 @@
   let lframe=0;
   function frame(){
     if(!ready) return;
-    for(const core of meshes){ const n=core.userData.node; core.position.set(n.x,n.y,n.z); core.userData.halo.position.set(n.x,n.y,n.z); }
+    for(const core of meshes){ const n=core.userData.node; core.position.set(n.x,n.y,n.z); }
     for(let i=0;i<edges.length;i++){ const e=edges[i], o=i*6;
       edgePos[o]=e.s.x; edgePos[o+1]=e.s.y; edgePos[o+2]=e.s.z; edgePos[o+3]=e.t.x; edgePos[o+4]=e.t.y; edgePos[o+5]=e.t.z; }
     if(edgePosAttr) edgePosAttr.needsUpdate=true;

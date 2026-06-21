@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — 3D nodes: from "plastic" to "organic" (velvet sheen)
+
+- The 3D nodes read flat/2D for two reasons: `MeshBasicMaterial` is **unlit** (no shading gradient → a flat disc) and the glow was a camera-facing `THREE.Sprite` (a 2D "radial blur" that can't look 3D). The holo scene also had **no lights at all**.
+- Explored options by fanning out 4 agents, each prototyping a real-3D treatment, assembled into side-by-side comparison pages: `lab/holo-nodes.html` (lit PBR sphere / emissive+UnrealBloom / fresnel-rim / faceted gem) → chose the lit sphere; then `lab/holo-organic.html` refined it (subsurface / Perlin-displaced / **velvet sheen**) because the clean PBR sphere read "plastic". Velvet sheen won — Huey liked its soft shaded falloff.
+- Ported into `js/holo.js`: per-node `MeshPhysicalMaterial` (roughness 0.62, `sheen:1` with a warm `sheenColor`, soft era-colour emissive) under a three-point light rig + `ACESFilmicToneMapping`, plus a tiny `onBeforeCompile` that adds a fresnel "wrap" to `totalEmissiveRadiance` (cheap fake subsurface). The sprite halo is **gone**; focus/selected now pops via scale (2.1/1.6) **and** `emissiveIntensity` (0.9/0.5/0.26) instead of the halo.
+- Gotchas worth keeping: **`light.position` is read-only** — use `.position.set()`, never `Object.assign(light,{position})` (cost me two dead lab panels). Genre `scene.background` colours **survive ACES** fine (they're near-black, where ACES ≈ identity — verified jazz/reggae). An `onBeforeCompile` injected at `#include <emissivemap_fragment>` can read `normal` + `vViewPosition` (both defined by then); identical injections **share one compiled program**, so 234 such materials are cheap. (A unique high-res *displaced* geometry per node — the rejected "living surface" — would NOT scale; that one needs a few shared low-res shapes.)
+
 ## 2026-06-21 — selection that follows you across views (one local, no new state)
 
 - Goal: clicking an artist then switching globe ⇄ chord ⇄ 3D used to drop the selection; it should persist so you can keep digging. The win was realising **`selNode` is already the unified "who's selected" in all three views** — globe `select()`, chord `chordPick()`, and a 3D tap (`MCH.select()` → engine `select()`) all set it. So no new persistent field is required.
