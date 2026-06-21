@@ -726,7 +726,35 @@ let clipFor=null;
 const SILENT="data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWAJAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=";
 let audioUnlocked=false;
 function unlockAudio(){if(!clip||audioUnlocked)return;audioUnlocked=true;try{clip.src=SILENT;const p=clip.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
-function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;clearTimeout(clipNote._t);if(!msg){el.classList.remove("show");return;}el.textContent=msg;el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
+function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;const tx=document.getElementById("clipnotetext")||el;clearTimeout(clipNote._t);if(!msg){el.classList.remove("show");return;}tx.textContent=msg;/* sit just under the topbar, whatever height it wraps to at this width */const bar=document.querySelector(".topbar");if(bar)el.style.top=(Math.round(bar.getBoundingClientRect().bottom)+10)+"px";el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
+/* ----  NOW-PLAYING WAVEFORM (simulated oscilloscope)  ----
+   The preview audio is cross-origin, so a real Web-Audio AnalyserNode can't read
+   its samples (and forcing crossOrigin would break the playback we fixed). This
+   is a procedural gold oscilloscope that runs ONLY while clip is actually playing
+   a preview — it reads as "music is playing" without pretending to be the signal.
+   Driven by the <audio> element's own events, so it covers main + collab clips. */
+let _wcv,_wctx,_wraf=0,_wt0=0,_wrun=false; const _wW=56,_wH=18;
+function waveStart(){ if(_wrun)return;
+  if(!_wcv){ _wcv=document.getElementById("clipwave"); if(!_wcv)return; _wctx=_wcv.getContext("2d");
+    const dpr=Math.min(devicePixelRatio||1,2); _wcv.width=_wW*dpr; _wcv.height=_wH*dpr; _wctx.scale(dpr,dpr); }
+  _wrun=true; const note=document.getElementById("clipnote"); if(note)note.classList.add("playing");
+  _wt0=performance.now(); _wraf=requestAnimationFrame(waveTick); }
+function waveStop(){ _wrun=false; if(_wraf)cancelAnimationFrame(_wraf); _wraf=0;
+  const note=document.getElementById("clipnote"); if(note)note.classList.remove("playing"); }
+function waveTick(ts){ if(!_wrun||!_wctx)return; const t=(ts-_wt0)/1000, w=_wW, h=_wH, mid=h/2;
+  _wctx.clearRect(0,0,w,h); _wctx.lineWidth=1.4; _wctx.lineJoin="round";
+  _wctx.strokeStyle="#e8c074"; _wctx.shadowColor="rgba(224,177,90,.55)"; _wctx.shadowBlur=3;
+  const amp=0.78+0.22*Math.sin(t*2.1); _wctx.beginPath();
+  for(let x=0;x<=w;x++){ const nx=x/w, env=Math.sin(nx*Math.PI),
+      y=mid+env*amp*((h*0.30)*Math.sin(nx*9+t*4.2)+(h*0.17)*Math.sin(nx*22-t*6.1+1.3)+(h*0.10)*Math.sin(nx*40+t*9.0));
+    x===0?_wctx.moveTo(x,y):_wctx.lineTo(x,y); }
+  _wctx.stroke(); _wraf=requestAnimationFrame(waveTick); }
+if(clip){
+  clip.addEventListener("playing",()=>{ if(clip.src&&clip.src.indexOf("data:")===0)return; waveStart(); }); /* skip the silent unlock blip */
+  clip.addEventListener("pause", waveStop);
+  clip.addEventListener("ended", waveStop);
+  clip.addEventListener("emptied", waveStop);
+}
 function playPreview(url,name){if(!clip)return;if(!url||url==="none"){clipNote("No preview found for "+name);return;}clip.src=url;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>{clipNote("Tap again to hear "+name);});clipNote("♪  "+name,32000);}
 /* ----  SELF-CORRECTING PREVIEW PLAYBACK  ----
    A resolved URL is only proof the *catalogue* has a clip — not that THIS device

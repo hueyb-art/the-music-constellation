@@ -2,6 +2,14 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — now-playing waveform (and why it's simulated)
+
+- A **real** Web-Audio waveform is not possible here: `createMediaElementSource(clip)` on a **cross-origin** `<audio>` (the Deezer/Apple previews, which don't send CORS) routes silence into the graph, **can't be undone** once created, and forcing `crossOrigin='anonymous'` would make those URLs fail to load — i.e. it would silence the playback we just fixed. So the waveform is a **procedural gold oscilloscope** (summed sines × an edge-taper envelope, animated by time), drawn **only while audio actually plays**.
+- Driven by the `<audio>` element's **own events** (`playing`/`pause`/`ended`/`emptied`) rather than the call sites, so it covers both the main player and collab clips for free. Skip the event when `clip.src` is the `data:` silent-unlock blip.
+- The `#clipnote` pill was restructured into `<canvas> + <span>`; `clipNote()` now writes the **span**, not `el.textContent` (which would wipe the canvas).
+- The pill (`top:62px`) was actually **overlapping the toolbar buttons** — the toolbar wraps *taller* as the window narrows (109px @1440, 146px @1280, ~160px narrower), so no fixed `top` clears it. Fix: on each show, set the pill's `top` to the toolbar's **measured** `getBoundingClientRect().bottom + 10` — robust at every width.
+- Preview gotcha (again): a hidden tab pauses `requestAnimationFrame`, so the wave canvas reads **blank** in headless checks. Verified the draw formula by running one frame manually (1066 lit px) and the wiring via DOM state (`.playing` class, span text, canvas preserved).
+
 ## 2026-06-21 — 3D nodes: from "plastic" to "organic" (velvet sheen)
 
 - The 3D nodes read flat/2D for two reasons: `MeshBasicMaterial` is **unlit** (no shading gradient → a flat disc) and the glow was a camera-facing `THREE.Sprite` (a 2D "radial blur" that can't look 3D). The holo scene also had **no lights at all**.
