@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reading room — the bookshelf</title>
+<style>
+  :root{ color-scheme:dark; --gold:#e0b15a; --goldlt:#f0d99a; --ink:#f3ece0; --soft:#ddd3c6; --muted:#9a9182; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#0f0a06;color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif}
+  .room{min-height:100vh;
+    background:
+      radial-gradient(900px 600px at 78% -6%, rgba(224,177,90,.10), transparent 60%),
+      linear-gradient(180deg,#1a120a,#0f0a06);
+    padding:26px 30px 80px}
+  header h1{font-size:18px;font-weight:600;margin:0 0 4px}
+  header p{font-size:13px;color:var(--muted);margin:0 0 4px;max-width:680px;line-height:1.5}
+  .pill{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:4px 12px;border-radius:999px;background:rgba(224,177,90,.16);color:var(--gold);margin-bottom:14px}
+  .case{max-width:1080px;margin:18px auto 0}
+
+  /* ---- shelves ---- */
+  .shelf{position:relative;margin-bottom:6px}
+  .books{display:flex;align-items:flex-end;gap:5px;padding:0 14px;min-height:206px}
+  .plank{height:16px;border-radius:2px;
+    background:linear-gradient(180deg,#6b4a2a,#4a3018 55%,#321f0e);
+    box-shadow:0 2px 0 rgba(0,0,0,.5),0 14px 22px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,225,170,.18);
+    margin:0 2px}
+
+  /* ---- a book spine ---- */
+  .book{position:relative;height:200px;flex:0 0 auto;border-radius:2px 2px 1px 1px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;padding:9px 0 8px;
+    box-shadow:inset 2px 0 0 rgba(255,255,255,.12), inset -3px 0 5px rgba(0,0,0,.45), 1px 6px 12px rgba(0,0,0,.4);
+    transition:transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .16s, filter .16s;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.14), rgba(255,255,255,0) 16%, rgba(0,0,0,.25) 86%, rgba(0,0,0,.4)),
+      var(--c)}
+  .book:hover{transform:translateY(-16px);filter:brightness(1.12);box-shadow:inset 2px 0 0 rgba(255,255,255,.16), inset -3px 0 5px rgba(0,0,0,.45), 0 18px 26px rgba(0,0,0,.55)}
+  .book .band{width:78%;height:0;border-top:2.5px solid rgba(224,184,110,.85);box-shadow:0 2px 0 rgba(0,0,0,.25);flex:0 0 auto}
+  .book .title{flex:1 1 auto;min-height:0;writing-mode:vertical-rl;text-orientation:mixed;
+    font:600 13.5px/1.05 Georgia,"Times New Roman",serif;color:var(--goldlt);
+    letter-spacing:.4px;margin:10px 0;overflow:hidden;text-align:start;
+    text-shadow:0 1px 0 rgba(0,0,0,.5)}
+  .book .author{writing-mode:vertical-rl;text-orientation:mixed;font:500 9.5px/1 Georgia,serif;
+    color:rgba(240,217,154,.78);letter-spacing:.5px;max-height:88px;overflow:hidden;margin-bottom:4px}
+  .book .foot{font-size:7.5px;color:rgba(240,217,154,.6);letter-spacing:.5px}
+  .book.lean{transform:rotate(-3deg);transform-origin:bottom}
+  .book.lean:hover{transform:translateY(-16px) rotate(-1deg)}
+
+  /* ---- detail card ---- */
+  .detail{position:fixed;inset:0;background:rgba(8,5,2,.62);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:30}
+  .detail.open{opacity:1;pointer-events:auto}
+  .card{max-width:460px;width:100%;background:linear-gradient(180deg,#241809,#160f07);
+    border:1px solid rgba(224,177,90,.34);border-radius:14px;padding:26px 28px;box-shadow:0 24px 70px rgba(0,0,0,.6);transform:translateY(10px) scale(.98);transition:transform .25s}
+  .detail.open .card{transform:none}
+  .card .ct{display:flex;gap:18px}
+  .card .mini{width:54px;height:150px;border-radius:2px;flex:0 0 auto;box-shadow:inset 2px 0 0 rgba(255,255,255,.12),1px 4px 10px rgba(0,0,0,.5);position:relative}
+  .card .mini::before{content:"";position:absolute;left:11%;right:11%;top:14px;border-top:2px solid rgba(224,184,110,.8)}
+  .card .mini::after{content:"";position:absolute;left:11%;right:11%;bottom:14px;border-top:2px solid rgba(224,184,110,.8)}
+  .card h2{font:600 22px/1.2 Georgia,serif;color:var(--ink);margin:0 0 2px}
+  .card .sub{font:italic 15px/1.35 Georgia,serif;color:var(--soft);margin:0 0 10px}
+  .card .by{font-size:14px;color:var(--gold);margin-bottom:2px}
+  .card .yr{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  .card .note{font-size:13.5px;line-height:1.55;color:var(--soft);border-top:1px solid rgba(255,255,255,.1);padding-top:12px;margin-top:4px}
+  .card .note b{color:var(--gold);font-weight:600}
+  .card .find{display:inline-block;margin-top:16px;font-size:13px;color:var(--gold);text-decoration:none;border:1px solid rgba(224,177,90,.4);padding:8px 14px;border-radius:9px}
+  .card .find:hover{background:rgba(224,177,90,.14)}
+  .card .x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="room">
+  <header>
+    <span class="pill">The rooms · Reading</span>
+    <h1>The reading shelf</h1>
+    <p>Every book in the reading list, on its spine. Hover to lift one out; click to read who wrote it and why it matters. (Real jazz data — the same list the room shows today, now browsable as a shelf.)</p>
+  </header>
+  <div class="case" id="case"></div>
+  <p class="hint" id="hint"></p>
+</div>
+
+<div class="detail" id="detail">
+  <div class="card" id="card"></div>
+</div>
+
+<script src="../js/data/jazz.js"></script>
+<script>
+const PAL=['#6e2b2b','#2f4a39','#283a5a','#3a2a24','#6a4a2a','#4a2a44','#26474a','#5a3a1e','#34303a','#7a5a2e','#5a2236','#2e3a2a'];
+const FALLBACK=[{name:"Gary Giddins",note:"Village Voice columnist.",books:[["Visions of Jazz: The First Century","1998"]]}];
+const critics = (window.GENRE_DATA && window.GENRE_DATA.jazz && window.GENRE_DATA.jazz.critics) || FALLBACK;
+
+// flatten to books
+const books=[];
+critics.forEach(c=> (c.books||[]).forEach(b=>{
+  const full=b[0]||"", year=b[1]||"";
+  const ci=full.indexOf(":");
+  books.push({ main:(ci>0?full.slice(0,ci):full).trim(), sub:(ci>0?full.slice(ci+1):"").trim(),
+    author:c.name, year, note:c.note||"", full });
+}));
+document.getElementById('hint').textContent = books.length+" books · "+critics.length+" writers — archives, periodicals & radio would sit on a lower shelf below.";
+
+const caseEl=document.getElementById('case');
+const widthFor = b => Math.min(54, Math.max(34, Math.round(32 + b.main.length*0.85)));
+
+function layout(){
+  caseEl.innerHTML='';
+  const avail = caseEl.clientWidth - 32;   // padding allowance
+  let shelf=null, used=0, idx=0;
+  const newShelf=()=>{ shelf=document.createElement('div'); shelf.className='shelf';
+    const bk=document.createElement('div'); bk.className='books'; shelf.appendChild(bk);
+    const pl=document.createElement('div'); pl.className='plank'; shelf.appendChild(pl);
+    caseEl.appendChild(shelf); used=0; return bk; };
+  let bk=newShelf();
+  books.forEach((b,i)=>{
+    const w=widthFor(b);
+    if(used+w+5>avail && used>0){ bk=newShelf(); }
+    used+=w+5;
+    const el=document.createElement('div');
+    el.className='book'+((i%7===3)?' lean':'');
+    el.style.setProperty('--c', PAL[idx++%PAL.length]);
+    el.style.width=w+'px';
+    el.innerHTML=`<div class="band"></div><div class="title">${esc(b.main)}</div><div class="author">${esc(lastName(b.author))}</div><div class="foot">${esc(b.year)}</div>`;
+    el.onclick=()=>openBook(b);
+    bk.appendChild(el);
+  });
+}
+function lastName(n){ return n.replace(/\s*\(.*\)\s*/,'').trim(); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+const detail=document.getElementById('detail'), card=document.getElementById('card');
+function openBook(b){
+  const q=encodeURIComponent(b.full+" "+b.author);
+  card.innerHTML=`<button class="x" onclick="closeBook()">&times;</button>
+    <div class="ct"><div class="mini" style="background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(0,0,0,.3) 90%),${PAL[(b.main.length)%PAL.length]}"></div>
+    <div><h2>${esc(b.main)}</h2>${b.sub?`<div class="sub">${esc(b.sub)}</div>`:''}
+    <div class="by">${esc(b.author)}</div><div class="yr">${esc(b.year)}</div></div></div>
+    <div class="note"><b>About the author —</b> ${esc(b.note)}</div>
+    <a class="find" href="https://www.google.com/search?tbm=bks&q=${q}" target="_blank" rel="noopener">Find this book &#8599;</a>`;
+  detail.classList.add('open');
+}
+function closeBook(){ detail.classList.remove('open'); }
+detail.onclick=e=>{ if(e.target===detail) closeBook(); };
+addEventListener('keydown',e=>{ if(e.key==='Escape') closeBook(); });
+window.closeBook=closeBook;
+
+layout();
+let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(layout,150); });
+</script>
+</body>
+</html>
