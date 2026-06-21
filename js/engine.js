@@ -656,28 +656,42 @@ async function loadShelfCovers(){
   await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
 }
 /* cover sources */
+/* title check — only accept a matched article whose name actually matches the item
+   (so "The Girls in the Band" never resolves to "Neil Armstrong", etc.) */
+function titleOk(want,got){
+  const norm=s=>String(s).toLowerCase().replace(/^the\s+/,"").replace(/\(.*?\)/g,"").replace(/[^a-z0-9]+/g," ").trim();
+  const a=norm(want),p=norm(got); if(!a||!p)return false;
+  if(p.startsWith(a)||a.startsWith(p))return true;
+  const aw=a.split(" ").filter(w=>w.length>3),pw=new Set(p.split(" "));
+  return aw.length>0 && aw.filter(w=>pw.has(w)).length/aw.length>=0.6;
+}
 async function coverBook(b){
   const ck="tmc_olcov_"+(b.full+"|"+b.author).toLowerCase().replace(/[^a-z0-9|]+/g,"_");
-  try{const c=localStorage.getItem(ck);if(c!==null)return c||null;}catch(e){}
-  let url=null;
-  try{const r=await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(b.main)}&author=${encodeURIComponent(b.author)}&limit=3&fields=cover_i`);
-    const j=await r.json();const d=(j.docs||[]).find(x=>x.cover_i);
+  try{const c=localStorage.getItem(ck);if(c)return c;}catch(e){}   /* only a real URL short-circuits; stale "" re-tries */
+  let url=null; const an=rsLast(b.author).toLowerCase();
+  try{const r=await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(b.main)}&author=${encodeURIComponent(b.author)}&limit=5&fields=cover_i,author_name`);
+    const j=await r.json();const docs=(j.docs||[]).filter(x=>x.cover_i);
+    const d=docs.find(x=>(x.author_name||[]).some(a=>a.toLowerCase().includes(an)))||docs[0];
     if(d)url=await rsPreload(`https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg?default=false`);}catch(e){}
   if(!url){try{const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(b.main)}+inauthor:${encodeURIComponent(rsLast(b.author))}&maxResults=1`);
     const j=await r.json();const im=j.items&&j.items[0]&&j.items[0].volumeInfo&&j.items[0].volumeInfo.imageLinks;
     if(im){const u=(im.thumbnail||im.smallThumbnail||"").replace(/^http:/,"https:").replace("&edge=curl","");if(u)url=await rsPreload(u);}}catch(e){}}
-  try{localStorage.setItem(ck,url||"");}catch(e){}
+  if(url){try{localStorage.setItem(ck,url);}catch(e){}}   /* cache hits only */
   return url;
 }
 async function coverFilm(b){  /* movie/doc posters via Wikipedia lead image (non-free allowed) */
   const ck="tmc_poster_"+(b.full+"|"+(b.year||"")).toLowerCase().replace(/[^a-z0-9|]+/g,"_");
-  try{const c=localStorage.getItem(ck);if(c!==null)return c||null;}catch(e){}
-  let url=null;
-  try{const q=`${b.main} ${b.year||""} ${b.dir||""} film`;
-    const u=`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=500&pilicense=any`;
-    const r=await fetch(u);const j=await r.json();const pages=j.query&&j.query.pages;const p=pages&&Object.values(pages)[0];
-    if(p&&p.thumbnail&&p.thumbnail.source)url=await rsPreload(p.thumbnail.source);}catch(e){}
-  try{localStorage.setItem(ck,url||"");}catch(e){}
+  try{const c=localStorage.getItem(ck);if(c)return c;}catch(e){}
+  const wikiImg=async(params)=>{ try{
+    const u=`https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=500&pilicense=any&${params}`;
+    const r=await fetch(u);const j=await r.json();const p=j.query&&Object.values(j.query.pages)[0];
+    return p&&p.thumbnail&&p.thumbnail.source?{src:p.thumbnail.source,title:p.title}:null;}catch(e){return null;} };
+  let hit=null;
+  if(b.wiki){ hit=await wikiImg("titles="+encodeURIComponent(b.wiki)); }   /* pinned exact article */
+  else { const r=await wikiImg("generator=search&gsrlimit=1&gsrsearch="+encodeURIComponent(`${b.main} ${b.year||""} film`));
+    if(r&&titleOk(b.main,r.title))hit=r; }                                  /* validate, else fall back */
+  const url=hit?await rsPreload(hit.src):null;
+  if(url){try{localStorage.setItem(ck,url);}catch(e){}}
   return url;
 }
 /* shelf builders */
@@ -689,7 +703,7 @@ function buildReadingShelf(){
   buildShelf("readcase",books,coverBook,openReadBook);
 }
 function buildFilmShelf(){
-  const items=(FILMS||[]).map(f=>({main:f.title||"",byline:f.director||"",dir:f.director||"",year:f.year||"",note:f.note||"",url:f.url||"",full:f.title||"",el:null,cover:null}));
+  const items=(FILMS||[]).map(f=>({main:f.title||"",byline:f.director||"",dir:f.director||"",year:f.year||"",note:f.note||"",url:f.url||"",wiki:f.wiki||"",full:f.title||"",el:null,cover:null}));
   buildShelf("filmcase",items,coverFilm,openFilmCard);
 }
 /* detail cards (shared overlay) */
