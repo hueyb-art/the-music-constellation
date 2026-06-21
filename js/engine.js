@@ -563,19 +563,25 @@ function openPage(nd){
   pageEl.scrollTop=0;pageEl.classList.add("open");pageOpen=true;
   selNode=nd;computeFocus(nd);centerOn(nd);
 }
-function closePage(){pageEl.classList.remove("open");pageOpen=false;}
+function closePage(){pageEl.classList.remove("open");pageOpen=false;if(typeof closeReadBook==="function")closeReadBook();}
 /* ----------  THE ROOMS: Reading / Films / Deep Cuts (one tabbed page)  ---------- */
 let roomTab="read";
 const ROOM_TABS=[["read","Reading"],["watch","Films & docs"],["cuts","Deep cuts"]];
 function roomReadingHTML(){
-  return `<p class="lead">A shelf of the writers who shaped how we hear this music — the critics, historians, and memoirists worth seeking out beyond any single musician's page.</p>
-    ${CRITICS.map(c=>`<div class="critic"><h4>${c.name}</h4><div class="cnote">${c.note}</div>${c.books.map(b=>`<div class="brow"><span class="btitle">${b[0]}</span> <span class="bmeta">— ${b[1]}</span></div>`).join("")}</div>`).join("")}
-    ${ARCHIVES.length?`<h3 style="margin-top:40px">Archives &amp; primary sources</h3>
-    <div class="reslist">${ARCHIVES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`:""}
-    <h3 style="margin-top:40px">Periodicals &amp; community</h3>
-    <div class="reslist">${RESOURCES.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>
-    ${RADIO.length?`<h3 style="margin-top:40px">Radio &amp; airwaves</h3>
-    <div class="reslist">${RADIO.map(r=>`<a class="reslink" href="${r[2]}" target="_blank" rel="noopener"><span class="rt">${r[0]}</span><span class="rn">${r[1]}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`:""}`;
+  const reslist=arr=>`<div class="reslist">${arr.map(r=>`<a class="reslink" href="${esc(r[2])}" target="_blank" rel="noopener"><span class="rt">${esc(r[0])}</span><span class="rn">${esc(r[1])}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`;
+  const sec=`${ARCHIVES.length?`<h3 style="margin-top:34px">Archives &amp; primary sources</h3>${reslist(ARCHIVES)}`:""}
+    <h3 style="margin-top:34px">Periodicals &amp; community</h3>${reslist(RESOURCES)}
+    ${RADIO.length?`<h3 style="margin-top:34px">Radio &amp; airwaves</h3>${reslist(RADIO)}`:""}`;
+  return `<div class="reading-room">
+    <p class="lead">A shelf of the writers who shaped how we hear this music — tap a spine to see the book and who wrote it.</p>
+    <div class="bookcase">
+      <div class="rlamp l"><div class="rl-arm"></div><div class="rl-head"></div></div>
+      <div class="rlamp r"><div class="rl-arm"></div><div class="rl-head"></div></div>
+      <div class="rcase" id="readcase"></div>
+      <div class="rwash"></div><div class="rshade"></div>
+    </div>
+    <div class="readmore">${sec}</div>
+  </div>`;
 }
 function roomFilmsHTML(){
   if(!FILMS.length)return `<p class="lead">Film picks for this constellation are on the way.</p>`;
@@ -602,8 +608,79 @@ function openRooms(tab){
   pageInner.querySelectorAll(".roomtab").forEach(b=>b.onclick=()=>openRooms(b.dataset.tab));
   pageInner.querySelectorAll(".dcartist[data-id]").forEach(el=>el.onclick=()=>{const nd=byId[el.dataset.id];if(nd)openPage(nd);});
   wireApple(pageInner);
+  if(roomTab!=="watch"&&roomTab!=="cuts")buildReadingShelf();
   pageEl.scrollTop=0;pageEl.classList.add("open");pageOpen=true;
 }
+
+/* ----------  Reading room: build the bookshelf (real covers + gilded fallback)  ---------- */
+const RS_PAL=['#6e2b2b','#2f4a39','#283a5a','#3a2a24','#6a4a2a','#4a2a44','#26474a','#5a3a1e','#34303a','#7a5a2e','#5a2236','#2e3a2a'];
+let readBooks=[],rsToken=0,rsRT=0,_rsCard=null;
+const rsLast=n=>String(n).replace(/\s*\(.*\)\s*/,"").trim();
+const rsWidth=b=>Math.min(54,Math.max(34,Math.round(32+b.main.length*0.85)));
+function buildReadingShelf(){
+  const caseEl=document.getElementById("readcase"); if(!caseEl)return;
+  const books=[]; (CRITICS||[]).forEach(c=>(c.books||[]).forEach(b=>{
+    const full=b[0]||"",year=b[1]||"",ci=full.indexOf(":");
+    books.push({main:(ci>0?full.slice(0,ci):full).trim(),sub:(ci>0?full.slice(ci+1):"").trim(),author:c.name,year,note:c.note||"",full,el:null,cover:null});
+  }));
+  readBooks=books; layoutReadingShelf(); loadReadCovers(books);
+}
+function layoutReadingShelf(){
+  const caseEl=document.getElementById("readcase"); if(!caseEl)return; caseEl.innerHTML="";
+  const avail=caseEl.clientWidth-28; let bk=null,used=0,idx=0;
+  const newShelf=()=>{const sh=document.createElement("div");sh.className="rshelf";
+    const b=document.createElement("div");b.className="rbooks";sh.appendChild(b);
+    const p=document.createElement("div");p.className="rplank";sh.appendChild(p);caseEl.appendChild(sh);used=0;return b;};
+  bk=newShelf();
+  readBooks.forEach((b,i)=>{const w=rsWidth(b);
+    if(used+w+5>avail&&used>0)bk=newShelf(); used+=w+5;
+    const el=document.createElement("div"); el.className="rbook"+((i%7===3)?" lean":"");
+    el.style.setProperty("--rc",RS_PAL[idx++%RS_PAL.length]); el.style.width=w+"px";
+    el.innerHTML=`<div class="rb-band"></div><div class="rb-title">${esc(b.main)}</div><div class="rb-author">${esc(rsLast(b.author))}</div><div class="rb-foot">${esc(b.year)}</div>`;
+    el.onclick=()=>openReadBook(b); b.el=el;
+    if(b.cover)applyReadCover(b);
+    bk.appendChild(el);
+  });
+}
+function applyReadCover(b){ if(!b.el)return; b.el.classList.add("hascover");
+  b.el.style.backgroundImage=`linear-gradient(rgba(12,8,3,.4),rgba(12,8,3,.4)),linear-gradient(90deg,rgba(0,0,0,.5),rgba(0,0,0,.06) 34%,rgba(0,0,0,.55)),url("${b.cover}")`;
+  b.el.style.backgroundSize="cover,cover,cover"; b.el.style.backgroundPosition="center"; b.el.style.backgroundRepeat="no-repeat";
+}
+function rsPreload(url){return new Promise(res=>{const im=new Image();im.onload=()=>res(im.naturalWidth>2?url:null);im.onerror=()=>res(null);im.src=url;});}
+async function rsFindCover(b){
+  const ck="tmc_olcov_"+(b.full+"|"+b.author).toLowerCase().replace(/[^a-z0-9|]+/g,"_");
+  try{const c=localStorage.getItem(ck);if(c!==null)return c||null;}catch(e){}
+  let url=null;
+  try{const r=await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(b.main)}&author=${encodeURIComponent(b.author)}&limit=3&fields=cover_i`);
+    const j=await r.json();const d=(j.docs||[]).find(x=>x.cover_i);
+    if(d)url=await rsPreload(`https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg?default=false`);}catch(e){}
+  if(!url){try{const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(b.main)}+inauthor:${encodeURIComponent(rsLast(b.author))}&maxResults=1`);
+    const j=await r.json();const im=j.items&&j.items[0]&&j.items[0].volumeInfo&&j.items[0].volumeInfo.imageLinks;
+    if(im){const u=(im.thumbnail||im.smallThumbnail||"").replace(/^http:/,"https:").replace("&edge=curl","");if(u)url=await rsPreload(u);}}catch(e){}}
+  try{localStorage.setItem(ck,url||"");}catch(e){}
+  return url;
+}
+async function loadReadCovers(books){
+  const tok=++rsToken; let i=0;
+  const worker=async()=>{ while(i<books.length){ if(tok!==rsToken)return; const b=books[i++]; const url=await rsFindCover(b);
+    if(tok!==rsToken)return; if(url){b.cover=url;applyReadCover(b);} } };
+  await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+}
+function rsCardEl(){ if(_rsCard)return _rsCard;
+  const bg=document.createElement("div");bg.className="bookcard-bg";
+  const card=document.createElement("div");card.className="bookcard";bg.appendChild(card);
+  bg.addEventListener("click",e=>{if(e.target===bg)closeReadBook();});
+  document.body.appendChild(bg); _rsCard={bg,card}; return _rsCard;
+}
+function openReadBook(b){ const c=rsCardEl(), q=encodeURIComponent(b.full+" "+b.author);
+  const left=b.cover?`<img class="bc-cover" src="${esc(b.cover)}" alt="">`:`<div class="bc-mini" style="background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(0,0,0,.3) 90%),${RS_PAL[b.main.length%RS_PAL.length]}"></div>`;
+  c.card.innerHTML=`<button class="bc-x" aria-label="Close">&times;</button><div class="bc-top">${left}<div><h2>${esc(b.main)}</h2>${b.sub?`<div class="bc-sub">${esc(b.sub)}</div>`:""}<div class="bc-by">${esc(b.author)}</div><div class="bc-yr">${esc(b.year)}</div></div></div><div class="bc-note"><b>About the author &mdash;</b> ${esc(b.note)}</div><a class="bc-find" href="https://www.google.com/search?tbm=bks&q=${q}" target="_blank" rel="noopener">Find this book &#8599;</a>`;
+  c.card.querySelector(".bc-x").onclick=closeReadBook;
+  c.bg.classList.add("open");
+}
+function closeReadBook(){ if(_rsCard)_rsCard.bg.classList.remove("open"); }
+addEventListener("resize",()=>{ if(document.getElementById("readcase")){clearTimeout(rsRT);rsRT=setTimeout(layoutReadingShelf,160);} });
+addEventListener("keydown",e=>{ if(e.key==="Escape"&&_rsCard&&_rsCard.bg.classList.contains("open"))closeReadBook(); });
 document.getElementById("rrBtn").onclick=()=>openRooms();
 
 /* ----------  LIVE DISCOGRAPHY (MusicBrainz)  ---------- */

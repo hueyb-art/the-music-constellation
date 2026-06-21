@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — the Reading room became a lit bookshelf (real covers)
+
+- The Reading tab is now a browsable bookshelf instead of a text list: each curated book (`critics[].books`) is a cloth-spine with its title + author gold-stamped, real **cover art** fetched and used as the spine background, two overhead picture lights raking warm light down, and a click → detail card with the full cover. Prototyped end-to-end in `lab/reading-bookshelf.html` (and the look chosen via `lab/rooms-backgrounds.html`) before porting into `openRooms()`.
+- **Covers:** title + author → **Open Library** `search.json` (`cover_i` → `covers.openlibrary.org/b/id/<id>-L.jpg?default=false`), **Google Books** as fallback; preload each via `new Image()` (so a missing/placeholder cover falls back to the gilded spine), cache the URL (or `""` for known-none) in `localStorage` under `tmc_olcov_*`. Jazz hits ~37/44; hip-hop/reggae fewer but every shelf stays complete via the fallback. The cover IS the spine background (a darkened CSS layer behind the gold title) — putting it on a child div lost the z-index battle with the spine's own background; setting it as the element background is what worked.
+- **Lighting that reads right:** a CSS-rotated "beam" threw light the *wrong* way (up-left) — abandoned it. A picture light realistically *washes* a surface, so the believable version is a soft warm pool **confined to the shelf** (`inset:0` so nothing glows above the lamp) falling from the upper corners, plus a lower-centre shadow for relief. Two lights, one per side, mounted high in a margin gap above the bookcase.
+- **Gotchas:** spine titles use the part before the colon (full title + subtitle on the card) so long titles fit; shelves are chunked by measured `clientWidth` and re-laid-out on resize; a `rsToken` counter cancels in-flight cover loads when the genre/tab changes so a slow jazz fetch can't paint onto a reggae shelf; the detail card lives on `<body>` (z-index above `#page`) and is dismissed by `closePage`. Preview gotcha: the animated genre switch advances in the rAF loop, which the hidden preview throttles — so test other genres' rooms by calling `loadGenre(g)` directly, not via the hash.
+
 ## 2026-06-21 — relationship audit: two systematic directional bugs (5-agent fan-out)
 
 - Ran a 5-agent fan-out — 4 examiners (one per genre + a cross-genre correctness auditor) and 1 adversarial verifier — over all ~1150 edges. Result: **100 corrections + 39 additions applied, 7 rejected**, all validated.
