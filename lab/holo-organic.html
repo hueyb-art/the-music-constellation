@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Organic node treatments — The Music Constellation</title>
+<style>
+  :root{ color-scheme:dark; }
+  html,body{ margin:0; height:100%; background:#070611; color:#e9e4d8; font-family:"Helvetica Neue",Arial,sans-serif; }
+  header{ padding:10px 16px; border-bottom:1px solid #1c1a2a; }
+  header h1{ font-size:15px; margin:0 0 2px; font-weight:600; letter-spacing:.2px; }
+  header p{ font-size:12px; margin:0; color:#9b95ab; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:1px; background:#1c1a2a; height:calc(100vh - 52px); }
+  .cell{ position:relative; background:#0a0a12; overflow:hidden; }
+  .cell canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  .cap{ position:absolute; left:10px; top:8px; z-index:2; pointer-events:none; background:rgba(7,6,17,.55); border:1px solid #2a2740; border-radius:7px; padding:5px 9px; backdrop-filter:blur(3px); }
+  .cap .n{ font-size:12.5px; font-weight:700; color:#f3ece0; }
+  .cap .n b{ color:#e0b15a; margin-right:6px; }
+  .cap .b{ font-size:11px; color:#a9a3b8; margin-top:1px; max-width:48ch; }
+  .cap.ref .n b{ color:#8b8696; }
+  .cap .err{ color:#ff8a8a; font-size:11px; }
+  .hint{ position:absolute; right:10px; bottom:8px; z-index:2; font-size:10.5px; color:#6f6a80; pointer-events:none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header>
+  <h1>Making option 1 organic &mdash; reference vs three treatments</h1>
+  <p>Panel 1 is the current "plastic" lit orb. Panels 2&ndash;4 break the plastic cues three different ways. Drag to orbit; they also spin. Pick by number (mix-and-match welcome).</p>
+</header>
+<div class="grid" id="grid"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ---- shared sample cluster ---- */
+const SAMPLE = [
+  { p:[  0,  0,  0], c:'#e0b15a', r:7.0 },
+  { p:[ 28, 10, -6], c:'#d98c4a', r:4.0 },
+  { p:[-24, 14,  8], c:'#c75b6a', r:3.6 },
+  { p:[ 10,-26, 12], c:'#7c6bb0', r:4.6 },
+  { p:[-18,-16,-18], c:'#4a90b8', r:3.0 },
+  { p:[ 22, -8, 22], c:'#5bb1a0', r:3.6 },
+  { p:[-30, -4,-10], c:'#d98c4a', r:2.6 },
+  { p:[  6, 30,-14], c:'#e0b15a', r:3.0 },
+  { p:[ 34, 18, 10], c:'#c75b6a', r:2.6 },
+  { p:[ -8, 22, 26], c:'#5bb1a0', r:3.0 },
+  { p:[ 16,  4,-32], c:'#4a90b8', r:2.6 },
+];
+const EDGES = [[0,1],[0,2],[0,3],[0,4],[0,5],[1,8],[2,6],[3,5],[4,6],[5,9],[7,0],[7,9],[10,0],[3,10]];
+
+/* ---- shared three-point lighting rig ---- */
+function rig(THREE, ctx){
+  const { scene, renderer } = ctx;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const k=new THREE.DirectionalLight(0xfff2e0,2.4); k.position.set(4,6,5); scene.add(k);
+  const rm=new THREE.DirectionalLight(0x6fb4ff,1.5); rm.position.set(-5,2,-6); scene.add(rm);
+  scene.add(new THREE.HemisphereLight(0x8090c0,0x101018,0.45));
+  scene.add(new THREE.AmbientLight(0x202028,0.6));
+}
+
+/* ---- classic Perlin 3D noise (for surface displacement) ---- */
+const PERM=(()=>{ const p=[]; for(let i=0;i<256;i++)p[i]=i;
+  for(let i=255;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=p[i]; p[i]=p[j]; p[j]=t; } return p.concat(p); })();
+const fade=t=>t*t*t*(t*(t*6-15)+10), lerp=(a,b,t)=>a+t*(b-a);
+function grad(h,x,y,z){ h&=15; const u=h<8?x:y, v=h<4?y:(h===12||h===14?x:z); return ((h&1)?-u:u)+((h&2)?-v:v); }
+function noise3(x,y,z){ const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;
+  x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z); const u=fade(x),v=fade(y),w=fade(z);
+  const A=PERM[X]+Y,AA=PERM[A]+Z,AB=PERM[A+1]+Z,B=PERM[X+1]+Y,BA=PERM[B]+Z,BB=PERM[B+1]+Z;
+  return lerp(lerp(lerp(grad(PERM[AA],x,y,z),grad(PERM[BA],x-1,y,z),u),lerp(grad(PERM[AB],x,y-1,z),grad(PERM[BB],x-1,y-1,z),u),v),
+              lerp(lerp(grad(PERM[AA+1],x,y,z-1),grad(PERM[BA+1],x-1,y,z-1),u),lerp(grad(PERM[AB+1],x,y-1,z-1),grad(PERM[BB+1],x-1,y-1,z-1),u),v),w); }
+function displacedSphere(THREE,r){
+  const g=new THREE.SphereGeometry(r,64,48), pos=g.attributes.position, v=new THREE.Vector3();
+  const f=2.4/r;
+  for(let i=0;i<pos.count;i++){ v.fromBufferAttribute(pos,i);
+    let n=noise3(v.x*f,v.y*f,v.z*f)*0.6 + noise3(v.x*f*2.3+11,v.y*f*2.3+5,v.z*f*2.3+3)*0.3;
+    const disp=r*0.16*n; const len=v.length()||1; v.addScaledVector(v,disp/len); pos.setXYZ(i,v.x,v.y,v.z); }
+  g.computeVertexNormals(); return g;
+}
+/* fake subsurface: light wraps to the silhouette (added to emissive via a small shader injection) */
+function wrapSSS(mat, color, strength){
+  mat.onBeforeCompile=(sh)=>{ sh.uniforms.uWrap={value:color.clone()}; sh.uniforms.uWrapK={value:strength};
+    sh.fragmentShader='uniform vec3 uWrap;\nuniform float uWrapK;\n'+sh.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\n  float _ndv=clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0);\n  totalEmissiveRadiance += uWrap*pow(1.0-_ndv,2.3)*uWrapK;'
+    ); };
+  return mat;
+}
+
+/* ================= VARIANTS ================= */
+const V1 = { ref:true, name:"Original (reference)", blurb:"Current lit PBR sphere — clean but reads 'plastic'.",
+  setup:rig,
+  makeNode(THREE,color,r){ if(!this._g)this._g=new THREE.SphereGeometry(1,32,24);
+    const m=new THREE.Mesh(this._g,new THREE.MeshStandardMaterial({color,roughness:0.32,metalness:0,emissive:color.clone(),emissiveIntensity:0.5})); m.scale.setScalar(r); return m; },
+  animate(){} };
+
+const V2 = { name:"Subsurface glow", blurb:"Light wraps to the rim (fake SSS) + softer specular — lit from within, like marble/wax.",
+  setup:rig,
+  makeNode(THREE,color,r){ if(!this._g)this._g=new THREE.SphereGeometry(1,48,36);
+    const mat=new THREE.MeshStandardMaterial({color,roughness:0.5,metalness:0,emissive:color.clone(),emissiveIntensity:0.28});
+    wrapSSS(mat,color,1.05);
+    const m=new THREE.Mesh(this._g,mat); m.scale.setScalar(r); return m; },
+  animate(){} };
+
+const V3 = { name:"Living surface", blurb:"Noise-displaced body — an irregular organic shape, not a perfect ball. Soft specular.",
+  setup:rig,
+  makeNode(THREE,color,r){
+    const mat=new THREE.MeshStandardMaterial({color,roughness:0.56,metalness:0,emissive:color.clone(),emissiveIntensity:0.26});
+    wrapSSS(mat,color,0.6);
+    const m=new THREE.Mesh(displacedSphere(THREE,r),mat); // geometry carries the radius
+    m.userData.spin=new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize();
+    return m; },
+  animate(THREE,t,nodes){ for(const n of nodes){ if(n.userData.spin) n.rotateOnAxis(n.userData.spin,0.0016); } } };
+
+const V4 = { name:"Velvet sheen", blurb:"Fuzzy peach-skin sheen + broad soft highlight — no hard plastic glint.",
+  setup:rig,
+  makeNode(THREE,color,r){ if(!this._g)this._g=new THREE.SphereGeometry(1,48,36);
+    const mat=new THREE.MeshPhysicalMaterial({color,roughness:0.62,metalness:0,emissive:color.clone(),emissiveIntensity:0.26,
+      sheen:1.0,sheenColor:new THREE.Color(0xfff0e0),sheenRoughness:0.85,clearcoat:0});
+    wrapSSS(mat,color,0.5);
+    const m=new THREE.Mesh(this._g,mat); m.scale.setScalar(r); return m; },
+  animate(){} };
+
+const VARIANTS=[V1,V2,V3,V4];
+
+/* ---- harness ---- */
+const grid=document.getElementById('grid'); const cells=[];
+let clusterR=1; for(const s of SAMPLE) clusterR=Math.max(clusterR, Math.hypot(...s.p)+s.r);
+
+VARIANTS.forEach((variant,idx)=>{
+  const cell=document.createElement('div'); cell.className='cell';
+  const cap=document.createElement('div'); cap.className='cap'+(variant.ref?' ref':'');
+  cap.innerHTML=`<div class="n"><b>${idx+1}</b>${variant.name}</div><div class="b">${variant.blurb}</div>`;
+  const canvas=document.createElement('canvas'); cell.appendChild(canvas); cell.appendChild(cap);
+  const hint=document.createElement('div'); hint.className='hint'; hint.textContent='drag to orbit'; cell.appendChild(hint);
+  grid.appendChild(cell);
+  try{
+    const renderer=new THREE.WebGLRenderer({ canvas, antialias:true }); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    const w=cell.clientWidth||640,h=cell.clientHeight||360; renderer.setSize(w,h,false);
+    const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0a12);
+    const camera=new THREE.PerspectiveCamera(50,w/h,0.5,5000); camera.position.set(0,clusterR*0.35,clusterR*2.6);
+    const controls=new OrbitControls(camera,canvas); controls.enableDamping=true; controls.dampingFactor=0.06; controls.enablePan=false;
+    controls.autoRotate=true; controls.autoRotateSpeed=0.9; controls.target.set(0,0,0); controls.minDistance=clusterR*0.6; controls.maxDistance=clusterR*6;
+    variant.setup&&variant.setup(THREE,{scene,renderer,camera});
+    const nodes=[];
+    SAMPLE.forEach(s=>{ const o=variant.makeNode(THREE,new THREE.Color(s.c),s.r); o.position.set(s.p[0],s.p[1],s.p[2]); scene.add(o); nodes.push(o); });
+    const epos=new Float32Array(EDGES.length*6);
+    EDGES.forEach((e,i)=>{ const a=SAMPLE[e[0]].p,b=SAMPLE[e[1]].p; epos[i*6]=a[0];epos[i*6+1]=a[1];epos[i*6+2]=a[2]; epos[i*6+3]=b[0];epos[i*6+4]=b[1];epos[i*6+5]=b[2]; });
+    const egeo=new THREE.BufferGeometry(); egeo.setAttribute('position',new THREE.BufferAttribute(epos,3));
+    scene.add(new THREE.LineSegments(egeo,new THREE.LineBasicMaterial({color:0xe0b15a,transparent:true,opacity:0.16,blending:THREE.AdditiveBlending})));
+    cells.push({ variant, renderer, scene, camera, controls, nodes, cell });
+  }catch(err){ cap.innerHTML+=`<div class="err">⚠ ${String(err&&err.message||err)}</div>`; console.error('variant '+(idx+1)+' failed:',err); }
+});
+
+addEventListener('resize',()=>{ for(const c of cells){ const w=c.cell.clientWidth,h=c.cell.clientHeight; c.camera.aspect=w/h; c.camera.updateProjectionMatrix(); c.renderer.setSize(w,h,false); } });
+const clock=new THREE.Clock();
+function loop(){ const t=clock.getElapsedTime();
+  for(const c of cells){ c.controls.update(); if(c.variant.animate) c.variant.animate(THREE,t,c.nodes); c.renderer.render(c.scene,c.camera); }
+  requestAnimationFrame(loop); }
+loop();
+window.__cells=cells;
+</script>
+</body>
+</html>
