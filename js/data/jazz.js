@@ -882,6 +882,17 @@ const lib={
 
 /* Reading room: critics & historians */
 const critics=[
+  {"name":"Charles Mingus","note":"Volcanic bassist-composer telling his own life","books":[["Beneath the Underdog","1971"]]},
+  {"name":"Miles Davis with Quincy Troupe","note":"The reinventor's voice, caught by a poet","books":[["Miles: The Autobiography","1989"]]},
+  {"name":"Robin D. G. Kelley","note":"Historian; the definitive Monk biographer","books":[["Africa Speaks, America Answers: Modern Jazz in Revolutionary Times","2012"]]},
+  {"name":"Farah Jasmine Griffin","note":"Columbia scholar of Black literature and music","books":[["If You Can't Be Free, Be a Mystery: In Search of Billie Holiday","2001"]]},
+  {"name":"E. Taylor Atkins","note":"Historian of Japan and its music","books":[["Blue Nippon: Authenticating Jazz in Japan","2001"]]},
+  {"name":"Mike Zwerin","note":"Trombonist turned expatriate jazz journalist","books":[["La Tristesse de Saint Louis: Swing Under the Nazis","1985"]]},
+  {"name":"John Storm Roberts","note":"Pioneering chronicler of global popular music","books":[["The Latin Tinge: The Impact of Latin American Music on the United States","1979"]]},
+  {"name":"John Szwed","note":"Anthropologist and biographer of Black music","books":[["Space Is the Place: The Lives and Times of Sun Ra","1997"]]},
+  {"name":"Ben Ratliff","note":"Former New York Times jazz and pop critic","books":[["Coltrane: The Story of a Sound","2007"]]},
+  {"name":"Wayne Enstice & Janis Stockhouse","note":"Educators who let the players speak","books":[["Jazzwomen: Conversations with Twenty-One Musicians","2004"]]},
+  
   {"name":"Gary Giddins","note":"Village Voice columnist; National Book Critics Circle Award winner","books":[["Visions of Jazz: The First Century","1998"],["Weather Bird: Jazz at the Dawn of Its Second Century","2004"],["Satchmo: The Genius of Louis Armstrong","1988"],["Celebrating Bird: The Triumph of Charlie Parker","1987"]]},
   {"name":"Dan Morgenstern","note":"Down Beat editor and historian; multiple Grammys for liner notes","books":[["Living with Jazz","2004"],["Jazz People","1976"]]},
   {"name":"Nate Chinen","note":"WBGO and formerly The New York Times; chronicler of 21st-century jazz","books":[["Playing Changes: Jazz for the New Century","2018"]]},
@@ -974,6 +985,17 @@ const wiki={
 
 /* Films & docs: {title, year, director, note, url?} — url optional (else search links) */
 const films=[
+  {title:"The Cry of Jazz",year:"1959",director:"Edward Bland",note:"A fierce, polemical essay on jazz and race, scored by Sun Ra — now in the National Film Registry."},
+  {title:"Space Is the Place",year:"1974",director:"John Coney",note:"Sun Ra's Afrofuturist sci-fi fever dream: the Arkestra resettling Black humanity on a distant planet."},
+  {title:"The Last of the Blue Devils",year:"1979",director:"Bruce Ricker",note:"Kansas City's surviving giants — Basie, Big Joe Turner, Jay McShann — reunite in a union hall to play and remember."},
+  {title:"Sun Ra: A Joyful Noise",year:"1980",director:"Robert Mugge",note:"A close, affectionate look at Sun Ra's earthly Arkestra — cosmic pronouncements and big-band swing alike."},
+  {title:"Sonny Rollins: Saxophone Colossus",year:"1986",director:"Robert Mugge",note:"The great improviser in full flight — including the legendary outdoor set where he played on after breaking his heel."},
+  {title:"Calle 54",year:"2000",director:"Fernando Trueba",note:"A gorgeous studio showcase of Latin jazz — Tito Puente, the Valdés family, Chico O'Farrill — caught live and glowing."},
+  {title:"Keith Jarrett: The Art of Improvisation",year:"2005",director:"Mike Dibb",note:"The first major portrait of jazz's great solo improviser, made with his full cooperation — from the Köln Concert outward."},
+  {title:"What Happened, Miss Simone?",year:"2015",director:"Liz Garbus",note:"Nina Simone's genius and fury, told through her own recordings and rare footage — talent, activism, and cost."},
+  {title:"Sound of Redemption: The Frank Morgan Story",year:"2015",director:"N.C. Heikin",note:"The 'next Charlie Parker' lost three decades to addiction and prison, then came back — a story of music as salvation."},
+  {title:"Bill Frisell: A Portrait",year:"2017",director:"Emma Franz",note:"A quiet, music-first study of the genre-roaming guitarist, shot and edited single-handed over several years."},
+  
   {title:"Jazz",year:"2001",director:"Ken Burns",note:"The sweeping 19-hour PBS history — the standard popular introduction, from New Orleans to the 1960s."},
   {title:"Jazz on a Summer's Day",year:"1959",director:"Bert Stern",note:"A luminous concert film of the 1958 Newport Jazz Festival, as much about the light and the crowd as the music."},
   {title:"A Great Day in Harlem",year:"1994",director:"Jean Bach",note:"The story behind the famous 1958 photograph that gathered 57 musicians on a Harlem stoop."},

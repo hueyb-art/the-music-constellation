@@ -669,6 +669,17 @@ const lib={
 
 /* Reading room: critics & historians */
 const critics=[
+  {"name":"Ciaran Thapar","note":"South London youth worker and writer","books":[["Cut Short: Youth Violence, Loss and Hope in the City","2021"]]},
+  {"name":"Dan Hancox","note":"Guardian writer on music and the urban margins","books":[["Inner City Pressure: The Story of Grime","2018"]]},
+  {"name":"Jeffrey Boakye","note":"Brixton-born teacher and essayist","books":[["Hold Tight: Black Masculinity, Millennials and the Meaning of Grime","2017"]]},
+  {"name":"Wiley","note":"The Godfather of Grime","books":[["Eskiboy","2017"]]},
+  {"name":"Hattie Collins & Olivia Rose","note":"Journalist and photographer who chronicled the scene","books":[["This Is Grime","2016"]]},
+  {"name":"DJ Target","note":"Roll Deep DJ and BBC 1Xtra broadcaster","books":[["Grime Kids: The Inside Story of the Global Grime Takeover","2018"]]},
+  {"name":"Joe Coscarelli","note":"New York Times culture and music reporter","books":[["Rap Capital: An Atlanta Story","2022"]]},
+  {"name":"Clover Hope","note":"Veteran music writer and critic","books":[["The Motherlode: 100+ Women Who Made Hip-Hop","2021"]]},
+  {"name":"Joan Morgan","note":"Critic who coined 'hip-hop feminism'","books":[["When Chickenheads Come Home to Roost: A Hip-Hop Feminist Breaks It Down","1999"]]},
+  {"name":"Questlove","note":"The Roots drummer and cultural historian","books":[["Hip-Hop Is History","2024"]]},
+  
   {"name":"Jeff Chang","note":"The definitive social history","books":[["Can't Stop Won't Stop: A History of the Hip-Hop Generation","2005"]]},
   {"name":"Nelson George","note":"Pioneering hip-hop journalist","books":[["Hip Hop America","1998"],["The Death of Rhythm and Blues","1988"]]},
   {"name":"Dan Charnas","note":"Business and craft of hip-hop","books":[["The Big Payback: The History of the Business of Hip-Hop","2010"],["Dilla Time: The Life and Afterlife of J Dilla","2022"]]},
@@ -830,6 +841,16 @@ const wiki={
 
 /* Films & docs: {title, year, director, note, url?} */
 const films=[
+  {title:"Terms & Conditions: A UK Drill Story",year:"2020",director:"Brian Hill",note:"A YouTube Originals film going past the headlines into drill's mechanics, musicality and its fraught relationship with the law."},
+  {title:"Don't Call It Road Rap",year:"2017",director:"Tayo Yusuff (host Mike Skinner)",note:"Mike Skinner spends a year inside London's hard rap underground — 67, Section Boyz, C Biz — before drill broke through."},
+  {title:"The Hip Hop Years",year:"1999",director:"David Upshal",note:"A three-part British series tracing the culture from the Bronx onward — early, archive-rich and packed with pioneer interviews."},
+  {title:"Ladies First: A Story of Women in Hip-Hop",year:"2023",director:"dream hampton",note:"A Netflix docuseries placing women at the center of the story — pioneers, queens and the fight for their flowers."},
+  {title:"My Mic Sounds Nice: A Truth About Women and Hip Hop",year:"2010",director:"Ava DuVernay",note:"DuVernay's debut documentary — MC Lyte to Eve — on the art and erasure of women rappers from the 1980s on."},
+  {title:"Roxanne Roxanne",year:"2017",director:"Michael Larnell",note:"The biopic of Roxanne Shanté, the teenage battle queen of the Roxanne Wars, in 1980s Queensbridge."},
+  {title:"Stretch and Bobbito: Radio That Changed Lives",year:"2015",director:"Bobbito García",note:"How a late-night college-radio show broke Nas, Wu-Tang, Biggie and Jay-Z before the world knew their names."},
+  {title:"Beef",year:"2003",director:"Peter Spirer",note:"A Ving Rhames-narrated history of hip-hop feuds, tracing the line from battle-rap one-upmanship to deadly street warfare."},
+  {title:"Welcome to Death Row",year:"2001",director:"S. Leigh Savidge & Jeff Scheftel",note:"The uncensored rise and fall of Death Row Records — Suge Knight, Dre, Snoop and 2Pac — told by those who were there."},
+  
   {title:"Wild Style",year:"1983",director:"Charlie Ahearn",note:"The first hip-hop movie — graffiti, b-boys and MCs in the South Bronx, with the real pioneers playing themselves."},
   {title:"Style Wars",year:"1983",director:"Tony Silver",note:"The definitive document of New York subway graffiti and the culture around it; essential early footage."},
   {title:"Scratch",year:"2001",director:"Doug Pray",note:"A loving history of the DJ and turntablism, from Grandmaster Flash to the Invisibl Skratch Piklz."},

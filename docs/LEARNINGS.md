@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-21 — Rooms made reliable + much deeper (image validation + content fan-out)
+
+- **Wrong cover/poster images** (user-reported: astronaut for "The Girls in the Band", Stephen King for "Stepping Razor", etc.) had two causes: the film query included the **director's name** (so Wikipedia matched the director's *bio page* and returned their photo), and **nothing validated** the matched article. Fix: query `title + year` only, and run `titleOk(want, got)` — accept a match only if the article title starts-with / is-started-by the film title or shares ≥60% of significant words. Wrong matches are now rejected → film-case fallback instead of a wrong photo. Added a `wiki` pin field on a film for exact-article cases.
+- **Negative-cache poisoning again:** reggae book covers were blank because transient misses (from rapid genre-switching during testing) were cached as `""` permanently — same bug as audio. Fix everywhere: **cache hits only**; a stale `""` is ignored and re-resolved. (General rule, now applied to audio + book covers + posters: never permanently cache a *miss*.)
+- **Content depth via fan-out:** the reggae/hiphop rooms were thin (esp. UK). Ran a 4-agent fan-out (3 genre researchers + 1 adversarial verifier) → **30 books + 29 films** confirmed real, correctly attributed, non-duplicate, and added (jazz/hiphop/reggae each ~+10/+10). The adversarial pass earned its keep: it **rejected "The UK Drill Project"** (a real work but a *stage play*, not a film — wrong room, no poster to fetch) and **fixed "Don't Call It Road Rap"** credits (Mike Skinner is the host, not director; 2017 not 2016).
+- **Applying generated data:** the films/critics arrays end with a **trailing comma**, so inserting *before* the closing `]` created an `undefined` hole (caught by validate.mjs's "film undefined" check). Insert *after* the opening `[` instead (prepend) — comma-safe regardless of trailing commas.
+
 ## 2026-06-21 — Films room: same shelf, posters from Wikipedia
 
 - The Films & docs room is now the same lit shelf as Reading — film "cases" with real **movie/doc posters** on the spines, click → the poster + year/director + note + YouTube/JustWatch links. Generalised the reading shelf into `buildShelf(caseId, items, coverFn, onClick)` so both rooms share it (one regression risk: did it carefully and re-verified Reading still renders 44 books).

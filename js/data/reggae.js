@@ -427,6 +427,17 @@ const lib={
 
 /* Reading room: critics & historians */
 const critics=[
+  {"name":"Suzette Newman & Chris Salewicz (eds.)","note":"Island insiders, with a preface by Chris Blackwell","books":[["Keep On Running: The Story of Island Records","2009"]]},
+  {"name":"Beth Lesser & Steve Barrow","note":"Chroniclers of Jamaica's sound-system years","books":[["King Jammy's","2002"]]},
+  {"name":"Beth Lesser","note":"Photographer-historian of the dancehall age","books":[["Rub-A-Dub Style: The Roots of Modern Dancehall","2012"]]},
+  {"name":"Julian Henriques","note":"Goldsmiths scholar of sound and performance","books":[["Sonic Bodies: Reggae Sound Systems, Performance Techniques, and Ways of Knowing","2011"]]},
+  {"name":"Daniel Rachel","note":"Oral historian of British music and politics","books":[["Walls Come Tumbling Down: Rock Against Racism, 2 Tone, Red Wedge","2016"]]},
+  {"name":"Colin Grant","note":"Jamaican-British writer and BBC historian","books":[["The Natural Mystics: Marley, Tosh, and Wailer","2011"]]},
+  {"name":"John Masouri","note":"Veteran reggae journalist; the Wailers' chronicler","books":[["Wailing Blues: The Story of Bob Marley's Wailers","2008"]]},
+  {"name":"Sonjah Stanley Niaah","note":"UWI Mona professor of cultural studies","books":[["Dancehall: From Slave Ship to Ghetto","2010"]]},
+  {"name":"Hélène Lee","note":"French journalist who tracked Rasta's origins","books":[["The First Rasta: Leonard Howell and the Rise of Rastafarianism","2003"]]},
+  {"name":"Stephen Davis & Peter Simon","note":"Writer and photographer of 1970s Jamaica","books":[["Reggae Bloodlines: In Search of the Music and Culture of Jamaica","1977"]]},
+  
   {"name":"Lloyd Bradley","note":"The essential history of reggae","books":[["Bass Culture: When Reggae Was King","2000"],["Sounds Like London","2013"]]},
   {"name":"David Katz","note":"Oral historian of Jamaican music","books":[["Solid Foundation: An Oral History of Reggae","2003"],["People Funny Boy: The Genius of Lee 'Scratch' Perry","2000"]]},
   {"name":"Steve Barrow & Peter Dalton","note":"The definitive listener's guide","books":[["The Rough Guide to Reggae","1997"]]},
@@ -591,6 +602,17 @@ const wiki={
 
 /* Films & docs: {title, year, director, note, url?} */
 const films=[
+  {title:"Reggae Britannia",year:"2011",director:"Jeremy Marre",note:"How Jamaican music took root in Britain — Steel Pulse, Aswad, UB40 and the birth of a homegrown reggae."},
+  {title:"The Story of Lovers Rock",year:"2011",director:"Menelik Shabazz",note:"A warm portrait of 'romantic reggae,' the uniquely Black British sound of blues dances and lovers rock."},
+  {title:"Deep Roots Music",year:"1982",director:"Howard Johnson",note:"The landmark six-part Channel 4 series, filmed just after Marley's death — rare footage tracing reggae's whole lineage."},
+  {title:"Rocksteady: The Roots of Reggae",year:"2009",director:"Stascha Bader",note:"Surviving rocksteady greats reunite to record and reminisce, a living return to Jamaica's tender golden age."},
+  {title:"Reggae: The Story of Jamaican Music",year:"2002",director:"Mike Connolly",note:"The sweeping BBC three-parter, narrated through Lloyd Bradley, charting ska to dancehall in one essential arc."},
+  {title:"Dancehall Queen",year:"1997",director:"Don Letts & Rick Elgood",note:"A gritty Kingston Cinderella tale set in the dancehall, soundtracked by the era's biggest deejays."},
+  {title:"Rebel Dread",year:"2020",director:"William E. Badgley",note:"The story of Don Letts, the filmmaker-DJ who wired reggae and sound-system culture into British punk."},
+  {title:"ReMastered: Who Shot the Sheriff?",year:"2018",director:"Kief Davidson",note:"An investigation into the 1976 attempt on Bob Marley's life, and the politics that put him in the crosshairs."},
+  {title:"Bob Marley: One Love",year:"2024",director:"Reinaldo Marcus Green",note:"The family-backed biopic, centered on the Exodus years in exile, with Kingsley Ben-Adir as Marley."},
+  {title:"Cool Runnings: The Reggae Movie",year:"1983",director:"Robert Mugge",note:"A widescreen capture of Reggae Sunsplash at its peak — Gregory Isaacs, Third World, Musical Youth and more onstage."},
+  
   {title:"The Harder They Come",year:"1972",director:"Perry Henzell",note:"Jimmy Cliff stars in the film that broke reggae worldwide; its soundtrack is a genre primer in itself."},
   {title:"Rockers",year:"1978",director:"Theodoros Bafaloukos",note:"A Robin Hood tale acted by real musicians (Leroy “Horsemouth” Wallace and friends) — a joyous snapshot of roots-era Kingston."},
   {title:"Marley",year:"2012",director:"Kevin Macdonald",note:"The definitive, family-sanctioned documentary on Bob Marley — exhaustive and moving."},
