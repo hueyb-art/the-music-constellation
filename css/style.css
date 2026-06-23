@@ -276,8 +276,6 @@
   .bookcard .bc-yr{font-size:12.5px;color:var(--muted)}
   .bookcard .bc-note{font-size:13.5px;line-height:1.55;color:var(--soft);border-top:1px solid rgba(255,255,255,.1);padding-top:12px;margin-top:16px}
   .bookcard .bc-note b{color:var(--gold);font-weight:600}
-  .bookcard .bc-find{display:inline-block;margin-top:16px;font-size:13px;color:var(--gold);text-decoration:none;border:1px solid rgba(224,177,90,.4);padding:8px 14px;border-radius:9px}
-  .bookcard .bc-find:hover{background:rgba(224,177,90,.14)}
   .bookcard .bc-x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1}
   .bc-links{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
   .bc-links a{color:var(--gold);font-size:13px;text-decoration:none;border-bottom:1px solid rgba(224,177,90,.4)}
