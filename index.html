@@ -6,7 +6,7 @@
 <title>The Music Constellation — an encyclopedia of who shaped whom</title>
 <meta name="description" content="Interactive 3D maps of music history: jazz, hip hop, and reggae as constellations of the musicians who shaped one another — with live discographies, photos, and 30-second previews." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,5 61,38 96,38 68,59 78,93 50,72 22,93 32,59 4,38 39,38' fill='%23e0b15a'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="css/style.css?v=2026-06-14.52" />
+<link rel="stylesheet" href="css/style.css?v=2026-06-14.53" />
 <!-- resolves three.js for the optional 3D view; nothing loads until 3D is entered -->
 <script type="importmap">
 { "imports": {
@@ -40,7 +40,7 @@
 <div class="legend" id="legend"></div>
 <div class="hint"><b>Hover</b> to trace ties &middot; <b>Click</b> for a card &middot; <b>Double-click</b> for the full page<br><b>Drag</b> to spin the globe &middot; <b>Scroll</b> to zoom in for photos</div>
 <div class="spread"><span>Tight</span><input id="spread" type="range" min="0.7" max="3.4" step="0.05" value="1.5" aria-label="Spread the network out" /><span>Spread</span></div>
-<div id="clipnote" class="clipnote"><canvas id="clipwave" class="clipwave" width="56" height="18" aria-hidden="true"></canvas><span id="clipnotetext"></span></div>
+<div id="clipnote" class="clipnote"><div class="cn-main"><canvas id="clipwave" class="clipwave" width="56" height="18" aria-hidden="true"></canvas><span id="clipnotetext"></span></div><div id="cliptrack" class="cliptrack"></div></div>
 
 <aside class="panel" id="panel"><button class="close" id="close">&times;</button><div id="panelBody"></div></aside>
 <div class="page" id="page"><div class="page-inner" id="pageInner"></div></div>
@@ -77,7 +77,7 @@ window.MC_CONFIG={
    above — the validator enforces they match) on any notable change, and every
    asset URL below changes with it, so a normal reload always fetches fresh —
    no hard-refresh needed, on any device. */
-window.MC_BUILD="2026-06-14.52";
+window.MC_BUILD="2026-06-14.53";
 ["js/collab.js","js/data/jazz.js","js/data/hiphop.js","js/data/reggae.js","js/holo.js","js/engine.js"].forEach(function(src){
   var s=document.createElement("script");s.src=src+"?v="+window.MC_BUILD;s.async=false;document.head.appendChild(s);
 });

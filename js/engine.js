@@ -854,7 +854,8 @@ let clipFor=null;
 const SILENT="data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWAJAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=";
 let audioUnlocked=false;
 function unlockAudio(){if(!clip||audioUnlocked)return;audioUnlocked=true;try{clip.src=SILENT;const p=clip.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
-function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;const tx=document.getElementById("clipnotetext")||el;clearTimeout(clipNote._t);if(!msg){el.classList.remove("show");return;}tx.textContent=msg;/* sit just under the topbar, whatever height it wraps to at this width */const bar=document.querySelector(".topbar");if(bar)el.style.top=(Math.round(bar.getBoundingClientRect().bottom)+10)+"px";el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
+function setTrackInfo(title,year){const tk=document.getElementById("cliptrack");if(!tk)return;const t=(title||"").trim();if(!t){tk.classList.remove("show");tk.textContent="";return;}tk.textContent=year?t+"  ("+year+")":t;tk.classList.add("show");}
+function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;const tx=document.getElementById("clipnotetext")||el;clearTimeout(clipNote._t);const tk=document.getElementById("cliptrack");if(tk){tk.textContent="";tk.classList.remove("show");}if(!msg){el.classList.remove("show");return;}tx.textContent=msg;/* sit just under the topbar, whatever height it wraps to at this width */const bar=document.querySelector(".topbar");if(bar)el.style.top=(Math.round(bar.getBoundingClientRect().bottom)+10)+"px";el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
 /* ----  NOW-PLAYING WAVEFORM  ----
    Pulses to the REAL music when the audio is analysable. Apple's previews are
    CORS-readable, so we fetch + decodeAudioData the exact clip that's playing,
@@ -911,7 +912,7 @@ if(clip){
   clip.addEventListener("ended", waveStop);
   clip.addEventListener("emptied", waveStop);
 }
-function playPreview(url,name){if(!clip)return;if(!url||url==="none"){clipNote("No preview found for "+name);return;}clip.src=url;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>{clipNote("Tap again to hear "+name);});clipNote("♪  "+name,32000);}
+function playPreview(url,name,title,year){if(!clip)return;if(!url||url==="none"){clipNote("No preview found for "+name);return;}clip.src=url;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>{clipNote("Tap again to hear "+name);});clipNote("♪  "+name,32000);if(title)setTrackInfo(title,year);}
 /* ----  SELF-CORRECTING PREVIEW PLAYBACK  ----
    A resolved URL is only proof the *catalogue* has a clip — not that THIS device
    can play it. Deezer's preview CDN is on tracker blocklists and its URLs are
@@ -926,7 +927,7 @@ let mainPlay=null;
 const provOf=u=>/itunes\.apple\.com/i.test(u||"")?"it":"dz";
 if(clip){
   clip.addEventListener("playing",()=>{
-    if(mainPlay&&clipFor===mainPlay.id&&mainPlay.url){try{localStorage.setItem(lsKey("clip2_"+mainPlay.id),mainPlay.url);}catch(e){}}
+    if(mainPlay&&clipFor===mainPlay.id&&mainPlay.url){try{localStorage.setItem(lsKey("clip2_"+mainPlay.id),JSON.stringify({url:mainPlay.url,title:mainPlay.title||"",year:mainPlay.year||""}));}catch(e){}}
   });
   clip.addEventListener("error",()=>{
     if(!mainPlay||clipFor!==mainPlay.id||mainPlay.alt)return;
@@ -934,12 +935,12 @@ if(clip){
     mainPlay.alt=true;try{localStorage.removeItem(lsKey("clip2_"+mainPlay.id));}catch(e){}
     const id=mainPlay.id,nm=mainPlay.name,want=mainPlay.want,ov=mainPlay.ov||{};
     clipNote("♪  finding "+nm+"…",6500);
-    const play2=(u,prov)=>{if(clipFor!==id)return;if(!u){clipNote("No preview found for "+nm);return;}mainPlay.url=u;mainPlay.prov=prov;clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);};
+    const play2=(hit,prov)=>{if(clipFor!==id)return;const u=hit&&hit.url;if(!u){clipNote("No preview found for "+nm);return;}mainPlay.url=u;mainPlay.prov=prov;mainPlay.title=hit.title||"";mainPlay.year=hit.year||"";clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);if(hit.title)setTrackInfo(hit.title,hit.year);};
     if(mainPlay.prov==="it"){ /* Apple failed → try Deezer */
-      const viaSearch=()=>dzSearch(nm,arr=>{const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));play2(t&&t.preview,"dz");});
-      if(ov.did)dzArtistTop(ov.did,u=>u?play2(u,"dz"):viaSearch());else viaSearch();
+      const viaSearch=()=>dzSearch(nm,arr=>{const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));play2(t?{url:t.preview,title:t.title,year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)}:null,"dz");});
+      if(ov.did)dzArtistTop(ov.did,u=>u?play2({url:u},"dz"):viaSearch());else viaSearch();
     }else{ /* Deezer (or unknown) failed → try Apple */
-      itSearch(nm,want,u=>play2(u,"it"));
+      itSearch(nm,want,hit=>play2(hit,"it"));
     }
   });
 }
@@ -963,7 +964,7 @@ function artistMatch(a,b){a=pnorm(a);b=pnorm(b);return !!a&&!!b&&a===b;}
 function jsonp(url,cb){if(typeof document==="undefined"||!document.body){cb(null);return;}const id="jp"+(Math.random()*1e9|0);let done=false;const s=document.createElement("script");const fin=v=>{if(done)return;done=true;try{delete window[id];}catch(e){window[id]=undefined;}if(s.parentNode)s.parentNode.removeChild(s);cb(v);};window[id]=d=>fin(d);s.onerror=()=>fin(null);s.src=url+(url.indexOf("?")<0?"?":"&")+"output=jsonp&callback="+id;document.body.appendChild(s);setTimeout(()=>fin(null),6500);}
 function dzSearch(q,cb){jsonp("https://api.deezer.com/search?q="+encodeURIComponent(q)+"&limit=12",d=>cb((d&&d.data)||[]));}
 function dzArtistTop(aid,cb){jsonp("https://api.deezer.com/artist/"+aid+"/top?limit=1",d=>{const t=(d&&d.data&&d.data[0]);cb(t&&t.preview?t.preview:null);});}
-function itSearch(term,want,cb){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=12";const match=res=>{const r=(res||[]).find(x=>x.previewUrl&&artistMatch(x.artistName,want));fin(r?r.previewUrl:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
+function itSearch(term,want,cb){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=12";const match=res=>{const r=(res||[]).find(x=>x.previewUrl&&artistMatch(x.artistName,want));fin(r?{url:r.previewUrl,title:r.trackName||"",year:(r.releaseDate||"").slice(0,4)}:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
 function playClip(nd){
   if(!clip)return;
   clipFor=nd.id;
@@ -974,21 +975,22 @@ function playClip(nd){
      silence an artist forever, so we ignore it and re-resolve. We cache hits
      only (on the `playing` event), never misses; a cached URL that no longer
      plays is dropped and re-resolved from the other provider. */
-  if(cached&&cached!=="none"){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:cached,prov:provOf(cached),alt:false};playPreview(cached,nd.name);return;}
+  if(cached&&cached!=="none"){let c=null;try{c=JSON.parse(cached);}catch(e){}if(!c||!c.url)c={url:cached,title:"",year:""};  /* back-compat: old caches stored a bare URL string */
+    mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:c.url,title:c.title||"",year:c.year||"",prov:provOf(c.url),alt:false};playPreview(c.url,nd.name,c.title,c.year);return;}
   clipNote("♪  finding "+nd.name+"…",6500);
   const seed=(nd.disco&&nd.disco[0]&&nd.disco[0][1])||"";
   const q1=ov.q||(seed&&!/^with /i.test(seed)?nd.name+" "+seed:nd.name);
   const q2=nd.name;
-  const done=url=>{if(clipFor!==nd.id)return;if(url){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:url,prov:provOf(url),alt:false};playPreview(url,nd.name);}else clipNote("No verified preview for "+nd.name);};
-  const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done(t.preview);else next();});
-  const apple=(q,next)=>itSearch(q,want,url=>{if(clipFor!==nd.id)return;if(url)done(url);else next();});
+  const done=hit=>{if(clipFor!==nd.id)return;if(hit&&hit.url){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:hit.url,title:hit.title||"",year:hit.year||"",prov:provOf(hit.url),alt:false};playPreview(hit.url,nd.name,hit.title,hit.year);}else clipNote("No verified preview for "+nd.name);};
+  const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done({url:t.preview,title:t.title||"",year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)});else next();});
+  const apple=(q,next)=>itSearch(q,want,hit=>{if(clipFor!==nd.id)return;if(hit)done(hit);else next();});
   /* Apple is PREFERRED: its previews are CORS-readable so the now-playing waveform
      can analyse the real audio, and its CDN is the robust one (not blocklisted,
      links don't expire). Deezer stays the fallback, with all the self-correcting
      logic. ov.only artists (famous-namesake collisions) keep the Deezer-only
      specific-query path so we never grab the wrong namesake. */
   const dzFallback=()=>{ const tail=()=>q1!==q2?search(q2,()=>done(null)):done(null);
-    if(ov.did){dzArtistTop(ov.did,u=>{if(clipFor!==nd.id)return;if(u)done(u);else search(q1,tail);});}
+    if(ov.did){dzArtistTop(ov.did,u=>{if(clipFor!==nd.id)return;if(u)done({url:u});else search(q1,tail);});}
     else search(q1,tail); };
   if(ov.only) search(q1,()=>done(null));
   else apple(ov.q||q2, dzFallback);
