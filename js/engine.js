@@ -715,8 +715,8 @@ function rsCardEl(){ if(_rsCard)return _rsCard;
 }
 function openReadBook(b){ const c=rsCardEl(), q=encodeURIComponent(b.full+" "+b.author);
   const left=b.cover?`<img class="bc-cover" src="${esc(b.cover)}" alt="">`:`<div class="bc-mini" style="background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(0,0,0,.3) 90%),${RS_PAL[(b.main||"").length%RS_PAL.length]}"></div>`;
-  const find=`https://www.google.com/search?tbm=bks&q=${q}`,bsh=`https://bookshop.org/search?keywords=${q}`;
-  c.card.innerHTML=`<button class="bc-x" aria-label="Close">&times;</button><div class="bc-top">${left}<div><h2>${esc(b.main)}</h2>${b.sub?`<div class="bc-sub">${esc(b.sub)}</div>`:""}<div class="bc-by">${esc(b.author)}</div><div class="bc-yr">${esc(b.year)}</div></div></div><div class="bc-note"><b>About the author &mdash;</b> ${esc(b.note)}</div><div class="bc-links"><a href="${find}" target="_blank" rel="noopener">Google Books</a><a href="${bsh}" target="_blank" rel="noopener">Bookshop.org</a></div>`;
+  const find=`https://www.google.com/search?tbm=bks&q=${q}`,amz=`https://www.amazon.com/s?k=${q}&i=stripbooks`,bsh=`https://bookshop.org/search?keywords=${q}`;
+  c.card.innerHTML=`<button class="bc-x" aria-label="Close">&times;</button><div class="bc-top">${left}<div><h2>${esc(b.main)}</h2>${b.sub?`<div class="bc-sub">${esc(b.sub)}</div>`:""}<div class="bc-by">${esc(b.author)}</div><div class="bc-yr">${esc(b.year)}</div></div></div><div class="bc-note"><b>About the author &mdash;</b> ${esc(b.note)}</div><div class="bc-links"><a href="${find}" target="_blank" rel="noopener">Google Books</a><a href="${amz}" target="_blank" rel="noopener">Amazon</a><a href="${bsh}" target="_blank" rel="noopener">Bookshop.org</a></div>`;
   c.card.querySelector(".bc-x").onclick=closeReadBook;
   c.bg.classList.add("open");
 }
