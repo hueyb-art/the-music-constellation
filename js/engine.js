@@ -1091,7 +1091,10 @@ GENRE_ORDER.forEach(k=>{
 })();
 function loadGenre(key){
   G=GENRES[key];
-  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges;LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;ARCHIVES=G.archives||[];RADIO=G.radio||[];FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];REFS=G.refs||[];WIKI=G.wiki;SYM=G.sym;
+  /* "Beef" ties are hidden pending review with the hip-hop community (2026-06-23).
+     Delete the .filter below to restore them. Beef edges exist only in hip-hop, so
+     this is a no-op for the other genres. The data itself is untouched. */
+  ERAS=G.eras;NODES=G.nodes;EDGES=G.edges.filter(ed=>ed.rel!=="beef");LIB=G.lib;CRITICS=G.critics;RESOURCES=G.resources;ARCHIVES=G.archives||[];RADIO=G.radio||[];FILMS=G.films||[];DEEPCUTS=G.deepcuts||[];REFS=G.refs||[];WIKI=G.wiki;SYM=G.sym;
   /* reset interaction state */
   hoverNode=null;selNode=null;chordAnchor=null;focusSet=null;curId=null;
   panel.classList.remove("open");closePage();if(clip)clip.pause();clipNote("");
