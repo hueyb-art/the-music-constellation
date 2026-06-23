@@ -481,7 +481,7 @@ function playCollabClip(a,b,items,band){
   clipFor=tag;
   /* honour only a *successful* cache ({url,name}); ignore old "none"/garbage so a
      pair that missed once (strict match, transient blip) is retried next time. */
-  try{const c=JSON.parse(localStorage.getItem(key)||"null");if(c&&c.url){playPreview(c.url,c.name);return;}}catch(e){}
+  try{const c=JSON.parse(localStorage.getItem(key)||"null");if(c&&c.url){playPreview(c.url,c.year?c.name+"  ("+c.year+")":c.name);return;}}catch(e){}
   const names=[a.name,b.name].concat(band?[band]:[]).map(pnorm);
   const ok=an=>{an=pnorm(an);return !!an&&names.some(n=>n&&(an===n||an.includes(n)||n.includes(an)));};
   /* strip "(feat. …)" / "[Live]" / " - Remastered" style qualifiers that stop a
@@ -503,7 +503,8 @@ function playCollabClip(a,b,items,band){
     dzSearch(list[i++],arr=>{
       if(clipFor!==tag)return;
       const t=(arr||[]).find(x=>x&&x.preview&&ok(x.artist&&x.artist.name));
-      if(t){try{localStorage.setItem(key,JSON.stringify({url:t.preview,name:t.title}));}catch(e){}playPreview(t.preview,t.title);}
+      if(t){const ct=clean(t.title);let yr="";for(const r of items){const rc=clean(r.title);if(rc&&(rc===ct||rc.indexOf(ct)>=0||ct.indexOf(rc)>=0)){yr=String(r.year||"").trim();break;}}
+        try{localStorage.setItem(key,JSON.stringify({url:t.preview,name:t.title,year:yr}));}catch(e){}playPreview(t.preview,yr?t.title+"  ("+yr+")":t.title);}
       else tryNext();
     });
   };
@@ -856,6 +857,18 @@ let audioUnlocked=false;
 function unlockAudio(){if(!clip||audioUnlocked)return;audioUnlocked=true;try{clip.src=SILENT;const p=clip.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
 function setTrackInfo(title,year){const tk=document.getElementById("cliptrack");if(!tk)return;const t=(title||"").trim();if(!t){tk.classList.remove("show");tk.textContent="";return;}tk.textContent=year?t+"  ("+year+")":t;tk.classList.add("show");}
 function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;const tx=document.getElementById("clipnotetext")||el;clearTimeout(clipNote._t);const tk=document.getElementById("cliptrack");if(tk){tk.textContent="";tk.classList.remove("show");}if(!msg){el.classList.remove("show");return;}tx.textContent=msg;/* sit just under the topbar, whatever height it wraps to at this width */const bar=document.querySelector(".topbar");if(bar)el.style.top=(Math.round(bar.getBoundingClientRect().bottom)+10)+"px";el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
+/* Trustworthy release year for the now-playing box. iTunes returns the release
+   date of *its* catalogue item, which for older recordings is usually a modern
+   reissue/remaster (a 1939 Glenn Miller side comes back as 1991). So: prefer the
+   curated discography year when the playing track matches a curated record, else
+   accept the API year only if it's plausible for the artist's lifespan, else
+   show no year rather than a misleading one. */
+function _normTrk(s){return String(s||"").toLowerCase().replace(/\(.*?\)/g," ").replace(/\b(remaster(ed)?|mono|stereo|version|edit|single|deluxe|anniversary|live|take\s*\d*)\b/g," ").replace(/[^a-z0-9]+/g," ").trim();}
+function discoYear(nd,title){if(!nd||!nd.disco)return "";const tt=_normTrk(title);if(!tt)return "";
+  for(const d of nd.disco){const dt=_normTrk(d&&d[1]);if(dt&&(dt===tt||dt.indexOf(tt)>=0||tt.indexOf(dt)>=0)){const m=String((d&&d[0])||"").match(/\d{4}s?/);if(m)return m[0];}}return "";}
+function yearPlausible(nd,y){y=parseInt(y,10);if(!y)return false;const life=(nd&&nd.life)||"";const ys=(life.match(/\d{4}/g)||[]).map(Number);if(!ys.length)return true;
+  const hasRange=/\d{4}\s*[–-]\s*\d{4}/.test(life),now=(new Date()).getFullYear();return y>=Math.min(...ys)-1 && y<=(hasRange?Math.max(...ys)+2:now+1);}
+function trustYear(nd,apiYear,title){const dy=discoYear(nd,title);if(dy)return dy;const y=parseInt(apiYear,10);return (y&&yearPlausible(nd,y))?String(y):"";}
 /* ----  NOW-PLAYING WAVEFORM  ----
    Pulses to the REAL music when the audio is analysable. Apple's previews are
    CORS-readable, so we fetch + decodeAudioData the exact clip that's playing,
@@ -935,7 +948,7 @@ if(clip){
     mainPlay.alt=true;try{localStorage.removeItem(lsKey("clip2_"+mainPlay.id));}catch(e){}
     const id=mainPlay.id,nm=mainPlay.name,want=mainPlay.want,ov=mainPlay.ov||{};
     clipNote("♪  finding "+nm+"…",6500);
-    const play2=(hit,prov)=>{if(clipFor!==id)return;const u=hit&&hit.url;if(!u){clipNote("No preview found for "+nm);return;}mainPlay.url=u;mainPlay.prov=prov;mainPlay.title=hit.title||"";mainPlay.year=hit.year||"";clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);if(hit.title)setTrackInfo(hit.title,hit.year);};
+    const play2=(hit,prov)=>{if(clipFor!==id)return;const u=hit&&hit.url;if(!u){clipNote("No preview found for "+nm);return;}const yr=trustYear(mainPlay.nd,hit.year,hit.title);mainPlay.url=u;mainPlay.prov=prov;mainPlay.title=hit.title||"";mainPlay.year=yr;clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);if(hit.title)setTrackInfo(hit.title,yr);};
     if(mainPlay.prov==="it"){ /* Apple failed → try Deezer */
       const viaSearch=()=>dzSearch(nm,arr=>{const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));play2(t?{url:t.preview,title:t.title,year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)}:null,"dz");});
       if(ov.did)dzArtistTop(ov.did,u=>u?play2({url:u},"dz"):viaSearch());else viaSearch();
@@ -976,12 +989,12 @@ function playClip(nd){
      only (on the `playing` event), never misses; a cached URL that no longer
      plays is dropped and re-resolved from the other provider. */
   if(cached&&cached!=="none"){let c=null;try{c=JSON.parse(cached);}catch(e){}if(!c||!c.url)c={url:cached,title:"",year:""};  /* back-compat: old caches stored a bare URL string */
-    mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:c.url,title:c.title||"",year:c.year||"",prov:provOf(c.url),alt:false};playPreview(c.url,nd.name,c.title,c.year);return;}
+    const yr=trustYear(nd,c.year,c.title);mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,nd:nd,url:c.url,title:c.title||"",year:yr,prov:provOf(c.url),alt:false};playPreview(c.url,nd.name,c.title,yr);return;}
   clipNote("♪  finding "+nd.name+"…",6500);
   const seed=(nd.disco&&nd.disco[0]&&nd.disco[0][1])||"";
   const q1=ov.q||(seed&&!/^with /i.test(seed)?nd.name+" "+seed:nd.name);
   const q2=nd.name;
-  const done=hit=>{if(clipFor!==nd.id)return;if(hit&&hit.url){mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,url:hit.url,title:hit.title||"",year:hit.year||"",prov:provOf(hit.url),alt:false};playPreview(hit.url,nd.name,hit.title,hit.year);}else clipNote("No verified preview for "+nd.name);};
+  const done=hit=>{if(clipFor!==nd.id)return;if(hit&&hit.url){const yr=trustYear(nd,hit.year,hit.title);mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,nd:nd,url:hit.url,title:hit.title||"",year:yr,prov:provOf(hit.url),alt:false};playPreview(hit.url,nd.name,hit.title,yr);}else clipNote("No verified preview for "+nd.name);};
   const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done({url:t.preview,title:t.title||"",year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)});else next();});
   const apple=(q,next)=>itSearch(q,want,hit=>{if(clipFor!==nd.id)return;if(hit)done(hit);else next();});
   /* Apple is PREFERRED: its previews are CORS-readable so the now-playing waveform
