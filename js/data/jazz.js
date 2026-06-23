@@ -6,7 +6,7 @@ const n=(id,name,era,role,life,blurb,bio,disco)=>({id,name,era,role,life,blurb,b
 const e=(a,b,rel)=>({a,b,rel});
 
 const eras={
-  "nola":{label:"New Orleans roots",color:"#d98c3f"},
+  "nola":{label:"New Orleans roots",color:"#bf5a2b"},
   "swing":{label:"Swing era",color:"#e0b15a"},
   "bebop":{label:"Bebop",color:"#d9607a"},
   "hardbop":{label:"Cool & hard bop",color:"#43b59a"},

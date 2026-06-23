@@ -247,6 +247,10 @@
   .rbook .rb-foot{font-size:7px;color:rgba(240,217,154,.7);letter-spacing:.5px;text-shadow:0 1px 2px rgba(0,0,0,.85);position:relative;z-index:2}
   .rbook.lean{transform:rotate(-3deg);transform-origin:bottom}
   .rbook.lean:hover{transform:translateY(-15px) rotate(-1deg)}
+  /* film shelf: thinner + a touch taller, like a DVD case spine */
+  .rbook.thin{height:214px}
+  .rbook.thin .rb-title{font-size:11px;letter-spacing:.2px;margin:8px 0}
+  .rbook.thin .rb-author{font-size:8px;max-height:72px}
   .rwash{position:absolute;inset:0;pointer-events:none;z-index:3;mix-blend-mode:screen;
     background:radial-gradient(620px 1020px at 17% -6%,rgba(255,228,172,.2),rgba(255,222,160,.05) 38%,transparent 60%),
       radial-gradient(620px 1020px at 83% -6%,rgba(255,228,172,.2),rgba(255,222,160,.05) 38%,transparent 60%)}

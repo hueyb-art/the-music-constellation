@@ -623,9 +623,10 @@ const RS_PAL=['#6e2b2b','#2f4a39','#283a5a','#3a2a24','#6a4a2a','#4a2a44','#2647
 let _shelf=null,rsToken=0,rsRT=0,_rsCard=null;
 const rsLast=n=>String(n).replace(/\s*\(.*\)\s*/,"").trim();
 const rsWidth=b=>Math.min(54,Math.max(34,Math.round(32+(b.main||"").length*0.85)));
-function buildShelf(caseId,items,coverFn,onClick){
+const rsWidthThin=b=>Math.min(30,Math.max(22,Math.round(20+(b.main||"").length*0.32)));  /* DVD-thin spines for the film shelf */
+function buildShelf(caseId,items,coverFn,onClick,thin){
   const caseEl=document.getElementById(caseId); if(!caseEl)return;
-  _shelf={caseId,items,coverFn,onClick}; layoutShelf(); loadShelfCovers();
+  _shelf={caseId,items,coverFn,onClick,thin}; layoutShelf(); loadShelfCovers();
 }
 function layoutShelf(){
   const s=_shelf; if(!s)return; const caseEl=document.getElementById(s.caseId); if(!caseEl)return; caseEl.innerHTML="";
@@ -634,9 +635,9 @@ function layoutShelf(){
     const b=document.createElement("div");b.className="rbooks";sh.appendChild(b);
     const p=document.createElement("div");p.className="rplank";sh.appendChild(p);caseEl.appendChild(sh);used=0;return b;};
   bk=newShelf();
-  s.items.forEach((b,i)=>{const w=rsWidth(b);
+  s.items.forEach((b,i)=>{const w=s.thin?rsWidthThin(b):rsWidth(b);
     if(used+w+5>avail&&used>0)bk=newShelf(); used+=w+5;
-    const el=document.createElement("div"); el.className="rbook"+((i%7===3)?" lean":"");
+    const el=document.createElement("div"); el.className="rbook"+(s.thin?" thin":"")+((i%7===3)?" lean":"");
     el.style.setProperty("--rc",RS_PAL[idx++%RS_PAL.length]); el.style.width=w+"px";
     el.innerHTML=`<div class="rb-band"></div><div class="rb-title">${esc(b.main)}</div><div class="rb-author">${esc(b.byline||"")}</div><div class="rb-foot">${esc(b.year||"")}</div>`;
     el.onclick=()=>s.onClick(b); b.el=el;
@@ -704,7 +705,7 @@ function buildReadingShelf(){
 }
 function buildFilmShelf(){
   const items=(FILMS||[]).map(f=>({main:f.title||"",byline:f.director||"",dir:f.director||"",year:f.year||"",note:f.note||"",url:f.url||"",wiki:f.wiki||"",full:f.title||"",el:null,cover:null}));
-  buildShelf("filmcase",items,coverFilm,openFilmCard);
+  buildShelf("filmcase",items,coverFilm,openFilmCard,true);
 }
 /* detail cards (shared overlay) */
 function rsCardEl(){ if(_rsCard)return _rsCard;
