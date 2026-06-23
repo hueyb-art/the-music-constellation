@@ -949,11 +949,12 @@ if(clip){
     const id=mainPlay.id,nm=mainPlay.name,want=mainPlay.want,ov=mainPlay.ov||{};
     clipNote("♪  finding "+nm+"…",6500);
     const play2=(hit,prov)=>{if(clipFor!==id)return;const u=hit&&hit.url;if(!u){clipNote("No preview found for "+nm);return;}const yr=trustYear(mainPlay.nd,hit.year,hit.title);mainPlay.url=u;mainPlay.prov=prov;mainPlay.title=hit.title||"";mainPlay.year=yr;clip.src=u;try{clip.currentTime=0;}catch(e){}const p=clip.play();if(p&&p.catch)p.catch(()=>clipNote("Tap again to hear "+nm));clipNote("♪  "+nm,32000);if(hit.title)setTrackInfo(hit.title,yr);};
+    const pf=mainPlay.title||"";
     if(mainPlay.prov==="it"){ /* Apple failed → try Deezer */
-      const viaSearch=()=>dzSearch(nm,arr=>{const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));play2(t?{url:t.preview,title:t.title,year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)}:null,"dz");});
+      const viaSearch=()=>dzSearch(nm,arr=>{const cands=(arr||[]).filter(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));const t=(pf&&cands.find(x=>trackTitleMatch(pf,x.title)))||cands[0];play2(t?{url:t.preview,title:t.title,year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)}:null,"dz");});
       if(ov.did)dzArtistTop(ov.did,u=>u?play2({url:u},"dz"):viaSearch());else viaSearch();
     }else{ /* Deezer (or unknown) failed → try Apple */
-      itSearch(nm,want,hit=>play2(hit,"it"));
+      itSearch(nm,want,hit=>play2(hit,"it"),pf);
     }
   });
 }
@@ -977,7 +978,11 @@ function artistMatch(a,b){a=pnorm(a);b=pnorm(b);return !!a&&!!b&&a===b;}
 function jsonp(url,cb){if(typeof document==="undefined"||!document.body){cb(null);return;}const id="jp"+(Math.random()*1e9|0);let done=false;const s=document.createElement("script");const fin=v=>{if(done)return;done=true;try{delete window[id];}catch(e){window[id]=undefined;}if(s.parentNode)s.parentNode.removeChild(s);cb(v);};window[id]=d=>fin(d);s.onerror=()=>fin(null);s.src=url+(url.indexOf("?")<0?"?":"&")+"output=jsonp&callback="+id;document.body.appendChild(s);setTimeout(()=>fin(null),6500);}
 function dzSearch(q,cb){jsonp("https://api.deezer.com/search?q="+encodeURIComponent(q)+"&limit=12",d=>cb((d&&d.data)||[]));}
 function dzArtistTop(aid,cb){jsonp("https://api.deezer.com/artist/"+aid+"/top?limit=1",d=>{const t=(d&&d.data&&d.data[0]);cb(t&&t.preview?t.preview:null);});}
-function itSearch(term,want,cb){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=12";const match=res=>{const r=(res||[]).find(x=>x.previewUrl&&artistMatch(x.artistName,want));fin(r?{url:r.previewUrl,title:r.trackName||"",year:(r.releaseDate||"").slice(0,4)}:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
+/* prefer the *signature* track: among the right artist's previews, pick the one
+   whose title matches the curated seed, else fall back to the first (so coverage
+   never drops — a non-song seed just yields the old behaviour). */
+function trackTitleMatch(want,got){const a=_normTrk(want),b=_normTrk(got);if(!a||!b||a.length<3||b.length<3)return false;return a===b||a.indexOf(b)>=0||b.indexOf(a)>=0;}
+function itSearch(term,want,cb,pref){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=15";const match=res=>{const cands=(res||[]).filter(x=>x.previewUrl&&artistMatch(x.artistName,want));const r=(pref&&cands.find(x=>trackTitleMatch(pref,x.trackName)))||cands[0];fin(r?{url:r.previewUrl,title:r.trackName||"",year:(r.releaseDate||"").slice(0,4)}:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
 function playClip(nd){
   if(!clip)return;
   clipFor=nd.id;
@@ -995,8 +1000,8 @@ function playClip(nd){
   const q1=ov.q||(seed&&!/^with /i.test(seed)?nd.name+" "+seed:nd.name);
   const q2=nd.name;
   const done=hit=>{if(clipFor!==nd.id)return;if(hit&&hit.url){const yr=trustYear(nd,hit.year,hit.title);mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,nd:nd,url:hit.url,title:hit.title||"",year:yr,prov:provOf(hit.url),alt:false};playPreview(hit.url,nd.name,hit.title,yr);}else clipNote("No verified preview for "+nd.name);};
-  const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const t=(arr||[]).find(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));if(t)done({url:t.preview,title:t.title||"",year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)});else next();});
-  const apple=(q,next)=>itSearch(q,want,hit=>{if(clipFor!==nd.id)return;if(hit)done(hit);else next();});
+  const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const cands=(arr||[]).filter(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));const t=(seed&&cands.find(x=>trackTitleMatch(seed,x.title)))||cands[0];if(t)done({url:t.preview,title:t.title||"",year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)});else next();});
+  const apple=(q,next)=>itSearch(q,want,hit=>{if(clipFor!==nd.id)return;if(hit)done(hit);else next();},seed);
   /* Apple is PREFERRED: its previews are CORS-readable so the now-playing waveform
      can analyse the real audio, and its CDN is the robust one (not blocklisted,
      links don't expire). Deezer stays the fallback, with all the self-correcting
