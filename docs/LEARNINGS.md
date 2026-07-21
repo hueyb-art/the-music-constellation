@@ -2,6 +2,13 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-23 — Song search (find the artist by a song you know)
+
+- A third way into the search box (`#q`): alongside artist-name and instrument, you can now type a **song title**. A per-genre `SONGS` index is built in `loadGenre` from every artist's curated `disco` titles (~1,800 across the corpus); matches render under a "Songs" header as `♪ Title — Artist · Year`, and clicking one runs `pick(nd)` to select that artist. Same `fold`/`levCap` typo tolerance as artist search; within-current-genre by design.
+- **Only viable because of the signature-recordings pass** — before it, `disco[0]` was mostly album titles and events, nothing worth searching; now it's real songs with original years.
+- **Emergent bonus:** because that pass gave session players the same landmark record, a song search also surfaces the personnel — "So What" returns Miles *and* Paul Chambers, Jimmy Cobb. Kept it (no cross-artist dedupe) since "who played on this?" is useful.
+- Dropdown keyboard-nav/click switched from `querySelectorAll("div")` to `[data-i]` so the non-selectable "Songs" header div is skipped.
+
 ## 2026-06-23 — Signature recordings for every artist (the "I don't recognise the song" fix)
 
 - **Two root causes, found by playing known catalogues.** (1) The preview resolver took the *first* track by the right artist regardless of title, so even a good seed played a random cut. (2) Most `disco[0]` seeds were **album titles or events** ('Illmatic', 'Raising Hell', 'first block party'), which can't be played as a preview. Both had to be fixed.
