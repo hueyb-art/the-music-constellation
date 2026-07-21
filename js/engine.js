@@ -822,24 +822,43 @@ function searchScore(nd,v){
   if(nd._srole.includes(v))return 40;
   return 0;
 }
+/* song search: match the curated signature/essential recordings (nd.disco titles),
+   so a user who knows a song but not the artist can find their way in. Scored like
+   the artist search, with the same typo tolerance. */
+function songScore(t,v){
+  if(t.startsWith(v))return 100;
+  const words=t.split(/\s+/);
+  for(const w of words)if(w.startsWith(v))return 80;
+  if(t.includes(v))return 60;
+  if(v.length>=4){const cap=v.length>=7?2:1;let best=cap+1;for(const w of words.concat([t])){const d=levCap(v,w,cap);if(d<best)best=d;}if(best<=cap)return 48-12*best;}
+  return 0;
+}
 const q=document.getElementById("q"),suggest=document.getElementById("suggest");
-let sIdx=-1,sList=[];
+let sIdx=-1,sList=[],SONGS=[];
 q.addEventListener("input",()=>{
   const v=fold(q.value.trim());
   if(!v){suggest.style.display="none";return;}
-  sList=NODES.map(nd=>[searchScore(nd,v),nd]).filter(x=>x[0]>0)
-    .sort((x,y)=>y[0]-x[0]||y[1].deg-x[1].deg).slice(0,12).map(x=>x[1]);sIdx=-1;
+  const arts=NODES.map(nd=>[searchScore(nd,v),nd]).filter(x=>x[0]>0)
+    .sort((x,y)=>y[0]-x[0]||y[1].deg-x[1].deg).slice(0,8).map(x=>x[1]);
+  const seen=new Set();
+  const songs=SONGS.map(s=>[songScore(s.t,v),s]).filter(x=>x[0]>0)
+    .sort((x,y)=>y[0]-x[0]||y[1].nd.deg-x[1].nd.deg)
+    .filter(x=>{const k=x[1].t+"|"+x[1].nd.id;if(seen.has(k))return false;seen.add(k);return true;})
+    .slice(0,6).map(x=>x[1]);
+  sList=arts.map(nd=>({nd})).concat(songs.map(s=>({nd:s.nd,song:s})));sIdx=-1;
   if(!sList.length){suggest.style.display="none";return;}
-  suggest.innerHTML=sList.map((nd,i)=>`<div data-i="${i}">${nd.name} <span style="color:var(--muted);font-size:11px">${nd.instr}</span></div>`).join("");
+  let html=arts.map((nd,i)=>`<div class="srow" data-i="${i}">${esc(nd.name)} <span class="smeta">${esc(nd.instr)}</span></div>`).join("");
+  if(songs.length)html+=`<div class="shead">Songs</div>`+songs.map((s,j)=>`<div class="srow sgrow" data-i="${arts.length+j}"><span class="snote">♪</span> ${esc(s.title)} <span class="smeta">— ${esc(s.nd.name)}${s.year?" · "+esc(String(s.year)):""}</span></div>`).join("");
+  suggest.innerHTML=html;
   suggest.style.display="block";
-  suggest.querySelectorAll("div").forEach(el=>{el.onclick=()=>pick(sList[+el.dataset.i]);});
+  suggest.querySelectorAll("[data-i]").forEach(el=>{el.onclick=()=>pick(sList[+el.dataset.i].nd);});
 });
 q.addEventListener("keydown",ev=>{
   if(suggest.style.display!=="block")return;
-  const items=suggest.querySelectorAll("div");
+  const items=suggest.querySelectorAll("[data-i]");
   if(ev.key==="ArrowDown")sIdx=Math.min(sList.length-1,sIdx+1);
   else if(ev.key==="ArrowUp")sIdx=Math.max(0,sIdx-1);
-  else if(ev.key==="Enter"){pick(sList[sIdx<0?0:sIdx]);return;}
+  else if(ev.key==="Enter"){pick((sList[sIdx<0?0:sIdx]||{}).nd);return;}
   else return;
   items.forEach((el,i)=>el.classList.toggle("active",i===sIdx));ev.preventDefault();
 });
@@ -1136,6 +1155,7 @@ function loadGenre(key){
     nd.mbid=(G.mbid||{})[nd.id]||null;
   });
   NODES.forEach(nd=>{nd._sname=fold(nd.name);nd._swords=nd._sname.split(/\s+/);nd._srole=fold(nd.role+" "+nd.instr);});
+  SONGS=[];NODES.forEach(nd=>{(nd.disco||[]).forEach(d=>{const ti=(d&&d[1])||"";if(ti&&ti.length>1)SONGS.push({t:fold(ti),title:ti,year:(d&&d[0])||"",nd});});});
   /* chord-web: each star's fixed angle on the ring, ordered by era (matches the era arcs) */
   const ekeys=Object.keys(ERAS);let ci=0;
   ekeys.forEach(k=>{NODES.forEach(nd=>{if(nd.era===k){nd._cang=ci/NODES.length*6.2832-1.5708;ci++;}});});
