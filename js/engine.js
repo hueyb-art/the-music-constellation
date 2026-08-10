@@ -460,6 +460,14 @@ function loadCollabInto(box,a,b,onLoad){
   let band=null;
   if(dA&&(dA===dB||lc(dA).includes(lc(b.name))))band=dA;
   else if(dB&&(dA===dB||lc(dB).includes(lc(a.name))))band=dB;
+  /* curated shared records — for pairs MusicBrainz misses (one played sideman on the
+     other's leader dates, family sessions, etc.), keyed by the sorted id pair in
+     G.collabs. Authoritative, so it short-circuits the co-credit lookup. */
+  const cur=(G.collabs||{})[[a.id,b.id].sort().join("_")];
+  if(cur&&cur.length&&!band){box.dataset.loaded="1";
+    const citems=cur.map(c=>({year:c[0]||"",title:c[1]||"",note:c[2]||""}));
+    box.innerHTML='<div class="cbnote" style="color:var(--gold)">Records together</div>'+citems.map(it=>`<div class="cbrow"><span class="cbyear">${esc(it.year)||"—"}</span><span class="cbmain"><span class="cbtitle">${esc(it.title)}</span>${svc(a.name+" "+b.name+" "+it.title)}</span></div>`).join("")+searchRow;
+    wireApple(box);if(onLoad)onLoad(citems,band);return;}
   const records=band?window.MB.bandDisco(band,lsKey("bd_"+band.replace(/[^a-z0-9]+/gi,""))):window.MB.collab({name:a.name,mbid:a.mbid},{name:b.name,mbid:b.mbid},collabKey(a.id,b.id));
   const secRow=band?`<div class="cbnote" style="color:var(--gold)">Records together · as ${esc(band)}</div>`:"";
   records.then(items=>{

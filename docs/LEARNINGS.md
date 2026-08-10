@@ -2,6 +2,12 @@
 
 A running log of non-obvious findings. Append, don't rewrite.
 
+## 2026-06-23 — Curated shared records (the sideman/family collab fix)
+
+- The connection card's "Records together" pulls co-*credited* releases from MusicBrainz. That structurally misses **sideman and family sessions**: Branford played on Wynton's *leader* albums (Think of One, Black Codes), which MusicBrainz credits to Wynton alone — so two brothers who obviously recorded together showed the bleak-through message "No co-credited records on MusicBrainz". A user rightly flagged it as an error.
+- Fix: an optional per-genre `G.collabs` map keyed by the two node ids **sorted alphabetically and joined with `_`** (matching `collabKey`'s order) → `[[year,title,note],…]`. `loadCollabInto` short-circuits with it (authoritative, synchronous, before the MB call) when present and there's no band. Populated the whole Marsalis family in jazz.js (Ellis + Wynton, Branford, Delfeayo, Jason, and their family albums).
+- General lesson: co-credit databases under-represent leader/sideman and family relationships — curate the known shared records for those pairs rather than trusting the lookup to be empty = "never recorded together".
+
 ## 2026-06-23 — Song search (find the artist by a song you know)
 
 - A third way into the search box (`#q`): alongside artist-name and instrument, you can now type a **song title**. A per-genre `SONGS` index is built in `loadGenre` from every artist's curated `disco` titles (~1,800 across the corpus); matches render under a "Songs" header as `♪ Title — Artist · Year`, and clicking one runs `pick(nd)` to select that artist. Same `fold`/`levCap` typo tolerance as artist search; within-current-genre by design.

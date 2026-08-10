@@ -16,6 +16,8 @@ const eras={
 };
 
 const nodes=[
+n("delfeayo","Delfeayo Marsalis","contemporary","Trombone · producer","b.1965 · American","The family's trombonist-producer.","Delfeayo Marsalis, born in New Orleans in 1965, is a jazz trombonist and record producer, the third of the Marsalis brothers. As a producer he shaped early records for his brothers Branford and Wynton and for many modern-jazz artists before stepping out as a leader with his 1992 debut 'Pontius Pilate's Decision'. His warm, vocal trombone and deep grounding in the New Orleans tradition anchor a body of work that blends swing, hard bop and hometown flavour. In 2008 he founded the Uptown Jazz Orchestra, a rollicking big band devoted to keeping the New Orleans jazz party alive. A committed educator like his father Ellis, he has championed jazz mentorship in his home city. Delfeayo remains one of the most distinctive trombone voices of his generation.",[["1992","Pontius Pilate's Decision","his debut as a leader"],["2010","Sweet Thunder","an Ellington-meets-Shakespeare suite"]]),
+n("jason","Jason Marsalis","contemporary","Drums · vibraphone","b.1977 · American","The youngest Marsalis.","Jason Marsalis, born in New Orleans in 1977, is the youngest of the Marsalis brothers, a drummer and vibraphonist raised inside his family's music. A prodigious percussionist, he anchored the acclaimed Marcus Roberts Trio and co-founded the Latin-jazz group Los Hombres Calientes before stepping out as a leader at twenty-one with 'The Year of the Drummer' in 1998. In later years he turned increasingly to the vibraphone, developing a lyrical four-mallet voice through his Vibes Quartet. Rooted in the New Orleans tradition and taught by his father Ellis, he fuses swing, bop and hometown rhythm with an inventive, playful spirit. He records regularly with his brothers on the family's celebrated gatherings. Jason remains a versatile and singular presence in contemporary jazz.",[["1998","The Year of the Drummer","his debut as a leader"]]),
 n("johnnygriffin","Johnny Griffin","hardbop","Tenor sax","1928–2008 · American","The fastest tenor in jazz.","Johnny Griffin, born in Chicago in 1928 and nicknamed 'The Little Giant', was a hard-bop tenor saxophonist famed for the blistering speed and joyful fire of his playing. He came up through Lionel Hampton's band and became a fixture of the hard-bop scene, joining Art Blakey's Jazz Messengers and later Thelonious Monk's quartet, where his agility matched Monk's angular music. In 1957 he cut the Blue Note date 'A Blowing Session', a three-tenor summit with John Coltrane and Hank Mobley that remains a benchmark of the era. His warm, muscular tone and headlong momentum made him one of the most exciting soloists of his generation. From the 1960s he lived and worked largely in Europe, an expatriate elder statesman who toured into his final years. Griffin endures as one of hard bop's great tenor voices.",[["1957","The Way You Look Tonight","from A Blowing Session"],["1957","Smoke Stack","A Blowing Session original"],["1957","The Congregation","title track"]]),
 n("frankrosolino","Frank Rosolino","hardbop","Trombone","1926–1978 · American","Virtuoso of the West Coast trombone.","Frank Rosolino, born in Detroit in 1926, was a jazz trombonist prized for a fluid, dazzling technique and an irrepressible sense of humour. He rose to prominence in Stan Kenton's orchestra in the early 1950s and became a mainstay of the West Coast scene, a fixture of the Lighthouse All-Stars and countless Los Angeles studio sessions. Equally gifted as a scat vocalist, he lent his exuberant voice to Gene Krupa's hit 'Lemon Drop' and cut the vocal album 'Turn Me Loose'. As a leader his 'Free for All' stands as his best-known date, showcasing bebop agility on an instrument few played so nimbly. His life ended in tragedy in 1978, but his playing left a lasting mark on the jazz trombone. Rosolino is remembered among the instrument's most fluent and joyful virtuosos.",[["1958","Free for All","his best-known leader date"],["1961","Turn Me Loose","vocal and trombone album"]]),
 n("tonybennett","Tony Bennett","swing","Voice","1926–2023 · American","The last great saloon singer.","Tony Bennett, born Anthony Benedetto in New York in 1926, was one of the most enduring interpreters of the Great American Songbook, a singer whose warmth and swing kept the standards alive for seven decades. He broke through in the early 1950s with hits like 'Rags to Riches' and found his signature in 1962 with 'I Left My Heart in San Francisco'. A jazz singer at heart, he recorded with Count Basie and made the intimate, acclaimed 'Tony Bennett / Bill Evans Album' in 1975, pairing his voice with the pianist's spare lyricism. Admired by Frank Sinatra as the best in the business, he never abandoned live performance or the songbook even as pop tastes changed. In his later years he reached new audiences through duets with contemporary stars. Bennett remains a definitive voice of American popular song.",[["1962","I Left My Heart in San Francisco","signature song"],["1953","Rags to Riches","early number-one hit"],["1975","But Beautiful","from the Bill Evans album"]]),
@@ -257,6 +259,13 @@ n("nancywilson","Nancy Wilson","hardbop","Voice","1937–2018 · American","The 
 ];
 
 const edges=[
+e("ellis","delfeayo","mentored"),
+e("ellis","jason","mentored"),
+e("delfeayo","wynton","recorded with"),
+e("delfeayo","branford","recorded with"),
+e("jason","wynton","recorded with"),
+e("jason","branford","recorded with"),
+e("jason","delfeayo","recorded with"),
 e("blakey","johnnygriffin","mentored"),
 e("hawkins","johnnygriffin","influenced"),
 e("monk","johnnygriffin","bandmate"),
@@ -1073,6 +1082,20 @@ mbid:{"hiromi":"8472f0ce-c57d-46f2-93db-d4a6f6e6473a","jojones":"ceda2457-e16f-4
   /* preview overrides: did = pinned Deezer artist id, artist = exact name a clip
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{},
+  /* curated shared records for pairs MusicBrainz misses (sideman/family sessions).
+     Keyed by the two node ids, sorted alphabetically and joined with "_". */
+  collabs:{
+    "branford_wynton":[["1982","Wynton Marsalis","Wynton's debut, Branford on sax"],["1983","Think of One","Wynton Marsalis album"],["1985","Black Codes (From the Underground)","Wynton Marsalis album"],["2003","The Marsalis Family: A Jazz Celebration","the whole family"]],
+    "ellis_wynton":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"],["2010","Music Redeems","the Marsalis family, live"]],
+    "branford_ellis":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"],["2010","Music Redeems","the Marsalis family, live"]],
+    "delfeayo_ellis":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"],["2010","Music Redeems","the Marsalis family, live"]],
+    "ellis_jason":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"],["2010","Music Redeems","the Marsalis family, live"]],
+    "delfeayo_wynton":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"]],
+    "branford_delfeayo":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"]],
+    "jason_wynton":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"]],
+    "branford_jason":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"]],
+    "delfeayo_jason":[["2003","The Marsalis Family: A Jazz Celebration","the whole family"]],
+  },
   sym:["bandmate","peer","collaborated","rivals","bebop circle","co-founded","recorded with","played with"],
   eras,nodes,edges,lib,critics,resources,archives,radio,films,deepcuts,refs,wiki,
 };
