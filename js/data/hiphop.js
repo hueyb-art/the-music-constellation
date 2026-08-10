@@ -540,7 +540,7 @@ e("21savage","drake","collaborated"),
 e("meekmill","rickross","signed"),
 e("kidcudi","childishgambino","influenced"),
 e("cardib","meganthestallion","collaborated"),
-e("liluzivert","youngthug","influenced"),
+e("youngthug","liluzivert","influenced"),
 e("chiefkeef","liluzivert","influenced"),
 e("vincestaples","earlsweatshirt","collaborated"),
 e("nas","joeybadass","influenced"),
@@ -919,6 +919,11 @@ mbid:{"funky4":"50498fa1-b339-4ac8-9327-d5db0e98a1f8","busybee":"bc7f8533-0ec6-4
   /* preview overrides: did = pinned Deezer artist id, artist = exact name a clip
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"nas":{"did":73},"crazylegs":{"artist":"Rock Steady Crew","q":"Rock Steady Crew Hey You"},"theneptunes":{"artist":"Clipse","q":"Clipse Grindin"},"jammasterjay":{"did":79236},"scottlarock":{"did":8618},"souljaboy":{"did":352219},"puffdaddy":{"did":173581},"keithcowboy":{"artist":"Grandmaster Flash & The Furious Five","q":"Grandmaster Flash The Message"},"juicecrew":{"artist":"Marley Marl","q":"Marley Marl The Symphony"},"chuckd":{"artist":"Public Enemy","q":"Public Enemy Fight the Power"},"questlove":{"artist":"The Roots","q":"The Roots You Got Me"},"rickrubin":{"artist":"Beastie Boys","q":"Beastie Boys Fight for Your Right"},"madlib":{"artist":"Madvillain","q":"Madvillain Accordion"},"busybee":{"artist":"Busy Bee","q":"Busy Bee Suicide"},"tooshort":{"q":"Too Short Blow the Whistle"},"deathrow":{"artist":"Dr. Dre","q":"Dr. Dre Nuthin but a G Thang"},"badboy":{"artist":"The Notorious B.I.G.","q":"Notorious B.I.G. Hypnotize"},"cashmoney":{"artist":"Lil Wayne","q":"Lil Wayne A Milli"},"tde":{"artist":"Kendrick Lamar","q":"Kendrick Lamar HUMBLE"}},
+  /* curated shared records for pairs MusicBrainz misses. Keyed by the two node
+     ids, sorted alphabetically and joined with "_". */
+  collabs:{
+    "liluzivert_youngthug":[["2018","Up","Young Thug feat. Lil Uzi Vert"],["2018","It's a Slime","Young Thug feat. Lil Uzi Vert, from Slime Language"],["2019","What's the Move","Young Thug feat. Lil Uzi Vert, from So Much Fun"],["2020","Strawberry Peels","Lil Uzi Vert feat. Young Thug & Gunna"]],
+  },
   sym:["peer","collaborated","rivals","beef","crew","group","duo","co-founded","frequent collaborators"],
   eras,nodes,edges,lib,critics,resources,archives,radio,films,deepcuts,refs,wiki,
 };
