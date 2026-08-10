@@ -923,6 +923,7 @@ mbid:{"funky4":"50498fa1-b339-4ac8-9327-d5db0e98a1f8","busybee":"bc7f8533-0ec6-4
      ids, sorted alphabetically and joined with "_". */
   collabs:{
     "liluzivert_youngthug":[["2018","Up","Young Thug feat. Lil Uzi Vert"],["2018","It's a Slime","Young Thug feat. Lil Uzi Vert, from Slime Language"],["2019","What's the Move","Young Thug feat. Lil Uzi Vert, from So Much Fun"],["2020","Strawberry Peels","Lil Uzi Vert feat. Young Thug & Gunna"]],
+    "djpremier_notoriousbig":[["1994","Unbelievable","DJ Premier, from Ready to Die"],["1997","Kick in the Door","DJ Premier, from Life After Death"],["1997","Ten Crack Commandments","DJ Premier, from Life After Death"]],
   },
   sym:["peer","collaborated","rivals","beef","crew","group","duo","co-founded","frequent collaborators"],
   eras,nodes,edges,lib,critics,resources,archives,radio,films,deepcuts,refs,wiki,
