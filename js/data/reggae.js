@@ -670,6 +670,7 @@ mbid:{"bunnylee":"16ad0626-7c09-455c-8841-0cc4b157c22b","wailingsouls":"f28a0e2e
      must match, q = search query, only = trust only q (famous-namesake collisions) */
   preview:{"tootshibbert":{"artist":"Toots and the Maytals","q":"Toots and the Maytals"},"bobmarley":{"did":719},"charliechaplin":{"q":"Charlie Chaplin Tribute to Reggae","only":true},"scientist":{"q":"Scientist Vampires Dub"},"koffee":{"q":"Koffee Toast"},"coxsone":{"artist":"The Skatalites","q":"The Skatalites Guns of Navarone"},"bunnylee":{"artist":"Johnny Clarke","q":"Johnny Clarke None Shall Escape the Judgement"},"winstonriley":{"artist":"Tenor Saw","q":"Tenor Saw Ring the Alarm"},"carltonbarrett":{"did":719},"bobbydigital":{"artist":"Sizzla","q":"Sizzla Black Woman and Child"}},
   collabs:{
+    "errolthompson_joegibbs":[["1977","Two Sevens Clash","produced for Culture, as The Mighty Two"],["1977","Uptown Top Ranking","produced for Althea & Donna; a UK number one"],["1978","African Dub All-Mighty Chapter 3","their landmark dub album"],["1979","Money in My Pocket","the Joe Gibbs re-cut for Dennis Brown"]],
     "coxsone_skatalites":[["1964","Man in the Street","Don Drummond composition"],["1965","Guns of Navarone","Studio One"]],
     "altonellis_coxsone":[["1967","I'm Still in Love with You","Studio One"],["1967","I'm Just a Guy","Studio One rocksteady"]],
     "coxsone_heptones":[["1966","Fatty Fatty","Heptones breakthrough hit for Studio One"],["1968","Party Time","Studio One rocksteady single on the Coxsone label"],["1968","Pretty Looks Isn't All","Studio One"]],
