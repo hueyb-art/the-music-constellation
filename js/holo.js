@@ -148,7 +148,10 @@
     canvas.addEventListener('pointerup', ev=>{
       if(Math.hypot(ev.clientX-downX, ev.clientY-downY)>9 || performance.now()-downT>320) return;  /* a drag, not a tap */
       const m=pickNearest(ev.clientX, ev.clientY);
-      if(m && m!==selected){ setFocus(m); if(window.MCH&&window.MCH.select) window.MCH.select(m.userData.node); }   /* opens the card + plays a clip */
+      /* always select on a genuine tap — on desktop, hover has usually already
+         set `selected` to this node, so an `m!==selected` guard here would skip
+         the card/clip (the tap would only ever re-light already-lit ties). */
+      if(m){ setFocus(m); if(window.MCH&&window.MCH.select) window.MCH.select(m.userData.node); }   /* opens the card + plays a clip */
       else { setFocus(null); }
     });
   }
