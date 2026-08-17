@@ -1586,7 +1586,7 @@ window.GENRE_DATA["classical"]={
   key:"classical",
   name:"The Classical Constellation",
   shortName:"Classical",
-  theme:{"bg":"#170a10","glow":"#4a1528","deep":"#0c0407","panel":"rgba(30,14,20,0.94)"},
+  theme:{"bg":"#24121b","glow":"#63203a","deep":"#160a11","panel":"rgba(42,21,30,0.94)"},
   generated:true,        /* built by scripts/import-classical.mjs; flip written:true once blurbs+bios land */
   filterLabel:"All schools",
   roleGroups:[],          /* filter by school, not instrument — see loadGenre */
