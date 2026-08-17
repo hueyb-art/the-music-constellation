@@ -6,7 +6,7 @@
 const GENRES=window.GENRE_DATA||{};
 const CFG=window.MC_CONFIG||{};
 const BRAND=CFG.brand||"The Music Constellation", TAGLINE=CFG.tagline||"who shaped whom";
-const GENRE_ORDER=((CFG.genres&&CFG.genres.length)?CFG.genres:["jazz","hiphop","reggae"]).filter(k=>GENRES[k]);
+const GENRE_ORDER=((CFG.genres&&CFG.genres.length)?CFG.genres:["jazz","hiphop","reggae","classical"]).filter(k=>GENRES[k]);
 /* single-brand mode: one dataset / tabs off → the brand becomes the headline */
 const SINGLE=(CFG.showTabs===false)||GENRE_ORDER.length<=1;
 let G=null;
@@ -26,6 +26,7 @@ const visible=nd=>activeEras.has(nd.era)&&(!instrFilter||nd.instr===instrFilter)
 
 /* Directional relationship words across all genres; symmetric ones come from data (sym). */
 const REL_DIR={
+  championed:["championed","championed by"],
   mentored:["mentored","mentored by"],
   influenced:["influenced","influenced by"],
   "influenced by":["influenced by","influenced"],
@@ -234,8 +235,175 @@ function drawChordView(){
         chordLabelBoxes.push({id:it.nd.id,x0,y0:it.ay+lg-hh,x1,y1:it.ay+lg+hh});}});
   }
 }
+/* ========== TIMELINE VIEW — schools as dated clusters on a year axis ==========
+   Ported from the art constellation (the dated-clusters design, NOT the old
+   depth-voyage that was removed in June). A genre opts in by supplying dated
+   groups — `schools` for classical, `movements` for art — plus era s/e; genres
+   without them keep globe + chord only (see tlAvailable).
+
+   x = the group's mid-year; groups overlapping in time stack into lanes (Gantt
+   packing); members cluster around the lane point; ties are drawn between them
+   so directional relationships flow left→right in time. */
+let _tlKey="", tlGroups=[], tlMaxLane=0, tlHoverMv=null, tlBloomMv=null;
+var tlAxisY=74, TL_MIN=1900, TL_XSCALE=44, TL_STEP=10;   /* var: resize() runs before this line */
+const TL_LANEH=80, TL_TOP=90, TL_RCAP=58, TL_BLOOM_K=1.3, TL_BLOOM_MAX=98;
+const tlSrc=()=>G.schools||G.movements||null;
+const tlKeyOf=nd=>nd.school||nd.movement||"";
+const tlAvailable=()=>!!tlSrc();
+function tlMeasureChrome(){const b=document.querySelector(".topbar");tlAxisY=(b?Math.round(b.getBoundingClientRect().bottom):56)+18;}
+const tlX=yr=>(yr-TL_MIN)*TL_XSCALE;
+function layoutTimeline(){
+  const ck=G.key+"|"+Math.round(W/40);
+  if(_tlKey===ck)return;                                  /* re-lay out on genre change or a real resize */
+  const M=tlSrc()||{}, byG={};
+  NODES.forEach(nd=>{const k=tlKeyOf(nd);(byG[k]=byG[k]||{name:k,nodes:[]}).nodes.push(nd);});
+  const list=Object.values(byG).map(mv=>{
+    const d=M[mv.name]||{}, er=ERAS[mv.nodes[0].era]||{};
+    const s=d.s||er.s||1900, e=d.e||er.e||s;
+    mv.s=s;mv.e=e;mv.mid=(s+e)/2;mv.rad=Math.min(TL_RCAP,Math.sqrt(mv.nodes.length)*7+8);return mv;
+  }).sort((a,b)=>a.s-b.s||a.mid-b.mid);
+  /* Scale to the genre's OWN span. Art covers a century, classical nine — a
+     fixed px-per-year would make one cramped and the other 40,000px wide. Aim
+     for a comfortable number of years per screen, and pick a tick step to suit. */
+  const lo=Math.min(...list.map(m=>m.s)), hi=Math.max(...list.map(m=>m.e));
+  const span=Math.max(20,hi-lo);
+  const perScreen=Math.max(25,Math.min(160,Math.round(span/8)));
+  TL_MIN=Math.floor((lo-span*0.03)/10)*10;
+  TL_XSCALE=Math.max(1.5,(W||1200)/perScreen);
+  TL_STEP=[5,10,25,50,100,200].find(s=>s*TL_XSCALE>=90)||200;
+  const laneEnd=[];
+  for(const mv of list){
+    let lane=0;for(;lane<laneEnd.length;lane++)if(tlX(mv.mid)-mv.rad>=laneEnd[lane]+12)break;
+    if(lane===laneEnd.length)laneEnd.push(-1e9);
+    laneEnd[lane]=tlX(mv.mid)+mv.rad; mv.lane=lane;
+    const bx=tlX(mv.mid), by=TL_TOP+lane*TL_LANEH;
+    mv.lx=bx; mv.ly=by; mv.exp=0;
+    mv.nodes.forEach((nd,i)=>{const a=i*2.399963,r=Math.min(TL_RCAP-6,Math.sqrt(i)*7);nd._ox=Math.cos(a)*r;nd._oy=Math.sin(a)*r;nd._tx=bx+nd._ox;nd._ty=by+nd._oy;});
+  }
+  tlGroups=list; tlMaxLane=Math.max(0,laneEnd.length-1); _tlKey=ck;
+}
+/* Clamp a pan so you can't scroll off into empty space; vertical is centred
+   when the lane stack fits the band below the year axis, else pannable. */
+function clampTL(x,y,z){
+  const pad=(TL_STEP||10)*TL_XSCALE;
+  const xL=W*0.04+(tlX(TL_MIN)-pad)*z, xR=W*0.04+(tlX(tlEnd())+pad)*z;
+  const loX=(W-40)-xR, hiX=40-xL;
+  x=hiX<loX?(loX+hiX)/2:Math.max(loX,Math.min(hiX,x));
+  const bandTop=tlAxisY+18, bandBot=H-24, band=bandBot-bandTop;
+  const yT=(TL_TOP-64)*z, yB=(TL_TOP+tlMaxLane*TL_LANEH+64)*z, ch=yB-yT;
+  if(ch<=band)y=bandTop+(band-ch)/2-yT; else{const loY=bandBot-yB,hiY=bandTop-yT;y=Math.max(loY,Math.min(hiY,y));}
+  return [x,y];
+}
+const tlEnd=()=>tlGroups.length?Math.max(...tlGroups.map(m=>m.e)):TL_MIN+100;
+/* Open at a comfortable fixed zoom — fit the lanes vertically, NOT the whole
+   span horizontally — parked at the start. The span overflows and you pan it. */
+function frameTimeline(){
+  layoutTimeline(); tlMeasureChrome();
+  tlHoverMv=null; tlGroups.forEach(mv=>mv.exp=0);
+  const bandTop=tlAxisY+18, band=Math.max(140,(H-24)-bandTop);
+  const contentH=TL_TOP+(tlMaxLane+1)*TL_LANEH+64;
+  tzoom=Math.max(0.5,Math.min(1.25,band/contentH));
+  tviewX=28-W*0.04-tlX(TL_MIN)*tzoom;
+  const yT=(TL_TOP-64)*tzoom,yB=(TL_TOP+tlMaxLane*TL_LANEH+64)*tzoom,ch=yB-yT;
+  tviewY=ch<=band?bandTop+(band-ch)/2-yT:bandTop-yT;
+  [tviewX,tviewY]=clampTL(tviewX,tviewY,tzoom);
+}
+function jumpToGroup(name){
+  layoutTimeline(); tlMeasureChrome();
+  const mv=tlGroups.find(m=>m.name===name); if(!mv){frameTimeline();return;}
+  const bandMid=(tlAxisY+18+H-24)/2;
+  [tviewX,tviewY]=clampTL(W/2-W*0.04-mv.lx*tzoom, bandMid-mv.ly*tzoom, tzoom);
+}
+/* Zoom about the pointer: scaling alone expands away from the origin, which
+   slides whatever you aimed at off-screen (it read as jumping back in time). */
+function tlZoomAt(px,py,nz){
+  const wx=(px-W*0.04-viewX)/zoom, wy=(py-viewY)/zoom;
+  tzoom=nz;
+  [tviewX,tviewY]=clampTL(px-W*0.04-wx*nz, py-wy*nz, nz);
+}
+function tlClusterAt(px,py){
+  const z=zoom;let best=null,bd=1e9;
+  for(const mv of tlGroups){
+    const cx=W*0.04+mv.lx*z+viewX, cy=mv.ly*z+viewY;
+    const d=Math.hypot(px-cx,py-cy), hitR=mv.rad*z*(1+mv.exp*TL_BLOOM_K)+14;
+    if(d<hitR&&d<bd){bd=d;best=mv;}
+  }
+  return best;
+}
+/* Hovering a cluster fans it open so its members separate enough to read. */
+function stepTimeline(){
+  const panning=pointer.down&&pointer.moved;
+  tlHoverMv=panning?null:tlClusterAt(pointer.x,pointer.y);
+  const forced=instrFilter?tlGroups.find(m=>m.name===instrFilter):null;
+  tlBloomMv=tlHoverMv||forced;
+  for(const mv of tlGroups){
+    const want=(mv===tlHoverMv||mv===forced)?1:0;
+    mv.exp+=(want-mv.exp)*0.16; if(mv.exp<0.002)mv.exp=0; else if(mv.exp>0.998)mv.exp=1;
+    const s=mv.exp?Math.min(1+mv.exp*TL_BLOOM_K,TL_BLOOM_MAX/Math.max(mv.rad,1)):1;
+    for(const nd of mv.nodes){nd._tx=mv.lx+nd._ox*s;nd._ty=mv.ly+nd._oy*s;}
+  }
+}
+function drawTimelineView(){
+  layoutTimeline();
+  const z=zoom,ox=viewX,oy=viewY;
+  const SX=x=>W*0.04+x*z+ox, SY=y=>y*z+oy;
+  const axisY=tlAxisY,gridTop=axisY+13,gridBot=H-20;
+  ctx.fillStyle="rgba(10,9,14,0.5)";ctx.fillRect(0,axisY-19,W,32);
+  ctx.textAlign="center";ctx.textBaseline="alphabetic";
+  const y0=Math.ceil(TL_MIN/TL_STEP)*TL_STEP, yEnd=tlEnd();
+  for(let yr=y0;yr<=yEnd+TL_STEP;yr+=TL_STEP){const sx=SX(tlX(yr));if(sx<-40||sx>W+40)continue;
+    ctx.strokeStyle="rgba(255,255,255,0.05)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,gridTop);ctx.lineTo(sx,gridBot);ctx.stroke();
+    ctx.fillStyle="rgba(243,236,224,0.62)";ctx.font="700 16px Helvetica Neue, Arial";ctx.fillText(yr,sx,axisY);}
+  /* each group's real span, so a stretch of time never looks emptier than it was */
+  ctx.save();ctx.lineCap="round";
+  tlGroups.forEach(mv=>{
+    if(mv.e-mv.s<1)return;
+    const x0=SX(tlX(mv.s)),x1=SX(tlX(mv.e)),y=SY(mv.ly);
+    if(x1<-60||x0>W+60)return;
+    const col=ERAS[mv.nodes[0].era].color,lit=mv===tlBloomMv;
+    ctx.strokeStyle=hexA(col,lit?0.55:0.16);ctx.lineWidth=lit?3:2;
+    ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();});
+  ctx.restore();
+  const foc=selNode,aid=foc&&foc.id,neigh=aid?adj[aid]:null;
+  const bloom=tlBloomMv,bname=bloom&&bloom.name;
+  EDGES.forEach(ed=>{if(!ed.s||!ed.t||!visible(ed.s)||!visible(ed.t))return;const lit=aid&&(ed.a===aid||ed.b===aid);
+    ctx.strokeStyle="rgba("+KIND_COLOR[ed.kind]+","+(lit?0.85:(foc?0.02:(bloom?0.03:0.05)))+")";ctx.lineWidth=lit?1.5:0.55;
+    ctx.beginPath();ctx.moveTo(SX(ed.s._tx),SY(ed.s._ty));ctx.lineTo(SX(ed.t._tx),SY(ed.t._ty));ctx.stroke();});
+  for(const nd of NODES){if(!visible(nd)){nd._sx=null;continue;}
+    const isF=nd===foc,isN=neigh&&neigh.has(nd.id),inB=bname&&tlKeyOf(nd)===bname,col=ERAS[nd.era].color;
+    const sx=SX(nd._tx),sy=SY(nd._ty),r=Math.max(1.5,radius(nd)*0.62*z);
+    nd._sx=sx;nd._sy=sy;nd._r=r;nd._d=0;
+    const al=foc?(isF||isN?1:(inB?0.85:0.13)):(bloom?(inB?1:0.24):0.88);
+    ctx.save();ctx.globalAlpha=al;ctx.shadowColor=col;ctx.shadowBlur=(isF||isN||inB?8:4)*BLURK;
+    ctx.beginPath();ctx.arc(sx,sy,isF?6:isN?4.5:(inB?Math.max(2.6,r*1.1):r),0,6.283);ctx.fillStyle=col;ctx.fill();ctx.restore();}
+  if(foc){ctx.textBaseline="middle";
+    const show=[foc].concat(neigh?[...neigh].map(id=>byId[id]).filter(n=>n&&visible(n)):[]);
+    show.forEach(nd=>{const big=nd===foc;ctx.save();ctx.shadowColor="rgba(0,0,0,0.92)";ctx.shadowBlur=3;
+      const right=nd._sx>W-160;ctx.textAlign=right?"right":"left";
+      ctx.font=(big?"600 ":"")+(big?13:11)+"px Helvetica Neue, Arial";
+      ctx.fillStyle=big?"rgba(245,222,150,.98)":"rgba(243,236,224,.95)";
+      ctx.fillText(nd.name,nd._sx+(right?-8:8),nd._sy);ctx.restore();});}
+  else if(bloom){
+    const cx=SX(bloom.lx),cy=SY(bloom.ly-bloom.rad*(1+bloom.exp*TL_BLOOM_K)-12);
+    ctx.textAlign="center";ctx.textBaseline="middle";ctx.save();ctx.shadowColor="rgba(0,0,0,0.9)";ctx.shadowBlur=3;
+    ctx.font="600 12px Helvetica Neue, Arial";ctx.fillStyle="rgba(224,177,90,0.92)";
+    ctx.fillText(bloom.name.length>38?bloom.name.slice(0,36)+"…":bloom.name,cx,cy);ctx.restore();
+    const small=bloom.nodes.length<=24;
+    if(bloom.exp>0.5){ctx.textBaseline="middle";
+      bloom.nodes.forEach(nd=>{if(!visible(nd)||nd._sx==null)return;if(!small&&nd!==hoverNode)return;
+        const right=nd._sx>W-150,hot=nd===hoverNode;ctx.save();ctx.shadowColor="rgba(0,0,0,0.92)";ctx.shadowBlur=3;
+        ctx.textAlign=right?"right":"left";ctx.globalAlpha=small?bloom.exp:1;
+        ctx.font=(hot?"600 ":"")+11+"px Helvetica Neue, Arial";
+        ctx.fillStyle=hot?"rgba(245,222,150,.98)":"rgba(243,236,224,.92)";
+        ctx.fillText(nd.name,nd._sx+(right?-7:7),nd._sy);ctx.restore();});}}
+  else{ctx.textAlign="center";ctx.textBaseline="middle";
+    tlGroups.forEach(mv=>{const sx=SX(mv.lx),sy=SY(mv.ly-mv.rad-8);if(sx<-160||sx>W+160)return;
+      ctx.font="10px Helvetica Neue, Arial";ctx.fillStyle="rgba(224,177,90,0.55)";
+      ctx.fillText(mv.name.length>32?mv.name.slice(0,30)+"…":mv.name,sx,sy);});}
+}
 function draw(){
   ctx.clearRect(0,0,W,H);
+  if(viewMode==="timeline"){drawTimelineView();return;}
   if(viewMode==="chord"){drawChordView();return;}
   const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),spp=Math.sin(pitch);
   const Rstar=0.62*Math.max(W,H);
@@ -334,6 +502,12 @@ function loop(){
     else{fade=Math.min(1,fade+0.04);if(fade>=1)trans=null;}
   }
   if(viewMode==="holo"){ if(!pageOpen)step(); if(window.HOLO)window.HOLO.frame(); requestAnimationFrame(loop); return; }
+  if(viewMode==="timeline"){
+    zoom+=(tzoom-zoom)*0.12;viewX+=(tviewX-viewX)*0.12;viewY+=(tviewY-viewY)*0.12;
+    [viewX,viewY]=clampTL(viewX,viewY,zoom);
+    stepTimeline();
+    draw();requestAnimationFrame(loop);return;
+  }
   if(viewMode==="chord"){
     zoom+=(tzoom-zoom)*0.12;viewX+=(tviewX-viewX)*0.12;viewY+=(tviewY-viewY)*0.12;
     const lim=CHORD_R*zoom+220;
@@ -359,6 +533,7 @@ function loop(){
    artist (crucial on touch, where you can't hover to aim). */
 function chordLabelAt(px,py){for(let i=0;i<chordLabelBoxes.length;i++){const b=chordLabelBoxes[i];if(px>=b.x0&&px<=b.x1&&py>=b.y0&&py<=b.y1)return byId[b.id];}return null;}
 function nodeAt(px,py){
+  if(viewMode==="timeline"){let best=null,bd=1e9;for(const nd of NODES){if(!visible(nd)||nd._sx==null)continue;const d=Math.hypot(px-nd._sx,py-nd._sy);if(d<bd){bd=d;best=nd;}}return bd<18?best:null;}
   /* chord: the stars are tiny dots on a thin ring, so hit-testing against each
      dot makes hover/click frustrating — you have to land exactly on one. Since
      every star sits on the ring at a known angle (_cea), instead pick the star
@@ -377,6 +552,7 @@ canvas.addEventListener("mousemove",ev=>{
   const px=ev.clientX,py=ev.clientY;
   if(pointer.down){const dx=px-pointer.x,dy=py-pointer.y;if(Math.abs(dx)+Math.abs(dy)>1){pointer.moved=true;tyaw=null;
     if(viewMode==="chord"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
+    else if(viewMode==="timeline"){[viewX,viewY]=clampTL(viewX+dx,viewY+dy,zoom);tviewX=viewX;tviewY=viewY;}
     else{yaw+=dx*0.005;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.005));vyaw=dx*0.005;vpitch=dy*0.005;}}
     pointer.x=px;pointer.y=py;return;}
   const nd=nodeAt(px,py);if(nd!==hoverNode){hoverNode=nd;if(!selNode)computeFocus(nd);canvas.style.cursor=nd?"pointer":"grab";}
@@ -386,7 +562,10 @@ canvas.addEventListener("mousedown",ev=>{unlockAudio();pointer.down=true;pointer
 addEventListener("mouseup",ev=>{if(pointer.down&&!pointer.moved){const nd=nodeAt(ev.clientX,ev.clientY);if(viewMode==="chord")chordPick(nd);else if(nd)select(nd);else deselect();}pointer.down=false;canvas.style.cursor="grab";});
 canvas.addEventListener("dblclick",ev=>{if(viewMode==="chord")return;const nd=nodeAt(ev.clientX,ev.clientY);if(nd)openPage(nd);});
 canvas.addEventListener("wheel",ev=>{ev.preventDefault();
-  const f=ev.deltaY<0?1.1:0.91;tzoom=Math.max(0.3,Math.min(3,tzoom*f));},{passive:false});
+  if(viewMode==="timeline"&&Math.abs(ev.deltaX)>Math.abs(ev.deltaY)){
+    [viewX,viewY]=clampTL(viewX-ev.deltaX,viewY,zoom);tviewX=viewX;tviewY=viewY;return;}
+  const f=ev.deltaY<0?1.1:0.91,nz=Math.max(0.3,Math.min(3,tzoom*f));
+  if(viewMode==="timeline")tlZoomAt(ev.clientX,ev.clientY,nz); else tzoom=nz;},{passive:false});
 /* touch */
 let touchMode=0,pinchD=0,tapXY=null,lastTap=0;
 canvas.addEventListener("touchstart",ev=>{
@@ -403,6 +582,8 @@ canvas.addEventListener("touchmove",ev=>{
     if(!pointer.moved&&tapXY&&Math.abs(px-tapXY.x)+Math.abs(py-tapXY.y)>10)pointer.moved=true;
     if(pointer.moved){const dx=px-pointer.x,dy=py-pointer.y;tyaw=null;
       if(viewMode==="chord"){tviewX=viewX+=dx;tviewY=viewY+=dy;}
+      else if(viewMode==="timeline"){[viewX,viewY]=clampTL(viewX+dx,viewY+dy,zoom);tviewX=viewX;tviewY=viewY;}
+    else if(viewMode==="timeline"){[viewX,viewY]=clampTL(viewX+dx,viewY+dy,zoom);tviewX=viewX;tviewY=viewY;}
       else{yaw+=dx*0.006;pitch=Math.max(-1.3,Math.min(1.3,pitch+dy*0.006));vyaw=dx*0.006;vpitch=dy*0.006;}}
     pointer.x=px;pointer.y=py;
   } else if(touchMode===2&&ev.touches.length>=2){
@@ -425,7 +606,10 @@ function deselect(){selNode=null;chordAnchor=null;if(!hoverNode)focusSet=null;pa
 /* In chord view, closing the breakout card returns to the anchored-and-silent
    state (the star stays lit) rather than clearing the whole selection. */
 document.getElementById("close").onclick=()=>{if(viewMode==="chord"){panel.classList.remove("open");clipFor=null;if(clip)clip.pause();clipNote("");}else deselect();};
-function connsFor(nd){return EDGES.filter(ed=>ed.a===nd.id||ed.b===nd.id).map(ed=>({other:ed.a===nd.id?byId[ed.b]:byId[ed.a],rel:relWord(ed,nd)})).sort((a,b)=>b.other.deg-a.other.deg);}
+/* `note` is optional and only some genres carry it (classical's connections are
+   annotated — "Anonymous IV records that Perotin revised Leonin's Magnus liber
+   organi"); it is shown under the connection on the card. */
+function connsFor(nd){return EDGES.filter(ed=>ed.a===nd.id||ed.b===nd.id).map(ed=>({other:ed.a===nd.id?byId[ed.b]:byId[ed.a],rel:relWord(ed,nd),note:ed.note||""})).sort((a,b)=>b.other.deg-a.other.deg);}
 function renderPanel(nd){
   const era=ERAS[nd.era],cs=connsFor(nd);
   panelBody.innerHTML=`
@@ -434,7 +618,7 @@ function renderPanel(nd){
     <div class="bio">${nd.blurb}</div>
     <button class="openpage" id="opBtn">Open full page <span>&rarr;</span></button>
     <div class="sec">Connections (${cs.length}) <span class="sechint">— tap ♪ for shared records</span></div>
-    <div class="conns">${cs.map((c,i)=>`<div class="conn" data-id="${c.other.id}"><span class="rel">${c.rel}</span><span class="nm">${c.other.name}</span><span class="cx" data-i="${i}" title="Shared recordings">♪</span></div><div class="collab" id="cb${i}"></div>`).join("")}</div>`;
+    <div class="conns">${cs.map((c,i)=>`<div class="conn" data-id="${c.other.id}"><span class="rel">${c.rel}</span><span class="nm">${c.other.name}</span><span class="cx" data-i="${i}" title="Shared recordings">♪</span></div>${c.note?`<div class="connnote">${esc(c.note)}</div>`:""}<div class="collab" id="cb${i}"></div>`).join("")}</div>`;
   document.getElementById("opBtn").onclick=()=>openPage(nd);
   panelBody.querySelectorAll(".conn").forEach(el=>{el.onclick=ev=>{if(ev.target.classList.contains("cx"))return;const t=byId[el.dataset.id];centerOn(t);select(t);};});
   panelBody.querySelectorAll(".cx").forEach(el=>{el.onclick=ev=>{ev.stopPropagation();const i=+el.dataset.i;toggleCollab(document.getElementById("cb"+i),nd,byId[cs[i].other.id],el);};});
@@ -1042,7 +1226,7 @@ function playClip(nd){
 }
 
 /* frame the voyage: recentre the tunnel (toStart=true snaps back to the genre's beginnings) */
-function fitView(){if(viewMode==="chord"){frameChord();return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
+function fitView(){if(viewMode==="chord"){frameChord();return;}if(viewMode==="timeline"){frameTimeline();return;}let R=1;for(const nd of NODES){if(!visible(nd))continue;R=Math.max(R,Math.hypot(nd.x,nd.y,nd.z));}tzoom=Math.max(0.3,Math.min(2.4,(Math.min(W,H)*0.46)/R));tyaw=null;}
 const fitBtn=document.getElementById("fitBtn");if(fitBtn)fitBtn.onclick=fitView;
 /* ----------  HIGH-RES POSTER EXPORT (prints)  ----------
    Renders the current view to a large square at print resolution and downloads
@@ -1080,10 +1264,12 @@ let userFramed=false;["wheel","mousedown"].forEach(ev=>canvas.addEventListener(e
 
 /* ----------  GLOBE ⇄ CHORD-WEB TOGGLE  ---------- */
 const chordBtn=document.getElementById("chordBtn");
+const tlBtn=document.getElementById("tlBtn");
 const holoBtn=document.getElementById("holoBtn");
 const stageEl=document.getElementById("stage"),spreadBox=document.querySelector(".spread");
 const hintEl=document.querySelector(".hint");
 const HINT_GLOBE=hintEl?hintEl.innerHTML:"";
+const HINT_TIMELINE="<b>Hover</b> a school to open it &middot; <b>Click</b> a composer to trace their ties &middot; <b>Drag</b> to pan through time &middot; <b>Scroll</b> to zoom";
 const HINT_CHORD=MOBILE
   ? '<b>Tap a star</b> to anchor it &amp; light its ties &middot; <b>then tap a name</b> to reveal the records they made together<br><b>Drag</b> to pan &middot; <b>pinch</b> to zoom &middot; it drifts slowly until you touch it'
   : '<b>Click a star</b> to anchor it &amp; light its ties (in silence) &middot; <b>then click a tie</b> to reveal records they made together<br><b>Drag</b> to pan &middot; <b>Scroll</b> to zoom &middot; it drifts slowly until you touch it';
@@ -1101,8 +1287,9 @@ function setView(mode){
   const carry=(selNode&&byId[selNode.id])?selNode:null;
   const prev=viewMode; viewMode=mode;
   if(chordBtn)chordBtn.classList.toggle("on",mode==="chord");
+  if(tlBtn)tlBtn.classList.toggle("on",mode==="timeline");
   if(holoBtn)holoBtn.classList.toggle("on",mode==="holo");
-  if(hintEl)hintEl.innerHTML=mode==="chord"?HINT_CHORD:mode==="holo"?HINT_HOLO:HINT_GLOBE;
+  if(hintEl)hintEl.innerHTML=mode==="timeline"?HINT_TIMELINE:mode==="chord"?HINT_CHORD:mode==="holo"?HINT_HOLO:HINT_GLOBE;
   alpha=1;userFramed=false;
   updateHashView();
   if(mode==="holo"){
@@ -1112,11 +1299,14 @@ function setView(mode){
     if(carry)select(carry,true);
     return;
   }
-  if(prev==="holo"){ if(window.HOLO)window.HOLO.exit(); if(stageEl)stageEl.style.display=""; if(spreadBox)spreadBox.style.display=""; }
-  if(mode==="chord"){chordSpin=0;chordIdle=0;deselect();yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameChord();if(carry)chordPick(carry);}
+  if(prev==="holo"){ if(window.HOLO)window.HOLO.exit(); if(stageEl)stageEl.style.display=""; }
+  if(spreadBox)spreadBox.style.display=(mode==="globe")?"":"none";
+  if(mode==="timeline"){deselect();frameTimeline();if(carry)select(carry,true);}
+  else if(mode==="chord"){chordSpin=0;chordIdle=0;deselect();yaw=0;pitch=0;tyaw=0;tpitch=0;vyaw=0;vpitch=0;frameChord();if(carry)chordPick(carry);}
   else{NODES.forEach(nd=>{nd.vz+=(Math.random()-.5)*8;});tviewX=0;tviewY=0;setTimeout(fitView,1800);if(carry)select(carry,true);}
 }
 if(chordBtn)chordBtn.onclick=()=>setView(viewMode==="chord"?"globe":"chord");
+if(tlBtn)tlBtn.onclick=()=>setView(viewMode==="timeline"?"globe":"timeline");
 if(holoBtn)holoBtn.onclick=()=>setView(viewMode==="holo"?"globe":"holo");
 
 /* ----------  GENRE LOADING, THEME & ROUTING  ---------- */
@@ -1157,7 +1347,10 @@ function loadGenre(key){
     const u=Math.random(),v=Math.random(),th=Math.acos(2*u-1),ph=2*Math.PI*v,rr=170*Math.cbrt(Math.random());
     nd.x=rr*Math.sin(th)*Math.cos(ph);nd.y=rr*Math.sin(th)*Math.sin(ph);nd.z=rr*Math.cos(th);
     nd.vx=0;nd.vy=0;nd.vz=0;nd.hl=0;nd._pa=0;nd.twp=Math.random()*6.28;
-    nd.instr=instrumentOf(nd.role);
+    /* Most genres filter by instrument, read from the curated role. Classical
+       has no useful instrument axis — composers are grouped by school — so a
+       genre may set bySchool and filter on that instead. */
+    nd.instr=G.bySchool?(nd.school||nd.role):instrumentOf(nd.role);
     nd.roleTag=(nd.role||"").split("·")[0].trim();   /* short instrument/role tag, e.g. "Trumpet", "Arranger" */
     nd.discoAs=G.discoAs[nd.id]||null;
     nd.mbid=(G.mbid||{})[nd.id]||null;
@@ -1182,6 +1375,11 @@ function loadGenre(key){
   const gn=document.getElementById("gname");gn.textContent=(SINGLE?BRAND:G.name)+" ";  /* textContent: brand may come from a URL param */
   const vsp=document.createElement("span");vsp.className="ver";vsp.textContent=window.MC_BUILD||"";gn.appendChild(vsp);
   gtabs.querySelectorAll(".gtab").forEach(b=>b.classList.toggle("on",b.dataset.g===key));
+  /* Timeline is offered only where the genre supplies dated groups (classical
+     has schools with spans; jazz/hiphop/reggae would need era s/e added). */
+  if(tlBtn)tlBtn.style.display=tlAvailable()?"":"none";
+  if(viewMode==="timeline"&&!tlAvailable())setView("globe");
+  _tlKey="";
   /* legend: eras + connection-line key */
   const kinds=[...new Set(EDGES.map(ed=>ed.kind))];
   legend.innerHTML=`<button class="legh" id="legToggle">Legend<span class="chev">▾</span></button><div class="legbody"><div class="lh">Eras — click to filter</div>`
@@ -1203,9 +1401,11 @@ function loadGenre(key){
   setTimeout(()=>{if(!userFramed)fitView();},1600);
   try{localStorage.setItem("tmc_last",key);}catch(e){}
 }
-instrEl.onchange=()=>{instrFilter=instrEl.value||null;alpha=Math.max(alpha,0.8);userFramed=true;setTimeout(fitView,650);};
+instrEl.onchange=()=>{instrFilter=instrEl.value||null;alpha=Math.max(alpha,0.8);userFramed=true;
+  if(viewMode==="timeline"){deselect();if(instrFilter)jumpToGroup(instrFilter);else frameTimeline();}
+  else setTimeout(fitView,650);};
 
-function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:v==="chord"?"chord":v==="holo"?"holo":"globe"};}
+function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:v==="timeline"?"timeline":v==="chord"?"chord":v==="holo"?"holo":"globe"};}
 function updateHashView(){if(!G)return;const h="#/"+G.key+(viewMode==="globe"?"":"/"+viewMode);if(location.hash!==h)try{history.replaceState(null,"",h);}catch(e){}}
 addEventListener("hashchange",()=>{const p=parseHash();if(p.genre&&!trans&&G&&G.key!==p.genre)switchGenre(p.genre);if(p.view!==viewMode&&!trans)setView(p.view);});
 

@@ -53,7 +53,15 @@ for (const [key, g] of Object.entries(genres)) {
   for (const nd of g.nodes) {
     if (ids.has(nd.id)) p(`duplicate node id "${nd.id}"`);
     ids.add(nd.id);
-    for (const field of ["id", "name", "era", "role", "life", "blurb", "bio"])
+    /* A generated genre (see g.generated — classical is built by an importer
+       rather than hand-authored) is filled in stages: the graph lands first and
+       the written layer follows. Require the structural fields always; treat the
+       written ones as required only once the genre declares itself complete.
+       `life` is exempt too: patrons and librettists reached only through a
+       connection legitimately have no dates. */
+    const written = ["blurb", "bio"], structural = ["id", "name", "era", "role"];
+    const need = (g.generated && !g.written) ? structural : [...structural, "life", ...written];
+    for (const field of need)
       if (!nd[field]) p(`node "${nd.id || nd.name}" missing ${field}`);
     if (!g.eras[nd.era]) p(`node "${nd.id}" has unknown era "${nd.era}"`);
     if (!Array.isArray(nd.disco)) p(`node "${nd.id}" disco must be an array`);

@@ -294,3 +294,7 @@
   .bc-top .bc-film{display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 30% 20%,#2a1d10,#120c06)}
   .bc-top .bc-film::after{content:"\1F39E";font-size:34px;opacity:.6}
   @media(max-width:560px){ .bookcase{margin-top:92px} .rbooks{min-height:188px} .rbook{height:182px} .bc-top{gap:14px} .bc-top .bc-cover{width:104px} .bc-top .bc-mini{width:96px;height:136px} }
+
+/* Connection notes — the annotation on a tie, where a genre supplies one
+   (classical). Sits under the connection row, above its ♪ collab drawer. */
+.conns .connnote{font-size:11.5px;line-height:1.45;color:var(--muted);padding:2px 0 8px 2px;margin-top:-2px;border-bottom:1px solid rgba(255,255,255,.05)}
