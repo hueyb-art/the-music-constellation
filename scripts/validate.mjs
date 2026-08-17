@@ -59,8 +59,10 @@ for (const [key, g] of Object.entries(genres)) {
        written ones as required only once the genre declares itself complete.
        `life` is exempt too: patrons and librettists reached only through a
        connection legitimately have no dates. */
-    const written = ["blurb", "bio"], structural = ["id", "name", "era", "role"];
-    const need = (g.generated && !g.written) ? structural : [...structural, "life", ...written];
+    const structural = ["id", "name", "era", "role"];
+    const need = g.generated
+      ? structural.concat(g.written ? ["blurb", "bio"] : [])   /* `life` stays exempt: a patron reached only through a connection has no dates */
+      : [...structural, "life", "blurb", "bio"];
     for (const field of need)
       if (!nd[field]) p(`node "${nd.id || nd.name}" missing ${field}`);
     if (!g.eras[nd.era]) p(`node "${nd.id}" has unknown era "${nd.era}"`);
