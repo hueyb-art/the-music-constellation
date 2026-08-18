@@ -1229,24 +1229,50 @@ function dzArtistTop(aid,cb){jsonp("https://api.deezer.com/artist/"+aid+"/top?li
 const _wStop=new Set(["the","and","for","der","die","das","les","des","del","della","von","van","in","de","la","le","el","il","op","opus","no"]);
 const _wStem=w=>(w.length>4&&w.endsWith("s"))?w.slice(0,-1):w;
 function _wTok(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").split(/\s+/).filter(x=>x.length>2&&!_wStop.has(x)).map(_wStem);}
+/* Novelty compilations are real recordings but a poor thing to hear on a click —
+   Bach's Brandenburg No. 6 came back from "Great for Baby's Brain, Mozart Effect
+   and Pure Enjoyment". Demote them; a release that NAMES the composer wins. */
+const _wJunk=/(baby|babies|sleep|lullab|relax|chill|study|meditat|spa|yoga|calm|wedding|dinner|cafe|lounge|workout|mozart effect|brain|\d+ best|greatest classical|classical for|essential classic|most beautiful|for reading|background)/i;
+/* Form-titles shared by dozens of composers: never play one unless the release
+   names the composer, or you get Verdi when you clicked Faure. */
+const _wGeneric=/^(ave maria|requiem|magnificat|te deum|stabat mater|missa|mass|miserere|symphony|sinfonia|sonata|concerto|nocturne|prelude|fugue|etude|quartet|quintet|trio|suite|cantata|motet|madrigal|ballade|rondo|minuet|serenade|overture|fantasia|toccata|variations|passion|oratorio|vespers|psalm|dream)\b/i;
+/* Pick the best work-title match from either provider. `get` maps a provider's
+   result to {artist, album, title}. Corroborated (composer named) beats
+   uncorroborated; junk compilations are pushed to the back. */
+function pickWork(list,pref,want,get){
+  const sur=pnorm(want).split(" ").filter(Boolean).pop()||"";
+  /* Corroboration. Artist or track title naming the composer is strong. An
+     ALBUM naming them is strong only when it leads with them — classical
+     releases are titled "Ockeghem: Missa De plus en plus" — because a
+     multi-composer anthology mentions everyone: "Black Composers Series Vol 9"
+     put Ulysses Kay on Dawson's Negro Folk Symphony. */
+  const leads=a=>{const t=pnorm(a).split(" ").filter(Boolean).slice(0,4);return t.includes(sur);};
+  const named=x=>{const g=get(x);return pnorm(g.artist).includes(sur)||pnorm(g.title).includes(sur)||leads(g.album);};
+  /* With a verified seed, match the WORK. Without one (no notable work was
+     confirmed for this composer), fall back to "the release names them" —
+     exact artistMatch is useless here because iTunes credits the performer,
+     so seedless composers were getting silence rather than anything wrong. */
+  const titled=pref
+    ? (list||[]).filter(x=>{const g=get(x);return g&&g.title&&workTitleMatch(pref,g.title);})
+    : (list||[]).filter(x=>{const g=get(x);return g&&g.title&&named(x);});
+  if(!titled.length)return null;
+  const scored=titled.map(x=>{const g=get(x);
+    const named=pnorm(g.artist).includes(sur)||pnorm(g.album).includes(sur);
+    let sc=named?10:0; if(_wJunk.test(g.album||"")||_wJunk.test(g.title||""))sc-=20;
+    return {x,sc,named};});
+  scored.sort((a,b)=>b.sc-a.sc);
+  if(pref&&_wGeneric.test(String(pref).trim())&&!scored.some(r=>r.named))return null;   /* generic title, nobody corroborates → refuse */
+  return scored[0].x;
+}
 function workTitleMatch(want,got){const a=_wTok(want),b=_wTok(got);if(!a.length||!b.length)return false;
   const hit=x=>b.includes(x);return hit(a[0])&&a.filter(hit).length>=Math.min(2,a.length);}
 function trackTitleMatch(want,got){const a=_normTrk(want),b=_normTrk(got);if(!a||!b||a.length<3||b.length<3)return false;return a===b||a.indexOf(b)>=0||b.indexOf(a)>=0;}
 function itSearch(term,want,cb,pref){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=15";const match=res=>{let cands;
-  if(G&&G.byWork&&pref){
-    /* WORK-FIRST matching (classical). iTunes credits the PERFORMER, not the
-       composer — searching Machaut returns The Orlando Consort — so requiring
-       artistName to be the composer rejects nearly everything. Verify by WORK
-       TITLE instead (the seed is a curated, pre-verified work: see
-       scripts/harvest-classical-audio.mjs) and corroborate with the composer's
-       surname in the artist or ALBUM name, which carries it about half the time
-       ("Pärt: Portrait"). Corroborated hits win; an uncorroborated title match
-       is the fallback, never the preference. */
-    const sur=pnorm(want).split(" ").filter(Boolean).pop()||"";
-    const titled=(res||[]).filter(x=>x.previewUrl&&workTitleMatch(pref,x.trackName));
-    const corrob=titled.filter(x=>pnorm(x.artistName).includes(sur)||pnorm(x.collectionName).includes(sur));
-    cands=corrob.length?corrob:titled;
-  } else cands=(res||[]).filter(x=>x.previewUrl&&artistMatch(x.artistName,want));
+  if(G&&G.byWork){
+    const best=pickWork(res,pref,want,x=>({artist:x.artistName,album:x.collectionName,title:x.trackName}));
+    fin(best?{url:best.previewUrl,title:best.trackName||"",year:(best.releaseDate||"").slice(0,4)}:null);return;
+  }
+  cands=(res||[]).filter(x=>x.previewUrl&&artistMatch(x.artistName,want));
   const r=(pref&&cands.find(x=>(G&&G.byWork?workTitleMatch:trackTitleMatch)(pref,x.trackName)))||cands[0];fin(r?{url:r.previewUrl,title:r.trackName||"",year:(r.releaseDate||"").slice(0,4)}:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
 function playClip(nd){
   if(!clip)return;
@@ -1265,7 +1291,13 @@ function playClip(nd){
   const q1=ov.q||(seed&&!/^with /i.test(seed)?nd.name+" "+seed:nd.name);
   const q2=nd.name;
   const done=hit=>{if(clipFor!==nd.id)return;if(hit&&hit.url){const yr=trustYear(nd,hit.year,hit.title);mainPlay={id:nd.id,name:nd.name,want:want,ov:ov,nd:nd,url:hit.url,title:hit.title||"",year:yr,prov:provOf(hit.url),alt:false};playPreview(hit.url,nd.name,hit.title,yr);}else clipNote("No verified preview for "+nd.name);};
-  const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;const cands=(arr||[]).filter(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));const t=(seed&&cands.find(x=>trackTitleMatch(seed,x.title)))||cands[0];if(t)done({url:t.preview,title:t.title||"",year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)});else next();});
+  const search=(q,next)=>dzSearch(q,arr=>{if(clipFor!==nd.id)return;let t;
+    if(G&&G.byWork){
+      /* Deezer credits compilations to the composer, so artistMatch alone let
+         "Baby's Brain"-style releases through. Same work-first rule as Apple. */
+      t=pickWork((arr||[]).filter(x=>x&&x.preview),seed,want,x=>({artist:x.artist&&x.artist.name,album:x.album&&x.album.title,title:x.title}));
+    } else {const cands=(arr||[]).filter(x=>x&&x.preview&&artistMatch(x.artist&&x.artist.name,want));t=(seed&&cands.find(x=>trackTitleMatch(seed,x.title)))||cands[0];}
+if(t)done({url:t.preview,title:t.title||"",year:((t.album&&t.album.release_date)||t.release_date||"").slice(0,4)});else next();});
   const apple=(q,next)=>itSearch(q,want,hit=>{if(clipFor!==nd.id)return;if(hit)done(hit);else next();},seed);
   /* Apple is PREFERRED: its previews are CORS-readable so the now-playing waveform
      can analyse the real audio, and its CDN is the robust one (not blocklisted,
