@@ -28,6 +28,7 @@ const UA = "TheMusicConstellation/1.0 (https://github.com/hueyb-art/the-music-co
 const args = process.argv.slice(2);
 const LIMIT = (() => { const i = args.indexOf("--limit"); return i < 0 ? Infinity : +args[i + 1]; })();
 const REFRESH = args.includes("--refresh");
+const RETRY = args.includes("--retry");   /* re-attempt those previously refused */
 
 const fold = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 /* light stemming so "Cello Suites" (Wikidata) matches "Cello Suite No. 1"
@@ -79,12 +80,33 @@ function fromProse(works) {
   if (!/[A-Z]/.test(head)) return null;
   return head;
 }
+/* Wikidata P86 ("composer") links every catalogued work to its composer, where
+   P800 ("notable work") is only ever a handful. For the medieval and Renaissance
+   end — Landini, Senleches, Hayne van Ghizeghem — P800 is usually empty while
+   P86 has their chansons and madrigals. Fetched in batches for whoever we are
+   about to check. */
+const p86 = {};
+async function loadP86(qids) {
+  for (const c of chunk(qids, 60)) {
+    const q = `SELECT ?c ?w ?wLabel WHERE { VALUES ?c { ${c.map(x => "wd:" + x).join(" ")} }
+      ?w wdt:P86 ?c . SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } LIMIT 900`;
+    const d = await get(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(q)}`);
+    for (const b of (d && d.results && d.results.bindings) || []) {
+      const k = b.c.value.split("/").pop(), t = b.wLabel ? b.wLabel.value : "";
+      if (t && !/^Q\d+$/.test(t) && t.length < 60) { (p86[k] = p86[k] || []); if (p86[k].length < 5 && !p86[k].includes(t)) p86[k].push(t); }
+    }
+    await sleep(900);
+  }
+  console.log(`work titles from Wikidata P86: ${Object.values(p86).reduce((n, a) => n + a.length, 0)} across ${Object.keys(p86).length} composers`);
+}
+
 const candidatesFor = nd => {
   const e = ENR.artists[nd.id] || {};
   const out = [];
   for (const q of (e.worksQ || [])) { const t = workLabels[q]; if (t && t.length < 60) out.push(t); }
+  for (const t of (p86[e.qid] || [])) out.push(t);          /* richer, mostly medieval/Renaissance */
   const p = fromProse(nd.works); if (p) out.push(p);
-  return [...new Set(out)].slice(0, 3);
+  return [...new Set(out)].slice(0, 4);
 };
 
 // ---- 2. verify against iTunes ----
@@ -109,7 +131,9 @@ async function findTrack(nd, work) {
 }
 
 const cache = (!REFRESH && existsSync(OUT)) ? JSON.parse(readFileSync(OUT, "utf8")) : {};
-const todo = nodes.filter(nd => !(nd.id in cache) && candidatesFor(nd).length).slice(0, LIMIT === Infinity ? undefined : LIMIT);
+await loadP86(nodes.filter(n => (RETRY ? cache[n.id] === null : !(n.id in cache)))
+  .map(n => (ENR.artists[n.id] || {}).qid).filter(Boolean));
+const todo = nodes.filter(nd => (RETRY ? cache[nd.id] === null : !(nd.id in cache)) && candidatesFor(nd).length).slice(0, LIMIT === Infinity ? undefined : LIMIT);
 console.log(`composers with candidate works: ${nodes.filter(n => candidatesFor(n).length).length} | to check: ${todo.length}`);
 
 let done = 0, found = 0;
