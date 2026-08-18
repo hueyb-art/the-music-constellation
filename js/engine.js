@@ -260,11 +260,35 @@ function drawChordView(){
 let _tlKey="", tlGroups=[], tlMaxLane=0, tlHoverMv=null, tlBloomMv=null;
 var tlAxisY=74, TL_MIN=1900, TL_XSCALE=44, TL_STEP=10;   /* var: resize() runs before this line */
 const TL_LANEH=80, TL_TOP=90, TL_RCAP=58, TL_BLOOM_K=1.3, TL_BLOOM_MAX=98;
-const tlSrc=()=>G.schools||G.movements||null;
-const tlKeyOf=nd=>nd.school||nd.movement||"";
+/* Group source, best available: explicit dated groups (classical schools, art
+   movements) → otherwise the ERAS themselves, when they carry date spans. The
+   era fallback is coarser by nature — jazz has 7 eras where classical has 66
+   schools — so it reads as a few broad clusters rather than a fine-grained
+   sweep. */
+const tlSrc=()=>{
+  if(G.schools)return G.schools;
+  if(G.movements)return G.movements;
+  const es=G.eras||{},ks=Object.keys(es);
+  if(ks.length&&ks.every(k=>es[k]&&es[k].s)){const m={};ks.forEach(k=>m[k]={s:es[k].s,e:es[k].e||es[k].s,era:k});return m;}
+  return null;
+};
+const tlKeyOf=nd=>nd.school||nd.movement||nd.era;
 const tlAvailable=()=>!!tlSrc();
 function tlMeasureChrome(){const b=document.querySelector(".topbar");tlAxisY=(b?Math.round(b.getBoundingClientRect().bottom):56)+18;}
 const tlX=yr=>(yr-TL_MIN)*TL_XSCALE;
+/* PER-ARTIST placement. Art and classical have dozens of dated groups, so they
+   read as a sweep of clusters. Jazz/hip hop/reggae have only 7 eras — clustering
+   by those gives seven fat blobs. But every musician carries their own dates in
+   `life` ("b.1965 · American", "1920–1955 · American"), so place each PERSON at
+   their own year and pack them vertically to avoid overlap: a beeswarm rather
+   than clusters, which is what actually stretches them out along time. */
+const tlPerArtist=()=>!G.schools&&!G.movements;
+function tlYearOf(nd){
+  const m=String(nd.life||"").match(/\d{4}/);
+  if(m)return +m[0];
+  const er=ERAS[nd.era];                       /* undated person → their era's midpoint */
+  return (er&&er.s)?Math.round((er.s+(er.e||er.s))/2):null;
+}
 function layoutTimeline(){
   const ck=G.key+"|"+Math.round(W/40);
   if(_tlKey===ck)return;                                  /* re-lay out on genre change or a real resize */
@@ -284,6 +308,20 @@ function layoutTimeline(){
   TL_MIN=Math.floor((lo-span*0.03)/10)*10;
   TL_XSCALE=Math.max(1.5,(W||1200)/perScreen);
   TL_STEP=[5,10,25,50,100,200].find(s=>s*TL_XSCALE>=90)||200;
+  if(tlPerArtist()){
+    /* beeswarm: x = the person's own year, y = first lane with room */
+    const people=NODES.map(nd=>({nd,yr:tlYearOf(nd)})).filter(p=>p.yr).sort((a,b)=>a.yr-b.yr);
+    const laneX=[], STEPY=20, GAPX=13;
+    for(const {nd,yr} of people){
+      const x=tlX(yr);
+      let lane=0;for(;lane<laneX.length;lane++)if(x-laneX[lane]>=GAPX)break;
+      if(lane===laneX.length)laneX.push(-1e9);
+      laneX[lane]=x;
+      nd._ox=0;nd._oy=0;nd._tx=x;nd._ty=TL_TOP+lane*STEPY;
+    }
+    for(const nd of NODES) if(nd._tx==null){nd._ox=0;nd._oy=0;nd._tx=tlX(TL_MIN);nd._ty=TL_TOP;}
+    tlGroups=[]; tlMaxLane=Math.max(0,laneX.length-1); _tlKey=ck; return;
+  }
   const laneEnd=[];
   for(const mv of list){
     let lane=0;for(;lane<laneEnd.length;lane++)if(tlX(mv.mid)-mv.rad>=laneEnd[lane]+12)break;
@@ -291,6 +329,7 @@ function layoutTimeline(){
     laneEnd[lane]=tlX(mv.mid)+mv.rad; mv.lane=lane;
     const bx=tlX(mv.mid), by=TL_TOP+lane*TL_LANEH;
     mv.lx=bx; mv.ly=by; mv.exp=0;
+    mv.label=(G.schools||G.movements)?mv.name:((ERAS[mv.name]&&ERAS[mv.name].label)||mv.name);
     mv.nodes.forEach((nd,i)=>{const a=i*2.399963,r=Math.min(TL_RCAP-6,Math.sqrt(i)*7);nd._ox=Math.cos(a)*r;nd._oy=Math.sin(a)*r;nd._tx=bx+nd._ox;nd._ty=by+nd._oy;});
   }
   tlGroups=list; tlMaxLane=Math.max(0,laneEnd.length-1); _tlKey=ck;
@@ -303,7 +342,8 @@ function clampTL(x,y,z){
   const loX=(W-40)-xR, hiX=40-xL;
   x=hiX<loX?(loX+hiX)/2:Math.max(loX,Math.min(hiX,x));
   const bandTop=tlAxisY+18, bandBot=H-24, band=bandBot-bandTop;
-  const yT=(TL_TOP-64)*z, yB=(TL_TOP+tlMaxLane*TL_LANEH+64)*z, ch=yB-yT;
+  const LH=(G&&tlPerArtist())?20:TL_LANEH;
+  const yT=(TL_TOP-64)*z, yB=(TL_TOP+tlMaxLane*LH+64)*z, ch=yB-yT;
   if(ch<=band)y=bandTop+(band-ch)/2-yT; else{const loY=bandBot-yB,hiY=bandTop-yT;y=Math.max(loY,Math.min(hiY,y));}
   return [x,y];
 }
@@ -314,10 +354,10 @@ function frameTimeline(){
   layoutTimeline(); tlMeasureChrome();
   tlHoverMv=null; tlGroups.forEach(mv=>mv.exp=0);
   const bandTop=tlAxisY+18, band=Math.max(140,(H-24)-bandTop);
-  const contentH=TL_TOP+(tlMaxLane+1)*TL_LANEH+64;
+  const contentH=TL_TOP+(tlMaxLane+1)*(tlPerArtist()?20:TL_LANEH)+64;
   tzoom=Math.max(0.5,Math.min(1.25,band/contentH));
   tviewX=28-W*0.04-tlX(TL_MIN)*tzoom;
-  const yT=(TL_TOP-64)*tzoom,yB=(TL_TOP+tlMaxLane*TL_LANEH+64)*tzoom,ch=yB-yT;
+  const yT=(TL_TOP-64)*tzoom,yB=(TL_TOP+tlMaxLane*(tlPerArtist()?20:TL_LANEH)+64)*tzoom,ch=yB-yT;
   tviewY=ch<=band?bandTop+(band-ch)/2-yT:bandTop-yT;
   [tviewX,tviewY]=clampTL(tviewX,tviewY,tzoom);
 }
@@ -400,7 +440,7 @@ function drawTimelineView(){
     const cx=SX(bloom.lx),cy=SY(bloom.ly-bloom.rad*(1+bloom.exp*TL_BLOOM_K)-12);
     ctx.textAlign="center";ctx.textBaseline="middle";ctx.save();ctx.shadowColor="rgba(0,0,0,0.9)";ctx.shadowBlur=3;
     ctx.font="600 12px Helvetica Neue, Arial";ctx.fillStyle="rgba(224,177,90,0.92)";
-    ctx.fillText(bloom.name.length>38?bloom.name.slice(0,36)+"…":bloom.name,cx,cy);ctx.restore();
+    const _bn=bloom.label||bloom.name;ctx.fillText(_bn.length>38?_bn.slice(0,36)+"…":_bn,cx,cy);ctx.restore();
     const small=bloom.nodes.length<=24;
     if(bloom.exp>0.5){ctx.textBaseline="middle";
       bloom.nodes.forEach(nd=>{if(!visible(nd)||nd._sx==null)return;if(!small&&nd!==hoverNode)return;
@@ -412,7 +452,7 @@ function drawTimelineView(){
   else{ctx.textAlign="center";ctx.textBaseline="middle";
     tlGroups.forEach(mv=>{const sx=SX(mv.lx),sy=SY(mv.ly-mv.rad-8);if(sx<-160||sx>W+160)return;
       ctx.font="10px Helvetica Neue, Arial";ctx.fillStyle="rgba(224,177,90,0.55)";
-      ctx.fillText(mv.name.length>32?mv.name.slice(0,30)+"…":mv.name,sx,sy);});}
+      const _mn=mv.label||mv.name;ctx.fillText(_mn.length>32?_mn.slice(0,30)+"…":_mn,sx,sy);});}
 }
 function draw(){
   ctx.clearRect(0,0,W,H);

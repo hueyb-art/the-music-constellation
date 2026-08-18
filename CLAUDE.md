@@ -102,3 +102,13 @@ Every genre used to load up front, so a visitor who only opened Jazz still downl
 - `parseHash()` accepts any genre **in the manifest**, loaded or not, so a cold deep link like `#/classical/timeline` works.
 
 Verified after the change: all four tabs render, each loads on first click, cold deep links work, and only the viewed genre is fetched.
+
+## Timeline for the three song genres (per-artist, not clusters)
+
+Jazz/hip hop/reggae now offer the Timeline too, but the layout differs by necessity. Art has 85 dated movements and classical 66 schools, so they read as a sweep of clusters. **These three have only 7 eras each** — grouping by those gave seven fat blobs, which is worse than no timeline.
+
+They do have something the other two don't: **every musician carries their own dates** in `life` ("b.1965 · American", "1920–1955 · American"). So `tlPerArtist()` (true when a genre has no `schools`/`movements`) switches `layoutTimeline` to a **beeswarm**: x is the person's own year, y is the first lane with room (`GAPX` 13px, `STEPY` 20px). Undated people fall back to their era's midpoint. `tlGroups` is left empty, so cluster labels and hover-bloom simply don't apply; hit-testing, selection and the ties all work unchanged.
+
+Era `s`/`e` spans were added to all three data files to drive the axis — **these are considered approximations, not sourced**, and are the thing to adjust if a period looks wrong.
+
+**Known semantic caveat:** the year used is the **birth year** (the first 4-digit number in `life`), so Louis Armstrong sits at 1901 though his music is 1925-60 — everyone reads ~25 years earlier than their work. Placing by an estimated active year (birth + ~25) would line the axis up with the music instead, at the cost of inventing a number. Huey's call.

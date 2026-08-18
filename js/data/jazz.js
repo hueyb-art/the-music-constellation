@@ -6,13 +6,13 @@ const n=(id,name,era,role,life,blurb,bio,disco)=>({id,name,era,role,life,blurb,b
 const e=(a,b,rel)=>({a,b,rel});
 
 const eras={
-  "nola":{label:"New Orleans roots",color:"#bf5a2b"},
-  "swing":{label:"Swing era",color:"#e0b15a"},
-  "bebop":{label:"Bebop",color:"#d9607a"},
-  "hardbop":{label:"Cool & hard bop",color:"#43b59a"},
-  "free":{label:"Free & avant-garde",color:"#9b7fd4"},
-  "modern":{label:"Modern & fusion",color:"#4f93d8"},
-  "contemporary":{label:"Contemporary",color:"#cf7bbf"},
+  "nola":{label:"New Orleans roots",color:"#bf5a2b",s:1900,e:1928},
+  "swing":{label:"Swing era",color:"#e0b15a",s:1928,e:1945},
+  "bebop":{label:"Bebop",color:"#d9607a",s:1944,e:1955},
+  "hardbop":{label:"Cool & hard bop",color:"#43b59a",s:1949,e:1965},
+  "free":{label:"Free & avant-garde",color:"#9b7fd4",s:1959,e:1975},
+  "modern":{label:"Modern & fusion",color:"#4f93d8",s:1969,e:1990},
+  "contemporary":{label:"Contemporary",color:"#cf7bbf",s:1985,e:2025},
 };
 
 const nodes=[

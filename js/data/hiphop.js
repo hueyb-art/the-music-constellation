@@ -6,13 +6,13 @@ const n=(id,name,era,role,life,blurb,bio,disco)=>({id,name,era,role,life,blurb,b
 const e=(a,b,rel)=>({a,b,rel});
 
 const eras={
-  "oldschool":{label:"Old school & foundation",color:"#e8b84b"},
-  "goldenage":{label:"Golden age",color:"#e8743f"},
-  "nineties":{label:"'90s / boom bap",color:"#4bbf73"},
-  "y2k":{label:"2000s",color:"#a07ff0"},
-  "blogera":{label:"Blog & streaming era",color:"#ec6aa0"},
-  "contemporary":{label:"Contemporary",color:"#46c8d0"},
-  "uk":{label:"UK: grime & drill",color:"#e85a5a"},
+  "oldschool":{label:"Old school & foundation",color:"#e8b84b",s:1973,e:1983},
+  "goldenage":{label:"Golden age",color:"#e8743f",s:1986,e:1993},
+  "nineties":{label:"'90s / boom bap",color:"#4bbf73",s:1992,e:1999},
+  "y2k":{label:"2000s",color:"#a07ff0",s:1999,e:2008},
+  "blogera":{label:"Blog & streaming era",color:"#ec6aa0",s:2007,e:2014},
+  "contemporary":{label:"Contemporary",color:"#46c8d0",s:2013,e:2025},
+  "uk":{label:"UK: grime & drill",color:"#e85a5a",s:2003,e:2025},
 };
 
 const nodes=[

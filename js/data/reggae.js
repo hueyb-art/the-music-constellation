@@ -6,13 +6,13 @@ const n=(id,name,era,role,life,blurb,bio,disco)=>({id,name,era,role,life,blurb,b
 const e=(a,b,rel)=>({a,b,rel});
 
 const eras={
-  "ska":{label:"Ska & foundations",color:"#e0b15a"},
-  "rocksteady":{label:"Rocksteady",color:"#d98c3f"},
-  "roots":{label:"Roots reggae",color:"#3faf5a"},
-  "dub":{label:"Dub & production",color:"#4f93d8"},
-  "dancehall":{label:"Dancehall",color:"#d9607a"},
-  "digital":{label:"Digital & ragga",color:"#9b7fd4"},
-  "contemporary":{label:"Contemporary",color:"#cf7bbf"},
+  "ska":{label:"Ska & foundations",color:"#e0b15a",s:1960,e:1966},
+  "rocksteady":{label:"Rocksteady",color:"#d98c3f",s:1966,e:1968},
+  "roots":{label:"Roots reggae",color:"#3faf5a",s:1968,e:1980},
+  "dub":{label:"Dub & production",color:"#4f93d8",s:1973,e:1985},
+  "dancehall":{label:"Dancehall",color:"#d9607a",s:1979,e:1990},
+  "digital":{label:"Digital & ragga",color:"#9b7fd4",s:1985,e:1995},
+  "contemporary":{label:"Contemporary",color:"#cf7bbf",s:1994,e:2025},
 };
 
 const nodes=[
