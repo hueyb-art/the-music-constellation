@@ -111,4 +111,6 @@ They do have something the other two don't: **every musician carries their own d
 
 Era `s`/`e` spans were added to all three data files to drive the axis — **these are considered approximations, not sourced**, and are the thing to adjust if a period looks wrong.
 
-**Known semantic caveat:** the year used is the **birth year** (the first 4-digit number in `life`), so Louis Armstrong sits at 1901 though his music is 1925-60 — everyone reads ~25 years earlier than their work. Placing by an estimated active year (birth + ~25) would line the axis up with the music instead, at the cost of inventing a number. Huey's call.
+**The axis is the ERA OF CREATION, not birth.** Huey's call, and the right one — "the era of the artist creation is vital to this project". `tlYearOf` uses the **earliest curated `disco` year** (their first signature recording), which is real sourced data and present on 650 of 651 nodes across the three genres; it falls back to the era midpoint, then birth, rather than inventing an offset. Ellington moves 1899→1930, Armstrong 1901→1928, Coltrane 1926→1960. An earlier version placed by birth year and read about 25 years early throughout.
+
+In per-artist mode the axis span is derived from the **people's years**, not the era spans — eras begin at 1900 but the first recording is 1917, so the view used to open on blank space.

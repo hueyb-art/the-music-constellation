@@ -283,11 +283,19 @@ const tlX=yr=>(yr-TL_MIN)*TL_XSCALE;
    their own year and pack them vertically to avoid overlap: a beeswarm rather
    than clusters, which is what actually stretches them out along time. */
 const tlPerArtist=()=>!G.schools&&!G.movements;
+/* WHEN THE MUSIC HAPPENED, not when the person was born. Birth year put Duke
+   Ellington at 1899 and Louis Armstrong at 1901, roughly 25 years before the
+   work they are here for — and the era of creation is the whole point of this
+   view. The curated `disco` years are real, sourced dates, so use the EARLIEST
+   recording as "when their recorded work begins" (650 of 651 nodes have one).
+   Fall back to the era midpoint, then to birth, rather than inventing an offset. */
 function tlYearOf(nd){
+  const ys=(nd.disco||[]).map(d=>{const m=String(d&&d[0]).match(/\d{4}/);return m?+m[0]:0;}).filter(Boolean);
+  if(ys.length)return Math.min(...ys);
+  const er=ERAS[nd.era];
+  if(er&&er.s)return Math.round((er.s+(er.e||er.s))/2);
   const m=String(nd.life||"").match(/\d{4}/);
-  if(m)return +m[0];
-  const er=ERAS[nd.era];                       /* undated person → their era's midpoint */
-  return (er&&er.s)?Math.round((er.s+(er.e||er.s))/2):null;
+  return m?+m[0]:null;
 }
 function layoutTimeline(){
   const ck=G.key+"|"+Math.round(W/40);
@@ -302,7 +310,12 @@ function layoutTimeline(){
   /* Scale to the genre's OWN span. Art covers a century, classical nine — a
      fixed px-per-year would make one cramped and the other 40,000px wide. Aim
      for a comfortable number of years per screen, and pick a tick step to suit. */
-  const lo=Math.min(...list.map(m=>m.s)), hi=Math.max(...list.map(m=>m.e));
+  /* In per-artist mode the axis must fit the PEOPLE, not the era spans — eras
+     start at 1900 but the first recording is 1917, so the view opened on blank
+     space. */
+  const _py=tlPerArtist()?NODES.map(tlYearOf).filter(Boolean):[];
+  const lo=_py.length?Math.min(..._py):Math.min(...list.map(m=>m.s));
+  const hi=_py.length?Math.max(..._py):Math.max(...list.map(m=>m.e));
   const span=Math.max(20,hi-lo);
   const perScreen=Math.max(25,Math.min(160,Math.round(span/8)));
   TL_MIN=Math.floor((lo-span*0.03)/10)*10;
