@@ -4,7 +4,7 @@ One web app, four genre constellations (jazz, hip hop, reggae, classical). No bu
 
 ## Architecture in one paragraph
 
-`index.html` is the only page; `js/engine.js` is the shared engine (canvas 3D force graph, search, panels, audio previews, live MusicBrainz/Wikipedia data); `js/data/<genre>.js` files register curated datasets on `window.GENRE_DATA`; the engine's `loadGenre()` swaps dataset + theme in place, `switchGenre()` animates the swap, and `#/jazz`-style hash routes select the genre. Genre themes are CSS custom properties registered with `@property` so they cross-fade.
+`index.html` is the only page; genre data is **lazy-loaded** (see below); `js/engine.js` is the shared engine (canvas 3D force graph, search, panels, audio previews, live MusicBrainz/Wikipedia data); `js/data/<genre>.js` files register curated datasets on `window.GENRE_DATA`; the engine's `loadGenre()` swaps dataset + theme in place, `switchGenre()` animates the swap, and `#/jazz`-style hash routes select the genre. Genre themes are CSS custom properties registered with `@property` so they cross-fade.
 
 ## The workflow (non-negotiable)
 
@@ -90,3 +90,15 @@ Classical is built by an importer, like the art constellation — the other thre
 - **Novelty compilations are demoted** (`_wJunk`): baby/sleep/relax/study/spa/"Mozart effect"/"50 best" and friends. Real recordings, poor thing to hear on a click.
 - **Seedless composers get a fallback.** 451 nodes have no verified work, and `artistMatch` is exact — iTunes credits the performer, so they played *silence*, not something wrong. They now resolve when the release NAMES them, which took 20 sampled composers from 3 to 15.
 - **Album corroboration must LEAD.** Allowing any album mention put Ulysses Kay on **William Dawson's** *Negro Folk Symphony*, via a multi-composer anthology that happened to list Kay. Classical releases are titled "Ockeghem: Missa De plus en plus", so the surname must fall in the album's first four words; artist or track-title mentions stay sufficient. Verified: keeps Ockeghem/Dunstaple/Pärt/Vivaldi, rejects "Black Composers Series, Vol. 9: Ulysses Kay".
+
+## Lazy genre loading
+
+Every genre used to load up front, so a visitor who only opened Jazz still downloaded all four datasets — classical alone is 290KB gzipped. Now only the genre being viewed is fetched: **first load went from 638KB to 160KB** (jazz) or 331KB (classical), and a fifth genre costs nothing until someone clicks its tab.
+
+- **`window.MC_GENRE_LIST`** in index.html is the manifest — `{key,label,src}` per genre. The engine builds its **tabs from this**, not from loaded data, or only the preloaded genre would get one.
+- **`window.MC_LOAD_GENRE(key)`** injects a data file on demand and returns a promise (deduped via `__mcLoading`, so double-clicks don't double-fetch). `switchGenre()` calls it when `GENRES[key]` is missing, then re-enters.
+- **`window.GENRE_DATA` is created in index.html**, before the engine. This matters: each data file does `window.GENRE_DATA=window.GENRE_DATA||{}`, which preserves object identity, so the engine's `const GENRES` reference sees genres that arrive later. If the engine created it instead, a later file could replace the object and the engine would hold a stale one.
+- index.html picks the **initial genre** (hash → `tmc_last` → first in manifest/`MC_CONFIG.genres`) and inserts only that data file before `js/engine.js`, since the engine needs its data present at startup.
+- `parseHash()` accepts any genre **in the manifest**, loaded or not, so a cold deep link like `#/classical/timeline` works.
+
+Verified after the change: all four tabs render, each loads on first click, cold deep links work, and only the viewed genre is fetched.

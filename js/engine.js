@@ -3,10 +3,18 @@
    One engine, many skies: the genre switcher swaps data + theme in place. */
 
 /* ----------  GENRE REGISTRY & ACTIVE STATE  ---------- */
-const GENRES=window.GENRE_DATA||{};
+/* Live reference: index.html creates window.GENRE_DATA before this file runs and
+   each data file preserves its identity, so genres loaded later (lazily, when
+   their tab is first opened) appear here without a reload. */
+const GENRES=window.GENRE_DATA||(window.GENRE_DATA={});
 const CFG=window.MC_CONFIG||{};
 const BRAND=CFG.brand||"The Music Constellation", TAGLINE=CFG.tagline||"who shaped whom";
-const GENRE_ORDER=((CFG.genres&&CFG.genres.length)?CFG.genres:["jazz","hiphop","reggae","classical"]).filter(k=>GENRES[k]);
+/* The tab list comes from the MANIFEST, not from what's loaded — otherwise only
+   the one preloaded genre would get a tab. */
+const GENRE_LIST=window.MC_GENRE_LIST||[];
+const GENRE_LABEL=k=>{const e=GENRE_LIST.find(g=>g.key===k);return (e&&e.label)||(GENRES[k]&&GENRES[k].shortName)||k;};
+const ensureGenre=k=>window.MC_LOAD_GENRE?window.MC_LOAD_GENRE(k):Promise.resolve(!!GENRES[k]);
+const GENRE_ORDER=((CFG.genres&&CFG.genres.length)?CFG.genres:GENRE_LIST.map(g=>g.key)).filter(k=>GENRE_LIST.some(g=>g.key===k)||GENRES[k]);
 /* single-brand mode: one dataset / tabs off → the brand becomes the headline */
 const SINGLE=(CFG.showTabs===false)||GENRE_ORDER.length<=1;
 let G=null;
@@ -100,7 +108,12 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 let fade=1,trans=null;
 const easeF=t=>t*t*(3-2*t);
 function switchGenre(key){
-  if(trans||!GENRES[key]||(G&&G.key===key))return;
+  if(trans||(G&&G.key===key))return;
+  if(!GENRES[key]){                       /* not fetched yet — pull it, then switch */
+    if(!GENRE_LIST.some(g=>g.key===key))return;
+    ensureGenre(key).then(ok=>{if(ok&&!trans&&(!G||G.key!==key))switchGenre(key);});
+    return;
+  }
   const h="#/"+key+(viewMode==="globe"?"":"/"+viewMode);
   if(location.hash!==h)location.hash=h;
   trans={to:key,phase:"out"};
@@ -1401,7 +1414,7 @@ const instrEl=document.getElementById("instr");
 const gtabs=document.getElementById("gtabs");
 GENRE_ORDER.forEach(k=>{
   const b=document.createElement("button");
-  b.className="gtab";b.dataset.g=k;b.textContent=GENRES[k].shortName;
+  b.className="gtab";b.dataset.g=k;b.textContent=GENRE_LABEL(k);
   b.onclick=()=>switchGenre(k);
   gtabs.appendChild(b);
 });
@@ -1491,13 +1504,13 @@ instrEl.onchange=()=>{instrFilter=instrEl.value||null;alpha=Math.max(alpha,0.8);
   if(viewMode==="timeline"){deselect();if(instrFilter)jumpToGroup(instrFilter);else frameTimeline();}
   else setTimeout(fitView,650);};
 
-function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const g=m&&GENRES[m[1]]?m[1]:null,v=m&&m[2];return{genre:g,view:v==="timeline"?"timeline":v==="chord"?"chord":v==="holo"?"holo":"globe"};}
+function parseHash(){const m=location.hash.match(/^#\/?([a-z]+)(?:\/([a-z]+))?/);const known=m&&(GENRES[m[1]]||GENRE_LIST.some(g=>g.key===m[1]));const g=known?m[1]:null,v=m&&m[2];return{genre:g,view:v==="timeline"?"timeline":v==="chord"?"chord":v==="holo"?"holo":"globe"};}
 function updateHashView(){if(!G)return;const h="#/"+G.key+(viewMode==="globe"?"":"/"+viewMode);if(location.hash!==h)try{history.replaceState(null,"",h);}catch(e){}}
 addEventListener("hashchange",()=>{const p=parseHash();if(p.genre&&!trans&&G&&G.key!==p.genre)switchGenre(p.genre);if(p.view!==viewMode&&!trans)setView(p.view);});
 
 let last=null;try{last=localStorage.getItem("tmc_last");}catch(e){}
 const ph=parseHash();
-const initial=ph.genre||((last&&GENRES[last])?last:GENRE_ORDER[0]);
+const initial=(ph.genre&&GENRES[ph.genre])?ph.genre:((last&&GENRES[last])?last:(Object.keys(GENRES)[0]||GENRE_ORDER[0]));
 loadGenre(initial);
 if(ph.view&&ph.view!=="globe")setView(ph.view);
 updateHashView();

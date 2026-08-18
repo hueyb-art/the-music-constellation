@@ -79,9 +79,54 @@ window.MC_CONFIG={
    asset URL below changes with it, so a normal reload always fetches fresh —
    no hard-refresh needed, on any device. */
 window.MC_BUILD="2026-08-17.10";
-["js/collab.js","js/data/jazz.js","js/data/hiphop.js","js/data/reggae.js","js/data/classical.js","js/holo.js","js/engine.js"].forEach(function(src){
-  var s=document.createElement("script");s.src=src+"?v="+window.MC_BUILD;s.async=false;document.head.appendChild(s);
-});
+
+/* GENRE MANIFEST + LAZY LOADING. Loading every genre up front meant a visitor
+   who only ever opened Jazz still downloaded all four datasets — classical
+   alone is 290KB gzipped, most of the payload for content they may never see.
+   So: the manifest gives the engine its tab list without any data, and only the
+   genre being viewed is fetched. The rest arrive when their tab is first
+   clicked. window.GENRE_DATA is created HERE so the engine can hold a live
+   reference to it — each data file does `window.GENRE_DATA=window.GENRE_DATA||{}`,
+   which preserves object identity, so later arrivals show up in the engine's
+   existing reference. */
+window.MC_GENRE_LIST=[
+  {key:"jazz",      label:"Jazz",      src:"js/data/jazz.js"},
+  {key:"hiphop",    label:"Hip Hop",   src:"js/data/hiphop.js"},
+  {key:"reggae",    label:"Reggae",    src:"js/data/reggae.js"},
+  {key:"classical", label:"Classical", src:"js/data/classical.js"},
+];
+window.GENRE_DATA=window.GENRE_DATA||{};
+window.__mcLoading={};
+window.MC_LOAD_GENRE=function(key){
+  var e=null,i;
+  for(i=0;i<window.MC_GENRE_LIST.length;i++) if(window.MC_GENRE_LIST[i].key===key) e=window.MC_GENRE_LIST[i];
+  if(!e) return Promise.resolve(false);
+  if(window.GENRE_DATA[key]) return Promise.resolve(true);
+  if(window.__mcLoading[key]) return window.__mcLoading[key];
+  window.__mcLoading[key]=new Promise(function(res){
+    var s=document.createElement("script");
+    s.src=e.src+"?v="+window.MC_BUILD; s.async=false;
+    s.onload=function(){res(!!window.GENRE_DATA[key]);};
+    s.onerror=function(){res(false);};
+    document.head.appendChild(s);
+  });
+  return window.__mcLoading[key];
+};
+/* which genre to show first — hash, then last-used, then the first in the
+   manifest (or MC_CONFIG.genres for a white-label build). Only this one is
+   loaded before the engine starts. */
+(function(){
+  var keys=window.MC_GENRE_LIST.map(function(g){return g.key;});
+  var order=(window.MC_CONFIG.genres&&window.MC_CONFIG.genres.length)?window.MC_CONFIG.genres:keys;
+  order=order.filter(function(k){return keys.indexOf(k)>=0;});
+  var m=location.hash.match(/^#\/?([a-z]+)/), first=m&&order.indexOf(m[1])>=0?m[1]:null;
+  if(!first){ try{var l=localStorage.getItem("tmc_last"); if(l&&order.indexOf(l)>=0)first=l;}catch(e){} }
+  if(!first) first=order[0]||"jazz";
+  var files=["js/collab.js","js/data/"+first+".js","js/holo.js","js/engine.js"];
+  files.forEach(function(src){
+    var s=document.createElement("script");s.src=src+"?v="+window.MC_BUILD;s.async=false;document.head.appendChild(s);
+  });
+})();
 </script>
 </body>
 </html>
