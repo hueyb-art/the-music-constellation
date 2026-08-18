@@ -202,6 +202,7 @@ const TRACKS = {
 const readJSON = p => { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; } };
 const ENR = readJSON(new URL("./classical-enriched.json", import.meta.url)) || { artists: {}, labels: {} };
 const BIOS = readJSON(new URL("./classical-bios.json", import.meta.url)) || {};
+const SEEDS = readJSON(new URL("./classical-tracks.json", import.meta.url)) || {};   // verified audio seeds
 
 // ---- emit ----
 const q = s => JSON.stringify(s == null ? "" : String(s));
@@ -218,6 +219,7 @@ for (const n of nodes.values()) {
   if (b && b.blurb) f.blurb = b.blurb;
   if (b && b.bio) f.bio = b.bio;
   if (TRACKS[n.id]) f.disco = TRACKS[n.id];
+  else if (SEEDS[n.id]) f.disco = SEEDS[n.id];
   if (Object.keys(f).length) factsOut[n.id] = f;
 }
 const factsLit = Object.keys(factsOut).length
@@ -259,6 +261,7 @@ window.GENRE_DATA["classical"]={
   filterLabel:"All schools",
   roleGroups:[],          /* filter by school, not instrument — see loadGenre */
   bySchool:true,          /* engine flag: this genre filters/groups by school */
+  byWork:true,            /* audio is matched by WORK TITLE, not performer name */
   discoAs:{},mbid:{},preview:{},collabs:{},
   sym:["family","partner","circle","collaborated","rivals"],
   eras,schools,nodes,edges,

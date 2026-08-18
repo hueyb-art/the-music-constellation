@@ -1089,7 +1089,11 @@ let clipFor=null;
 const SILENT="data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWAJAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=";
 let audioUnlocked=false;
 function unlockAudio(){if(!clip||audioUnlocked)return;audioUnlocked=true;try{clip.src=SILENT;const p=clip.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false;});}catch(e){audioUnlocked=false;}}
-function setTrackInfo(title,year){const tk=document.getElementById("cliptrack");if(!tk)return;const t=(title||"").trim();if(!t){tk.classList.remove("show");tk.textContent="";return;}tk.textContent=year?t+"  ("+year+")":t;tk.classList.add("show");}
+function setTrackInfo(title,year){const tk=document.getElementById("cliptrack");if(!tk)return;const t=(title||"").trim();if(!t){tk.classList.remove("show");tk.textContent="";return;}
+  /* some catalogue titles already carry the year ("In a Landscap: (1948)"),
+     so don't print it twice */
+  const dup=year&&new RegExp("\\(\\s*"+year+"\\s*\\)").test(t);
+  tk.textContent=(year&&!dup)?t+"  ("+year+")":t;tk.classList.add("show");}
 function clipNote(msg,hold){const el=document.getElementById("clipnote");if(!el)return;const tx=document.getElementById("clipnotetext")||el;clearTimeout(clipNote._t);const tk=document.getElementById("cliptrack");if(tk){tk.textContent="";tk.classList.remove("show");}if(!msg){el.classList.remove("show");return;}tx.textContent=msg;/* sit just under the topbar, whatever height it wraps to at this width */const bar=document.querySelector(".topbar");if(bar)el.style.top=(Math.round(bar.getBoundingClientRect().bottom)+10)+"px";el.classList.add("show");clipNote._t=setTimeout(()=>el.classList.remove("show"),hold||2600);}
 /* Trustworthy release year for the now-playing box. iTunes returns the release
    date of *its* catalogue item, which for older recordings is usually a modern
@@ -1215,8 +1219,35 @@ function dzArtistTop(aid,cb){jsonp("https://api.deezer.com/artist/"+aid+"/top?li
 /* prefer the *signature* track: among the right artist's previews, pick the one
    whose title matches the curated seed, else fall back to the first (so coverage
    never drops — a non-song seed just yields the old behaviour). */
+/* Work-title matching for classical (byWork). Same idea as trackTitleMatch but
+   token-based with light plural stemming, because catalogues and reference
+   works disagree on number: Wikidata says "Brandenburg Concertos" and
+   "Cello Suites", iTunes says "Brandenburg Concerto No. 3" and "Cello Suite
+   No. 1". Substring matching fails on exactly those, which are some of the
+   most recorded music there is. Left separate so the other three genres keep
+   the stricter song-title behaviour unchanged. */
+const _wStop=new Set(["the","and","for","der","die","das","les","des","del","della","von","van","in","de","la","le","el","il","op","opus","no"]);
+const _wStem=w=>(w.length>4&&w.endsWith("s"))?w.slice(0,-1):w;
+function _wTok(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").split(/\s+/).filter(x=>x.length>2&&!_wStop.has(x)).map(_wStem);}
+function workTitleMatch(want,got){const a=_wTok(want),b=_wTok(got);if(!a.length||!b.length)return false;
+  const hit=x=>b.includes(x);return hit(a[0])&&a.filter(hit).length>=Math.min(2,a.length);}
 function trackTitleMatch(want,got){const a=_normTrk(want),b=_normTrk(got);if(!a||!b||a.length<3||b.length<3)return false;return a===b||a.indexOf(b)>=0||b.indexOf(a)>=0;}
-function itSearch(term,want,cb,pref){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=15";const match=res=>{const cands=(res||[]).filter(x=>x.previewUrl&&artistMatch(x.artistName,want));const r=(pref&&cands.find(x=>trackTitleMatch(pref,x.trackName)))||cands[0];fin(r?{url:r.previewUrl,title:r.trackName||"",year:(r.releaseDate||"").slice(0,4)}:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
+function itSearch(term,want,cb,pref){let done=false;const fin=v=>{if(done)return;done=true;cb(v);};setTimeout(()=>fin(null),12000);const u="https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&media=music&entity=song&limit=15";const match=res=>{let cands;
+  if(G&&G.byWork&&pref){
+    /* WORK-FIRST matching (classical). iTunes credits the PERFORMER, not the
+       composer — searching Machaut returns The Orlando Consort — so requiring
+       artistName to be the composer rejects nearly everything. Verify by WORK
+       TITLE instead (the seed is a curated, pre-verified work: see
+       scripts/harvest-classical-audio.mjs) and corroborate with the composer's
+       surname in the artist or ALBUM name, which carries it about half the time
+       ("Pärt: Portrait"). Corroborated hits win; an uncorroborated title match
+       is the fallback, never the preference. */
+    const sur=pnorm(want).split(" ").filter(Boolean).pop()||"";
+    const titled=(res||[]).filter(x=>x.previewUrl&&workTitleMatch(pref,x.trackName));
+    const corrob=titled.filter(x=>pnorm(x.artistName).includes(sur)||pnorm(x.collectionName).includes(sur));
+    cands=corrob.length?corrob:titled;
+  } else cands=(res||[]).filter(x=>x.previewUrl&&artistMatch(x.artistName,want));
+  const r=(pref&&cands.find(x=>(G&&G.byWork?workTitleMatch:trackTitleMatch)(pref,x.trackName)))||cands[0];fin(r?{url:r.previewUrl,title:r.trackName||"",year:(r.releaseDate||"").slice(0,4)}:null);};if(typeof fetch==="undefined"){jsonp(u,d=>match(d&&d.results));return;}fetchJSON(u).then(d=>match(d&&d.results)).catch(()=>jsonp(u,d=>match(d&&d.results)));}
 function playClip(nd){
   if(!clip)return;
   clipFor=nd.id;
