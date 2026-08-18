@@ -417,7 +417,12 @@ function drawTimelineView(){
     ctx.strokeStyle=hexA(col,lit?0.55:0.16);ctx.lineWidth=lit?3:2;
     ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();});
   ctx.restore();
-  const foc=selNode,aid=foc&&foc.id,neigh=aid?adj[aid]:null;
+  /* Who gets named. In CLUSTER mode hovering blooms a group and labels its
+     members, so hover is spoken for and tie-tracing stays a click. In PER-ARTIST
+     mode there are no clusters — hovering a musician showed nothing at all, which
+     made the view unreadable — so hover behaves like the globe: it names them,
+     names their connections and lights the ties. */
+  const foc=selNode||(tlPerArtist()?hoverNode:null),aid=foc&&foc.id,neigh=aid?adj[aid]:null;
   const bloom=tlBloomMv,bname=bloom&&bloom.name;
   EDGES.forEach(ed=>{if(!ed.s||!ed.t||!visible(ed.s)||!visible(ed.t))return;const lit=aid&&(ed.a===aid||ed.b===aid);
     ctx.strokeStyle="rgba("+KIND_COLOR[ed.kind]+","+(lit?0.85:(foc?0.02:(bloom?0.03:0.05)))+")";ctx.lineWidth=lit?1.5:0.55;
