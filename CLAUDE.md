@@ -72,3 +72,9 @@ Classical is built by an importer, like the art constellation — the other thre
 - Data shape: `n(id,name,era,school,life,works,alsoIn)` — **`role` = the school**, `life` = "dates · place", plus `works` from the source. `bySchool:true` makes the engine filter by school instead of instrument. 26 composers are listed under two schools; the second is kept in `alsoIn`.
 - `generated:true` + `written:true` tell `validate.mjs` how strict to be: structural fields always, `blurb`/`bio` once written, and `life` permanently exempt (a patron reached only through a connection has no dates).
 - 159 of the 712 nodes are **patrons, theorists and librettists**, not composers — they are folded into the school of whoever they are most tied to, and their bios must describe what they enabled, not call them composers.
+
+### Audio for classical (a known gap, with one fix so far)
+
+`playClip` seeds its search from `disco[0]`'s title. Classical nodes ship with an empty `disco`, so the engine just searches the composer's name and plays whatever is most famous — which for **John Cage returned 4'33", four and a half minutes of silence**. Perfectly correct, entirely useless.
+
+`TRACKS` in `scripts/import-classical.mjs` supplies a curated signature recording per composer, merged into `disco`; Cage is seeded with *In a Landscape*. The general pass is still outstanding, and the constraint to remember is that **iTunes credits the PERFORMER, not the composer** — `itSearch` filters candidates with `artistMatch(artistName, want)`, so a seed only resolves where the release also credits the composer (for Cage, exactly 1 of 15 results passed). Doing this properly across 553 composers means matching on **track title** instead of artist name, with the work titles in each node's `works` as the seed corpus.

@@ -187,6 +187,17 @@ for (const n of nodes.values()) {
   }
 }
 
+/* Curated signature recordings, used as the AUDIO SEARCH SEED — playClip uses
+   disco[0]'s title, so without one the engine just searches the composer's name
+   and returns whatever is most famous. For John Cage that was 4'33", which is
+   four and a half minutes of silence: the most faithful preview imaginable and
+   completely useless. Seed a piece that actually sounds. iTunes credits the
+   PERFORMER, not the composer, so a seed only resolves where the release also
+   credits the composer — verified per entry before being added here. */
+const TRACKS = {
+  johncage: [["1948", "In a Landscape", "solo piano — a Cage that makes a sound"]],
+};
+
 // ---- enrichment merge (portraits/bios, when those layers exist) ----
 const readJSON = p => { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; } };
 const ENR = readJSON(new URL("./classical-enriched.json", import.meta.url)) || { artists: {}, labels: {} };
@@ -206,6 +217,7 @@ for (const n of nodes.values()) {
   if (e && e.ok) { if (e.title) f.wiki = e.title; if (e.portrait) f.img = e.portrait; }
   if (b && b.blurb) f.blurb = b.blurb;
   if (b && b.bio) f.bio = b.bio;
+  if (TRACKS[n.id]) f.disco = TRACKS[n.id];
   if (Object.keys(f).length) factsOut[n.id] = f;
 }
 const factsLit = Object.keys(factsOut).length
