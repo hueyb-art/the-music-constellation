@@ -43,6 +43,15 @@ const OVERRIDE = {
   bunnystrikerlee: "Bunny Lee", innercircle: "Inner Circle (band)", culture: "Culture (band)",
   joseywales: "Josey Wales (singer)", admiralbailey: "Admiral Bailey",
   michaelrose: "Michael Rose (singer)", glenwashington: "Glen Washington",
+  /* both matched a plausible-but-wrong entity that passed the date test:
+     "Drake" resolved to the Drake-Kendrick Lamar FEUD (an event, caught by
+     the substring name guard), and Don Cherry the pocket-trumpeter to the
+     Canadian ice hockey coach, born 1934 to the trumpeter's 1936 - two
+     years apart, comfortably inside the tolerance. */
+  drake: "Drake (musician)", cherry: "Don Cherry (trumpeter)",
+  /* the Jamaican producer, not the NASCAR owner and NFL coach born 1940 -
+     two years from the producer's 1942, so the date test cleared him too. */
+  joegibbs: "Joe Gibbs (record producer)",
 };
 
 const genres = {};

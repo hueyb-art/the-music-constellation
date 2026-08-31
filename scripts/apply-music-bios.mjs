@@ -12,7 +12,7 @@
 // --identity rewrites every bio with its own current value: the output must come
 // back byte-identical, which proves the parser round-trips before it is trusted
 // with real edits.
-import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -75,9 +75,13 @@ for (const g of ["jazz", "hiphop", "reggae"]) {
   } else if (DRY) {
     console.log(`  ${g}: ${nodes} nodes, would rewrite ${changed}`);
   } else {
-    copyFileSync(path, path + ".bak");
+    /* Backups go OUTSIDE js/data: validate.mjs runs `node --check` over every
+       file in that directory, and a <genre>.js.bak there fails the gate with
+       ERR_UNKNOWN_FILE_EXTENSION before it ever reaches the data checks. */
+    mkdirSync(ROOT + "scratch/bak", { recursive: true });
+    copyFileSync(path, `${ROOT}scratch/bak/${g}.js.bak`);
     writeFileSync(path, out);
-    console.log(`  ${g}: ${nodes} nodes, rewrote ${changed} (backup at ${g}.js.bak)`);
+    console.log(`  ${g}: ${nodes} nodes, rewrote ${changed} (backup at scratch/bak/${g}.js.bak)`);
   }
 }
 console.log(`files ${totals.files} | nodes ${totals.nodes} | rewritten ${totals.changed} | skipped ${totals.skipped}`);
