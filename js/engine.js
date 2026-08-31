@@ -853,7 +853,7 @@ function openPage(nd){
 function closePage(){pageEl.classList.remove("open");pageOpen=false;if(typeof closeReadBook==="function")closeReadBook();}
 /* ----------  THE ROOMS: Reading / Films / Deep Cuts (one tabbed page)  ---------- */
 let roomTab="read";
-const ROOM_TABS=[["read","Reading"],["watch","Films & docs"],["cuts","Deep cuts"]];
+const ROOM_TABS=[["read","Reading"],["watch","Films & docs"],["cuts","Deep cuts"],["about","About the data"]];
 function roomReadingHTML(){
   const reslist=arr=>`<div class="reslist">${arr.map(r=>`<a class="reslink" href="${esc(r[2])}" target="_blank" rel="noopener"><span class="rt">${esc(r[0])}</span><span class="rn">${esc(r[1])}</span><span class="ra">&#8599;</span></a>`).join("")}</div>`;
   const sec=`${ARCHIVES.length?`<h3 style="margin-top:34px">Archives &amp; primary sources</h3>${reslist(ARCHIVES)}`:""}
@@ -890,9 +890,25 @@ function roomCutsHTML(){
     ${REFS.length?`<h3 style="margin-top:40px">Reference shelf</h3>
     ${REFS.map(r=>`<div class="film"><div class="frow"><span class="ftitle">${esc(r.title)}</span><span class="fmeta">${[r.author,r.year].filter(Boolean).map(esc).join(" · ")}</span></div><div class="fnote">${esc(r.note)}</div></div>`).join("")}`:""}`;
 }
+/* The provenance note. Deliberately plain about what is curated, what was
+   written by a model and checked against evidence, and where the rest is
+   fetched from — it has to stay true for every genre, which is why the three
+   hand-authored genres were re-grounded facts-first (docs/LEARNINGS.md). */
+function roomAboutHTML(){
+  return `<div class="about-room">
+    <p class="lead">How this constellation was put together, and where its facts come from.</p>
+    <h3>Curated by hand</h3>
+    <p class="abp">Who appears here, how they are grouped, which connections exist and what each one means, and every artist&rsquo;s signature recordings are curated by hand. That curation is the argument the map is making: who shaped whom.</p>
+    <h3>The written biographies</h3>
+    <p class="abp">Each biography was drafted by an AI model and then checked by a second one. Both worked only from a fixed evidence pack assembled for that artist &mdash; the curated role, dates and recordings above, plus facts and an encyclopedia extract drawn from Wikidata and Wikipedia. The checker removed anything that pack did not support, so where the evidence is thin the entry is short rather than speculative, and a few true details were cut for want of a source.</p>
+    <h3>Where the rest comes from</h3>
+    <p class="abp">Portraits come from Wikipedia. Discographies and shared-record lookups come from MusicBrainz. Audio previews are short clips served by Apple and Deezer, played from their servers.</p>
+    <p class="abp abfoot">Anything here can be wrong, and corrections are welcome.</p>
+  </div>`;
+}
 function openRooms(tab){
   if(tab)roomTab=tab;
-  const body=roomTab==="watch"?roomFilmsHTML():roomTab==="cuts"?roomCutsHTML():roomReadingHTML();
+  const body=roomTab==="watch"?roomFilmsHTML():roomTab==="cuts"?roomCutsHTML():roomTab==="about"?roomAboutHTML():roomReadingHTML();
   pageInner.innerHTML=`<button class="back" id="backBtn"><span>&larr;</span> Back to the constellation</button>
     <span class="pill" style="background:rgba(224,177,90,.18);color:#e0b15a">The rooms</span>
     <div class="roomtabs">${ROOM_TABS.map(([k,l])=>`<button class="roomtab${k===roomTab?" on":""}" data-tab="${k}">${l}</button>`).join("")}</div>
@@ -901,7 +917,7 @@ function openRooms(tab){
   pageInner.querySelectorAll(".roomtab").forEach(b=>b.onclick=()=>openRooms(b.dataset.tab));
   pageInner.querySelectorAll(".dcartist[data-id]").forEach(el=>el.onclick=()=>{const nd=byId[el.dataset.id];if(nd)openPage(nd);});
   wireApple(pageInner);
-  if(roomTab==="watch")buildFilmShelf(); else if(roomTab!=="cuts")buildReadingShelf();
+  if(roomTab==="watch")buildFilmShelf(); else if(roomTab==="read")buildReadingShelf();
   pageEl.scrollTop=0;pageEl.classList.add("open");pageOpen=true;
 }
 

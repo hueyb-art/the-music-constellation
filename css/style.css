@@ -298,3 +298,9 @@
 /* Connection notes — the annotation on a tie, where a genre supplies one
    (classical). Sits under the connection row, above its ♪ collab drawer. */
 .conns .connnote{font-size:11.5px;line-height:1.45;color:var(--muted);padding:2px 0 8px 2px;margin-top:-2px;border-bottom:1px solid rgba(255,255,255,.05)}
+
+/* ROOMS: the provenance note ("About the data") — a plain reading column.
+   Headings deliberately inherit `.page h3` so this tab reads like the others. */
+.about-room{max-width:680px}
+.about-room .abp{margin:0 0 14px;font-size:15px;line-height:1.7;color:#ddd3c6}
+.about-room .abfoot{margin-top:26px;font-size:13px;color:var(--muted)}
