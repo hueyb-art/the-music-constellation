@@ -915,7 +915,8 @@ const critics=[
   {"name":"Ben Ratliff","note":"Former New York Times jazz and pop critic","books":[["Coltrane: The Story of a Sound","2007"]]},
   {"name":"Wayne Enstice & Janis Stockhouse","note":"Educators who let the players speak","books":[["Jazzwomen: Conversations with Twenty-One Musicians","2004"]]},
   
-  {"name":"Gary Giddins","note":"Village Voice columnist; National Book Critics Circle Award winner","books":[["Visions of Jazz: The First Century","1998"],["Weather Bird: Jazz at the Dawn of Its Second Century","2004"],["Satchmo: The Genius of Louis Armstrong","1988"],["Celebrating Bird: The Triumph of Charlie Parker","1987"]]},
+  {"name":"Ross Russell","note":"Founded Dial to record Parker, then wrote him into fiction","books":[["The Sound","1961"]]},
+  {"name":"Gary Giddins","note":"Village Voice columnist; National Book Critics Circle Award winner","books":[["Visions of Jazz: The First Century","1998"],["Weather Bird: Jazz at the Dawn of Its Second Century","2004"],["Satchmo: The Genius of Louis Armstrong","1988"],["Celebrating Bird: The Triumph of Charlie Parker","1987"],["Riding on a Blue Note: Jazz and American Pop","1981"],["Jazz: The Essentials (with Scott DeVeaux)","2009"],["Bing Crosby: Swinging on a Star \u2014 The War Years, 1940\u20131946","2018"]]},
   {"name":"Dan Morgenstern","note":"Down Beat editor and historian; multiple Grammys for liner notes","books":[["Living with Jazz","2004"],["Jazz People","1976"]]},
   {"name":"Nate Chinen","note":"WBGO and formerly The New York Times; chronicler of 21st-century jazz","books":[["Playing Changes: Jazz for the New Century","2018"]]},
   {"name":"Ted Gioia","note":"Historian and pianist","books":[["The History of Jazz","1997"],["How to Listen to Jazz","2016"],["The Jazz Standards","2012"],["West Coast Jazz","1992"]]},
@@ -1007,7 +1008,10 @@ const wiki={
 
 /* Films & docs: {title, year, director, note, url?} — url optional (else search links) */
 const films=[
-{title:"Max Roach: The Drum Also Waltzes",year:"2023",director:"Sam Pollard & Ben Shapiro",note:"A PBS American Masters portrait of the pioneering drummer, composer and activist.",wiki:"Max Roach: The Drum Also Waltzes"},
+{title:"Jaco",year:"2014",director:"Paul Marchand & Stephen Kijak",note:"The life and death of Jaco Pastorius, produced by Metallica's Robert Trujillo, with Hancock, Shorter, Joni Mitchell and Flea talking.",wiki:"Jaco (film)"},
+  {title:"One Night with Blue Note",year:"1985",director:"John Charles Jopson",note:"The Town Hall concert of February 1985, staged to mark Blue Note's relaunch, with the label's old hands and its new signings on one stage.",wiki:"One Night with Blue Note"},
+  {title:"Artie Shaw: Time Is All You've Got",year:"1985",director:"Brigitte Berman",note:"An Oscar-winning portrait of the clarinettist. Shaw sued Berman afterwards for a larger share of the profits, and lost.",wiki:"Artie Shaw: Time Is All You've Got"},
+  {title:"Max Roach: The Drum Also Waltzes",year:"2023",director:"Sam Pollard & Ben Shapiro",note:"A PBS American Masters portrait of the pioneering drummer, composer and activist.",wiki:"Max Roach: The Drum Also Waltzes"},
 {title:"Ella Fitzgerald: Just One of Those Things",year:"2019",director:"Leslie Woodhead",note:"A documentary tracing the life and voice of the First Lady of Song.",wiki:"Ella Fitzgerald: Just One of Those Things"},
 {title:"Count Basie: Through His Own Eyes",year:"2019",director:"Jeremy Marre",note:"A documentary on the bandleader who defined Kansas City swing.",wiki:"Count Basie: Through His Own Eyes"},
   {title:"The Cry of Jazz",year:"1959",director:"Edward Bland",note:"A fierce, polemical essay on jazz and race, scored by Sun Ra — now in the National Film Registry."},
