@@ -1008,7 +1008,8 @@ const wiki={
 
 /* Films & docs: {title, year, director, note, url?} — url optional (else search links) */
 const films=[
-{title:"Ragtime",year:"1981",director:"Milo\u0161 Forman",note:"Forman's adaptation of Doctorow's novel, set in and around New York at the turn of the century. Not a documentary \u2014 the world the music came out of, caught in a drama.",wiki:"Ragtime (film)"},
+{title:"Immortal: The Musical Crusade of Reggie Workman",year:"2024",director:"Maya Milenovic",note:"The NEA Jazz Master on his jazz philosophy, drawn out in conversation with his daughter Ayana, who produced it. Wynton Marsalis executive produced."},
+  {title:"Ragtime",year:"1981",director:"Milo\u0161 Forman",note:"Forman's adaptation of Doctorow's novel, set in and around New York at the turn of the century. Not a documentary \u2014 the world the music came out of, caught in a drama.",wiki:"Ragtime (film)"},
   {title:"Charles Lloyd: Arrows Into Infinity",year:"2012",director:"Dorothy Darr & Jeffery Morse",note:"The saxophonist's long arc: sixties success, years of withdrawal at Big Sur, and a late return."},
   {title:"The Language of the Unknown: A Film About the Wayne Shorter Quartet",year:"2013",director:"Guido Lukoschek",note:"Shorter's quartet at work, and on what they think they are doing while they improvise."},
   {title:"Tubby Hayes: A Man in a Hurry",year:"2015",director:"Lee Cogswell",note:"The British tenor player who packed a career into two decades and was gone at thirty-eight."},
