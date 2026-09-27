@@ -1008,7 +1008,12 @@ const wiki={
 
 /* Films & docs: {title, year, director, note, url?} — url optional (else search links) */
 const films=[
-{title:"Jaco",year:"2014",director:"Paul Marchand & Stephen Kijak",note:"The life and death of Jaco Pastorius, produced by Metallica's Robert Trujillo, with Hancock, Shorter, Joni Mitchell and Flea talking.",wiki:"Jaco (film)"},
+{title:"Ragtime",year:"1981",director:"Milo\u0161 Forman",note:"Forman's adaptation of Doctorow's novel, set in and around New York at the turn of the century. Not a documentary \u2014 the world the music came out of, caught in a drama.",wiki:"Ragtime (film)"},
+  {title:"Charles Lloyd: Arrows Into Infinity",year:"2012",director:"Dorothy Darr & Jeffery Morse",note:"The saxophonist's long arc: sixties success, years of withdrawal at Big Sur, and a late return."},
+  {title:"The Language of the Unknown: A Film About the Wayne Shorter Quartet",year:"2013",director:"Guido Lukoschek",note:"Shorter's quartet at work, and on what they think they are doing while they improvise."},
+  {title:"Tubby Hayes: A Man in a Hurry",year:"2015",director:"Lee Cogswell",note:"The British tenor player who packed a career into two decades and was gone at thirty-eight."},
+  {title:"Chet's Romance",year:"1988",director:"Bertrand F\u00e8vre",note:"A short film of Chet Baker singing and playing, made near the end of his life."},
+  {title:"Jaco",year:"2014",director:"Paul Marchand & Stephen Kijak",note:"The life and death of Jaco Pastorius, produced by Metallica's Robert Trujillo, with Hancock, Shorter, Joni Mitchell and Flea talking.",wiki:"Jaco (film)"},
   {title:"One Night with Blue Note",year:"1985",director:"John Charles Jopson",note:"The Town Hall concert of February 1985, staged to mark Blue Note's relaunch, with the label's old hands and its new signings on one stage.",wiki:"One Night with Blue Note"},
   {title:"Artie Shaw: Time Is All You've Got",year:"1985",director:"Brigitte Berman",note:"An Oscar-winning portrait of the clarinettist. Shaw sued Berman afterwards for a larger share of the profits, and lost.",wiki:"Artie Shaw: Time Is All You've Got"},
   {title:"Max Roach: The Drum Also Waltzes",year:"2023",director:"Sam Pollard & Ben Shapiro",note:"A PBS American Masters portrait of the pioneering drummer, composer and activist.",wiki:"Max Roach: The Drum Also Waltzes"},
