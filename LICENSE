@@ -1,53 +1,50 @@
-Copyright (c) 2026 Huey B (hueyb-art). All rights reserved.
+================================================================================
+The Music Constellation
+Copyright (c) 2026 Huey Benjamin. All rights reserved.
+================================================================================
 
-No licence is granted to use, copy, modify, merge, publish, distribute, sublicense or sell
-any part of this repository — neither the source code nor the curated editorial content
-(the rosters, biographies, era groupings, connection data, discographies, reading-room
-selections and film notes in js/data/).
+This software and its accompanying editorial content — the engine and its
+Constellation, Chord Web, Timeline and 3D views; the curated rosters, era
+groupings, influence and collaboration data, connection notes, signature
+recordings and written biographies; and the data-preparation and enrichment
+tooling — are the proprietary work of the copyright holder.
 
-The site is published at https://hueyb-art.github.io/the-music-constellation/ so that people
-can use it. Publishing it does not place it in the public domain and does not grant any right
-to reuse what it contains.
+NO LICENCE IS GRANTED. No right to use, copy, modify, publish, distribute,
+sublicense, deploy, install, host, exhibit or create derivative works of any
+part of this work is granted, whether express or implied, except under a
+separate written agreement signed by the copyright holder.
 
-EDUCATIONAL AND NON-COMMERCIAL USE
+Being given access to view a demonstration of this work — whether hosted, in
+person, or by any private link — grants no licence of any kind, and no right to
+copy, record, redistribute or reimplement it.
 
-A free licence for educational, academic or non-commercial use may be granted on request.
-It is not automatic and it is not granted by this file; ask, and say what you want to do.
-Contact: https://github.com/hueyb-art/the-music-constellation
+DISCRETIONARY GRANTS. The copyright holder may grant permission — including free
+of charge, and including to museums, galleries, schools, universities and other
+educational or cultural institutions — at their sole discretion. Any such grant
+is valid only in writing, applies only to the party and purpose named in it, and
+creates no entitlement or precedent for any other party or any future request.
 
-WHAT CHANGED, AND WHAT THAT DOES NOT UNDO
+PRIOR VERSIONS. Versions of The Music Constellation published between
+12 June 2026 and 1 October 2026 were made available under the MIT licence
+(code) and Creative Commons Attribution 4.0 (editorial content). Those grants
+are irrevocable for copies lawfully obtained during that period and continue to
+apply to those copies. They do not extend to this or any later version. As at
+1 October 2026 no copy is known to have been taken: no forks, stars or watchers
+existed on any repository, and no snapshot of the published site existed in the
+Internet Archive.
 
-Until 2026-10-01 this repository carried an MIT licence on the code and CC BY 4.0 on the
-editorial content in js/data/. Those terms are withdrawn for this and all later versions.
+THIRD-PARTY MATERIAL. This work displays material it does not own, retrieved at
+runtime and not redistributed by the copyright holder: artist imagery from
+Wikimedia and Wikipedia under their respective licences, audio previews served
+by Apple and Deezer, and metadata from MusicBrainz and Wikidata. Note that the
+film-poster lookup requests pilicense=any, which returns images Wikipedia serves
+as NON-FREE under fair use — a narrower permission than every other source here.
 
-Creative Commons licences are irrevocable for copies already distributed. Anyone who took a
-copy while CC BY 4.0 was in force keeps that licence FOR THAT COPY. This file governs this
-version and everything after it. At the time of the change the repository had no forks, no
-stars and no watchers.
+Nothing here purports to license that material, and any deployment must address
+it separately.
 
-THIRD-PARTY MATERIAL KEEPS ITS OWN TERMS
+NO WARRANTY. This work is provided without warranty of any kind. Warranty,
+support, indemnity and service commitments are available only under a written
+agreement.
 
-Nothing here grants any right over material that belongs to somebody else. The app fetches
-several things at runtime rather than committing them:
-
-  MusicBrainz     Core data is CC0. Discographies and the shared-record lookups in
-                  js/collab.js come from the MusicBrainz web service, used within its
-                  rate limit. https://musicbrainz.org/doc/About/Data_License
-
-  Wikipedia /     Portraits and biographical extracts, and film posters via the
-  Wikidata        pageimages API. NOTE: the film-poster lookup uses pilicense=any, which
-                  returns NON-FREE images served under fair use on Wikipedia. That is a
-                  narrower permission than this project's other sources and should be
-                  reviewed before any commercial use.
-
-  Open Library /  Book cover art for the reading room, fetched and cached client-side.
-  Google Books    Each cover remains the property of its publisher.
-
-  Apple / iTunes  Thirty-second audio previews, played from their own endpoints and never
-  and Deezer      copied or stored. Their API terms apply.
-
-Biographies in js/data/ were written by a model from a fixed per-artist evidence pack and
-fact-checked against it, as the "About the data" tab in Rooms describes. They are original
-text and are covered by the copyright above; the facts in them are not.
-
-Any source added later must be recorded here, with its terms, before it is used.
+Licensing enquiries: https://github.com/hueyb-art
