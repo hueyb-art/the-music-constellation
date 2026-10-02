@@ -50,5 +50,21 @@ a spreadsheet and have it converted to the data-file shape.
 - The live MusicBrainz / Wikipedia / Deezer / Apple lookups are third-party; a
   self-contained install can rely on the curated data baked into the dataset
   and treat those enrichments as optional (see kiosk/offline mode).
-- Code is MIT; the curated editorial content is CC BY 4.0. For an exclusive
-  commercial engagement, agree licensing terms for the curation separately.
+- **Everything here is all rights reserved** — the engine and the curation alike. See
+  [LICENSE](../LICENSE). Nothing in this repository may be reused without a licence
+  agreed in writing, so a commercial engagement starts from a clean sheet rather than
+  from terms already given away.
+
+  Until 2026-10-01 the code was MIT and the curation CC BY 4.0. Those terms are withdrawn.
+  Creative Commons cannot be revoked for copies already taken; at the time of the change
+  the repository had no forks, stars or watchers.
+
+- A **free licence for educational, academic or non-commercial use may be granted on
+  request**. That is deliberate: a university or a school should be able to use this, and
+  that is a decision to make case by case rather than a blanket grant.
+
+- **Before any paid deployment, review the runtime third-party content.** The film-poster
+  lookup requests `pilicense=any`, which returns images Wikipedia serves as NON-FREE under
+  fair use — a narrower permission than everything else here. Apple and Deezer previews
+  play from their own endpoints under their API terms. A kiosk or offline build that leans
+  on the baked-in curation avoids all of it.

@@ -59,4 +59,17 @@ Rosters and connections are a curated selection, not an exhaustive census — ch
 
 ## License
 
-Code is [MIT](LICENSE). The curated editorial content — rosters, biographies, connection data in `js/data/` — is [CC BY 4.0](LICENSE-CONTENT.md): reuse it with credit to this project.
+**All rights reserved** — see [LICENSE](LICENSE). This covers the code *and* the curated
+editorial content: the rosters, biographies, connection data and discographies in `js/data/`.
+
+The site is public so that people can use it. That does not make its contents free to reuse.
+
+A **free licence for educational, academic or non-commercial use may be granted on request** —
+ask, and say what you have in mind.
+
+Until 2026-10-01 the code was MIT and the content CC BY 4.0. Those terms are withdrawn going
+forward; Creative Commons licences cannot be revoked for copies already taken, and the
+repository had no forks at the time of the change.
+
+Third-party material keeps its own terms — MusicBrainz, Wikipedia/Wikidata, Open Library and
+the Apple and Deezer preview endpoints are all listed in [LICENSE](LICENSE).
